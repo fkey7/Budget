@@ -109,3 +109,47 @@ document.getElementById("btnReset").addEventListener("click", () => {
 });
 
 render();
+function addTransaction({ type, date, amount, currency, note }) {
+  const data = loadData();
+
+  const tx = {
+    id: crypto.randomUUID(),
+    type,            // "expense" | "income"
+    date,            // "YYYY-MM-DD"
+    amount: Number(amount),
+    currency,
+    note: note || ""
+  };
+
+  data.transactions.push(tx);
+  saveData(data);
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Varsayılan tarih bugün olsun
+const dateInput = document.getElementById("txDate");
+if (dateInput && !dateInput.value) dateInput.value = todayISO();
+
+document.getElementById("btnAddTx").addEventListener("click", () => {
+  const type = document.getElementById("txType").value;
+  const date = document.getElementById("txDate").value || todayISO();
+  const amount = document.getElementById("txAmount").value;
+  const currency = document.getElementById("txCurrency").value;
+  const note = document.getElementById("txNote").value;
+
+  if (!amount || Number(amount) <= 0) {
+    alert("Tutar gir (0'dan büyük) ❗️");
+    return;
+  }
+
+  addTransaction({ type, date, amount, currency, note });
+
+  // input temizle
+  document.getElementById("txAmount").value = "";
+  document.getElementById("txNote").value = "";
+
+  render();
+});
