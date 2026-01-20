@@ -1,0 +1,111 @@
+const STORAGE_KEY = "butce_data_v1";
+
+// Senin gönderdiğin JSON formatına uygun "boş şablon"
+function defaultData() {
+  return {
+    categories: { income: [], expense: [] },
+    transactions: [],
+    monthlyRates: {},
+    exchangeRates: { USD: 1, TRY: 1, EUR: 1, RUB: 1 },
+    nextCategoryId: 1,
+  };
+}
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return defaultData();
+  try {
+    const parsed = JSON.parse(raw);
+    return migrateIfNeeded(parsed);
+  } catch {
+    return defaultData();
+  }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function migrateIfNeeded(d) {
+  // Geriye uyumluluk için alan yoksa ekle
+  const base = defaultData();
+  return {
+    ...base,
+    ...d,
+    categories: d.categories ?? base.categories,
+    transactions: d.transactions ?? base.transactions,
+    monthlyRates: d.monthlyRates ?? base.monthlyRates,
+    exchangeRates: d.exchangeRates ?? base.exchangeRates,
+    nextCategoryId: d.nextCategoryId ?? base.nextCategoryId,
+  };
+}
+
+function downloadJson(filename, obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function setStatus(text) {
+  document.getElementById("status").textContent = text;
+}
+
+function render() {
+  const data = loadData();
+
+  setStatus([
+    `Kategoriler (Gelir): ${data.categories.income.length}`,
+    `Kategoriler (Gider): ${data.categories.expense.length}`,
+    `İşlem sayısı: ${data.transactions.length}`,
+    `Kur: ${JSON.stringify(data.exchangeRates)}`,
+    `monthlyRates anahtar sayısı: ${Object.keys(data.monthlyRates).length}`,
+  ].join("\n"));
+
+  const txList = document.getElementById("txList");
+  if (!data.transactions.length) {
+    txList.textContent = "(işlem yok)";
+    return;
+  }
+
+  // Son 10 işlemi basitçe göster
+  const last = data.transactions.slice(-10).reverse();
+  txList.textContent = last.map(t => JSON.stringify(t)).join("\n");
+}
+
+document.getElementById("btnExport").addEventListener("click", () => {
+  const data = loadData();
+  const today = new Date().toISOString().slice(0, 10);
+  downloadJson(`butce-yedek-${today}.json`, data);
+});
+
+document.getElementById("fileImport").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const text = await file.text();
+  try {
+    const parsed = JSON.parse(text);
+    const data = migrateIfNeeded(parsed);
+    saveData(data);
+    render();
+    alert("JSON içe aktarıldı ✅");
+  } catch (err) {
+    alert("JSON okunamadı ❌");
+  } finally {
+    e.target.value = "";
+  }
+});
+
+document.getElementById("btnReset").addEventListener("click", () => {
+  if (!confirm("Tüm veriyi sıfırlamak istiyor musun?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+});
+
+render();
