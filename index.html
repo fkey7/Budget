@@ -26,6 +26,48 @@
       <h2>Durum</h2>
       <pre id="status" class="mono"></pre>
     </section>
+<section class="card">
+  <h2>İşlem Ekle</h2>
+
+  <div class="grid">
+    <div>
+      <label>Tür</label>
+      <select id="txType">
+        <option value="expense">Gider</option>
+        <option value="income">Gelir</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Tarih</label>
+      <input id="txDate" type="date" />
+    </div>
+
+    <div>
+      <label>Tutar</label>
+      <input id="txAmount" type="number" step="0.01" placeholder="0" />
+    </div>
+
+    <div>
+      <label>Para Birimi</label>
+      <select id="txCurrency">
+        <option value="TRY">TRY</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="RUB">RUB</option>
+      </select>
+    </div>
+
+    <div class="full">
+      <label>Açıklama</label>
+      <input id="txNote" type="text" placeholder="Market, maaş, fatura..." />
+    </div>
+
+    <div class="full">
+      <button id="btnAddTx">Kaydet</button>
+    </div>
+  </div>
+</section>
 
     <section class="card">
       <h2>Son İşlemler</h2>
