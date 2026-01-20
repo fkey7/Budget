@@ -75,7 +75,11 @@ function render() {
 
   // Son 10 işlemi basitçe göster
   const last = data.transactions.slice(-10).reverse();
-  txList.textContent = last.map(t => JSON.stringify(t)).join("\n");
+ txList.innerHTML = last.map(t => {
+  const sign = t.type === "expense" ? "-" : "+";
+  return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${t.note}</div>`;
+}).join("");
+
 }
 
 document.getElementById("btnExport").addEventListener("click", () => {
