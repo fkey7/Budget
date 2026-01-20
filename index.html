@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bütçe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Bütçe</h1>
+    <div class="actions">
+      <button id="btnExport">JSON Dışa Aktar</button>
+
+      <label class="file">
+        JSON İçe Aktar
+        <input id="fileImport" type="file" accept="application/json" />
+      </label>
+
+      <button id="btnReset" class="danger">Sıfırla</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Durum</h2>
+      <pre id="status" class="mono"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Son İşlemler</h2>
+      <div id="txList" class="mono small"></div>
+      <p class="muted">Şimdilik sadece iskelet. Bir sonraki adımda işlem ekleme ekranını yapacağız.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
