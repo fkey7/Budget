@@ -58,12 +58,13 @@ function setStatus(text) {
 
 function render() {
   const data = loadData();
-  
-ensureMonthInputs();
-renderCategoryList();
-fillTxCategorySelect(
-  document.getElementById("txType")?.value || "expense"
-);
+
+  // Kategori UI'leri (sen daha önce eklemiştin)
+  if (typeof ensureMonthInputs === "function") ensureMonthInputs();
+  if (typeof renderCategoryList === "function") renderCategoryList();
+  if (typeof fillTxCategorySelect === "function") {
+    fillTxCategorySelect(document.getElementById("txType")?.value || "expense");
+  }
 
   setStatus([
     `Kategoriler (Gelir): ${data.categories.income.length}`,
@@ -73,24 +74,34 @@ fillTxCategorySelect(
     `monthlyRates anahtar sayısı: ${Object.keys(data.monthlyRates).length}`,
   ].join("\n"));
 
+  // Son işlemler listesi
   const txList = document.getElementById("txList");
   if (!data.transactions.length) {
     txList.textContent = "(işlem yok)";
-    return;
-const y = document.getElementById("selYear")?.value;
-const m = document.getElementById("selMonth")?.value;
+  } else {
+    const last = data.transactions.slice(-10).reverse();
+    txList.innerHTML = last.map(t => {
+      const sign = t.type === "expense" ? "-" : "+";
+      return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${t.note}</div>`;
+    }).join("");
+  }
 
-if (y && m) {
-  const s = calcMonthlySummary(y, m);
-  const box = document.getElementById("monthlySummary");
-  if (box) {
-    box.innerHTML =
-      `Plan Gelir: ${s.planIncome.toFixed(2)} USD\n` +
-      `Gerçek Gelir: ${s.actualIncome.toFixed(2)} USD\n` +
-      `Plan Gider: ${s.planExpense.toFixed(2)} USD\n` +
-      `Gerçek Gider: ${s.actualExpense.toFixed(2)} USD\n\n` +
-      `Net (Plan): ${s.netPlan.toFixed(2)} USD\n` +
-      `Net (Gerçek): ${s.netActual.toFixed(2)} USD`;
+  // Aylık özet (USD) - bu kısım render'ın EN SONUNDA olmalı
+  const y = document.getElementById("selYear")?.value;
+  const m = document.getElementById("selMonth")?.value;
+
+  if (y && m && typeof calcMonthlySummary === "function") {
+    const s = calcMonthlySummary(y, m);
+    const box = document.getElementById("monthlySummary");
+    if (box) {
+      box.textContent =
+        `Plan Gelir: ${s.planIncome.toFixed(2)} USD\n` +
+        `Gerçek Gelir: ${s.actualIncome.toFixed(2)} USD\n` +
+        `Plan Gider: ${s.planExpense.toFixed(2)} USD\n` +
+        `Gerçek Gider: ${s.actualExpense.toFixed(2)} USD\n\n` +
+        `Net (Plan): ${s.netPlan.toFixed(2)} USD\n` +
+        `Net (Gerçek): ${s.netActual.toFixed(2)} USD`;
+    }
   }
 }
 
