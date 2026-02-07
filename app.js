@@ -58,6 +58,12 @@ function setStatus(text) {
 
 function render() {
   const data = loadData();
+  
+ensureMonthInputs();
+renderCategoryList();
+fillTxCategorySelect(
+  document.getElementById("txType")?.value || "expense"
+);
 
   setStatus([
     `Kategoriler (Gelir): ${data.categories.income.length}`,
@@ -71,6 +77,24 @@ function render() {
   if (!data.transactions.length) {
     txList.textContent = "(işlem yok)";
     return;
+const y = document.getElementById("selYear")?.value;
+const m = document.getElementById("selMonth")?.value;
+
+if (y && m) {
+  const s = calcMonthlySummary(y, m);
+  const box = document.getElementById("monthlySummary");
+  if (box) {
+    box.innerHTML =
+      `Plan Gelir: ${s.planIncome.toFixed(2)} USD\n` +
+      `Gerçek Gelir: ${s.actualIncome.toFixed(2)} USD\n` +
+      `Plan Gider: ${s.planExpense.toFixed(2)} USD\n` +
+      `Gerçek Gider: ${s.actualExpense.toFixed(2)} USD\n\n` +
+      `Net (Plan): ${s.netPlan.toFixed(2)} USD\n` +
+      `Net (Gerçek): ${s.netActual.toFixed(2)} USD`;
+  }
+}
+
+    
   }
 
   // Son 10 işlemi basitçe göster
