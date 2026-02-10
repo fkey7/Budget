@@ -5,20 +5,14 @@ const STORAGE_KEY = "butce_data_v1";
 ========================= */
 function defaultData() {
   return {
-    app: { version: 4, locale: "tr", baseCurrency: "USD" },
-
+    app: { version: 5, locale: "tr", baseCurrency: "USD" },
     fx: { monthlyAvg: {}, overrides: {}, lastUpdatedAt: null },
-
     categories: { income: [], expense: [] },
     transactions: [],
     monthlyRates: {},
     exchangeRates: { USD: 1, TRY: 1, EUR: 1, RUB: 1 },
     nextCategoryId: 1,
-
-    // Bilanço: ay bazlı snapshot
-    balanceSheets: {
-      // "2026-06": { assets:[{id,name,amount}], liabilities:[...], plan:{assets,liab,equity} }
-    }
+    balanceSheets: {}
   };
 }
 
@@ -58,6 +52,8 @@ function migrateIfNeeded(d) {
 ========================= */
 function $(id) { return document.getElementById(id); }
 function todayISO() { return new Date().toISOString().slice(0, 10); }
+function pad2(n) { return String(n).padStart(2, "0"); }
+
 function setStatus(text) { if ($("status")) $("status").textContent = text; }
 
 function downloadJson(filename, obj) {
@@ -77,8 +73,6 @@ function ymFromDate(d) {
   return { y, m };
 }
 
-function pad2(n) { return String(n).padStart(2, "0"); }
-
 function isYM(str) {
   return /^\d{4}\-(0[1-9]|1[0-2])$/.test(String(str).trim());
 }
@@ -91,22 +85,12 @@ function getSelectedYMKey() {
   return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
 }
 
-function setSelectedYMKey(ymKey) {
-  if (!isYM(ymKey)) return false;
-  const [y, m] = ymKey.split("-");
-  ensureYearMonthSelectors(); // populate first
-  if ($("selYear")) $("selYear").value = y;
-  if ($("selMonth")) $("selMonth").value = m;
-  return true;
-}
-
 function ensureYearMonthSelectors() {
   const data = loadData();
   const yearSel = $("selYear");
   const monthSel = $("selMonth");
   if (!yearSel || !monthSel) return;
 
-  // Years from: transactions + balanceSheets + fx
   const years = new Set();
   data.transactions.forEach(t => years.add(String(t.date).slice(0, 4)));
   Object.keys(data.balanceSheets || {}).forEach(k => years.add(k.slice(0, 4)));
@@ -114,28 +98,42 @@ function ensureYearMonthSelectors() {
   Object.keys(data.fx?.overrides || {}).forEach(k => years.add(k.slice(0, 4)));
   if (!years.size) years.add(String(new Date().getFullYear()));
 
-  if (!yearSel.children.length) {
-    [...years].sort().forEach(y => {
+  const existing = new Set([...yearSel.options].map(o => o.value));
+  [...years].sort().forEach(y => {
+    if (!existing.has(y)) {
       const o = document.createElement("option");
       o.value = y; o.textContent = y;
       yearSel.appendChild(o);
-    });
-    yearSel.value = [...years].sort()[0];
-  } else {
-    // ensure any missing year options appear
-    const existing = new Set([...yearSel.options].map(o => o.value));
-    [...years].sort().forEach(y => {
-      if (!existing.has(y)) {
-        const o = document.createElement("option");
-        o.value = y; o.textContent = y;
-        yearSel.appendChild(o);
-      }
-    });
-  }
+    }
+  });
 
-  if (!monthSel.value) {
-    monthSel.value = pad2(new Date().getMonth() + 1);
-  }
+  if (!yearSel.value) yearSel.value = [...years].sort()[0];
+  if (!monthSel.value) monthSel.value = pad2(new Date().getMonth() + 1);
+}
+
+function setSelectedYMKey(ymKey) {
+  if (!isYM(ymKey)) return false;
+  const [y, m] = ymKey.split("-");
+  ensureYearMonthSelectors();
+  if ($("selYear")) $("selYear").value = y;
+  if ($("selMonth")) $("selMonth").value = m;
+  return true;
+}
+
+function prevMonth(ymKey) {
+  const [y, m] = ymKey.split("-").map(Number);
+  const d = new Date(y, m - 1, 1);
+  d.setMonth(d.getMonth() - 1);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 /* =========================
@@ -298,7 +296,7 @@ function fillTxCategorySelect(type) {
   if (!sel) return;
   const arr = data.categories[type] || [];
   sel.innerHTML = arr.length
-    ? arr.map(c => `<option value="${c.id}">${c.name}</option>`).join("")
+    ? arr.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")
     : `<option value="0">(kategori yok)</option>`;
 }
 
@@ -350,7 +348,6 @@ async function addTransaction({ type, date, amount, currency, note, categoryId }
     currency: cur,
     note: note || "",
     categoryId: Number(categoryId) || 0,
-
     usdAmount: Number(usdAmount.toFixed(6)),
     usdRateUsed: Number(usdRateUsed.toFixed(6)),
     fxSource,
@@ -362,8 +359,6 @@ async function addTransaction({ type, date, amount, currency, note, categoryId }
 
 /* =========================
    MONTHLY SUMMARY (USD)
-   - Plan: ayın effective kuru (override/avg)
-   - Actual: tx.usdAmount (snapshot)
 ========================= */
 function calcMonthlySummary(year, month) {
   const data = loadData();
@@ -400,11 +395,7 @@ function calcMonthlySummary(year, month) {
 }
 
 /* =========================
-   BALANCE SHEET (BİLANÇO)
-   - dynamic items (add/edit/delete)
-   - monthly snapshots
-   - monthly plan totals
-   - MoM + YTD (Jan if exists else first month)
+   BALANCE SHEET (BİLANÇO) + v2
 ========================= */
 function ensureBalanceMonth(ymKey) {
   const data = loadData();
@@ -418,6 +409,10 @@ function ensureBalanceMonth(ymKey) {
     saveData(data);
   }
   return data.balanceSheets[ymKey];
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
 function sumItems(items) {
@@ -452,67 +447,12 @@ function getAllBalanceMonthsSorted() {
   return keys.filter(isYM).sort();
 }
 
-function prevMonth(ymKey) {
-  const [y, m] = ymKey.split("-").map(Number);
-  const d = new Date(y, m - 1, 1);
-  d.setMonth(d.getMonth() - 1);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
-}
-
 function getYtdBaseMonth(ymKey) {
   const [y] = ymKey.split("-");
   const all = getAllBalanceMonthsSorted().filter(k => k.startsWith(`${y}-`));
   if (!all.length) return null;
   const jan = `${y}-01`;
-  return all.includes(jan) ? jan : all[0];
-}
-
-function renderBalance() {
-  const ymKey = getSelectedYMKey();
-  const sheet = ensureBalanceMonth(ymKey);
-  const totals = calcBalanceTotals(ymKey);
-
-  // Tables
-  renderItemsTable("assetsTable", sheet.assets, "asset");
-  renderItemsTable("liabTable", sheet.liabilities, "liab");
-
-  // Totals box
-  if ($("balTotals") && totals) {
-    $("balTotals").textContent =
-      `Toplam Varlıklar: ${totals.assets.toFixed(2)} USD\n` +
-      `Toplam Yükümlülükler: ${totals.liab.toFixed(2)} USD\n` +
-      `Özsermaye (Equity): ${totals.equity.toFixed(2)} USD`;
-  }
-
-  // Plan inputs
-  if ($("planAssets")) $("planAssets").value = Number(sheet.plan?.assets || 0);
-  if ($("planLiab")) $("planLiab").value = Number(sheet.plan?.liab || 0);
-  if ($("planEquity")) $("planEquity").value = Number(sheet.plan?.equity || 0);
-
-  // Summary: MoM + YTD + Plan vs Actual
-  const prevKey = prevMonth(ymKey);
-  const prevTotals = calcBalanceTotals(prevKey);
-  const baseKey = getYtdBaseMonth(ymKey);
-  const baseTotals = baseKey ? calcBalanceTotals(baseKey) : null;
-
-  const momA = prevTotals ? (totals.assets - prevTotals.assets) : 0;
-  const momL = prevTotals ? (totals.liab - prevTotals.liab) : 0;
-  const momE = prevTotals ? (totals.equity - prevTotals.equity) : 0;
-
-  const ytdA = baseTotals ? (totals.assets - baseTotals.assets) : 0;
-  const ytdL = baseTotals ? (totals.liab - baseTotals.liab) : 0;
-  const ytdE = baseTotals ? (totals.equity - baseTotals.equity) : 0;
-
-  if ($("balSummary")) {
-    $("balSummary").textContent =
-      `Ay: ${ymKey}\n` +
-      `MoM (Önceki ay): Varlık ${momA.toFixed(2)} | Yükümlülük ${momL.toFixed(2)} | Equity ${momE.toFixed(2)}\n` +
-      `YTD (Başlangıç: ${baseKey ?? "-"}) : Varlık ${ytdA.toFixed(2)} | Yükümlülük ${ytdL.toFixed(2)} | Equity ${ytdE.toFixed(2)}\n\n` +
-      `Plan vs Gerçekleşen (Δ):\n` +
-      `- Varlık Δ: ${totals.deltaA.toFixed(2)}\n` +
-      `- Yükümlülük Δ: ${totals.deltaL.toFixed(2)}\n` +
-      `- Equity Δ: ${totals.deltaE.toFixed(2)}\n`;
-  }
+  return all.includes(jan) ? jan : all[0]; // senin kuralın
 }
 
 function renderItemsTable(tableId, items, kind) {
@@ -540,7 +480,6 @@ function renderItemsTable(tableId, items, kind) {
 
   table.innerHTML = head + rows;
 
-  // bind inputs
   table.querySelectorAll("input[data-kind]").forEach(inp => {
     inp.addEventListener("change", () => {
       const kind2 = inp.getAttribute("data-kind");
@@ -551,7 +490,6 @@ function renderItemsTable(tableId, items, kind) {
       const data = loadData();
       const ymKey = getSelectedYMKey();
       const sheet = ensureBalanceMonth(ymKey);
-
       const arr = (kind2 === "asset") ? sheet.assets : sheet.liabilities;
       const obj = arr.find(x => x.id === id2);
       if (!obj) return;
@@ -565,7 +503,6 @@ function renderItemsTable(tableId, items, kind) {
     });
   });
 
-  // bind delete
   table.querySelectorAll("button[data-action='del']").forEach(btn => {
     btn.addEventListener("click", () => {
       const kind2 = btn.getAttribute("data-kind");
@@ -619,27 +556,244 @@ function saveBalancePlan() {
   saveData(data);
 }
 
-function buildTrend(fromYM, toYM) {
-  if (!isYM(fromYM) || !isYM(toYM)) return "Tarih formatı yanlış. YYYY-MM olmalı.";
+function copyPrevMonthSnapshot() {
+  const data = loadData();
+  const ymKey = getSelectedYMKey();
+  const prevKey = prevMonth(ymKey);
 
+  if (!data.balanceSheets?.[prevKey]) {
+    alert("Önceki ayda bilanço verisi yok ❗️");
+    return;
+  }
+
+  // Seçili ay boş değilse uyar
+  const cur = ensureBalanceMonth(ymKey);
+  const hasAnything = (cur.assets?.length || 0) + (cur.liabilities?.length || 0) > 0;
+  if (hasAnything) {
+    if (!confirm("Seçili ayda veri var. Üzerine yazılsın mı?")) return;
+  }
+
+  const src = data.balanceSheets[prevKey];
+  const cloned = deepClone(src);
+
+  // id’leri tazeleyelim (çakışma olmasın)
+  const regen = (arr) => (arr || []).map(x => ({ ...x, id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random() }));
+  cloned.assets = regen(cloned.assets);
+  cloned.liabilities = regen(cloned.liabilities);
+
+  data.balanceSheets[ymKey] = cloned;
+  saveData(data);
+  render();
+}
+
+/* =========================
+   LOAN PAYMENT AUTOMATION (v2)
+   - selected month: reduce chosen liability, increase chosen asset
+========================= */
+function fillLoanSelectors() {
+  const ymKey = getSelectedYMKey();
+  const sheet = ensureBalanceMonth(ymKey);
+
+  const liabSel = $("loanLiabSelect");
+  const assetSel = $("loanAssetSelect");
+  if (!liabSel || !assetSel) return;
+
+  liabSel.innerHTML = (sheet.liabilities || []).length
+    ? sheet.liabilities.map(x => `<option value="${x.id}">${escapeHtml(x.name)} (${Number(x.amount||0).toFixed(2)})</option>`).join("")
+    : `<option value="">(yükümlülük yok)</option>`;
+
+  assetSel.innerHTML = (sheet.assets || []).length
+    ? sheet.assets.map(x => `<option value="${x.id}">${escapeHtml(x.name)} (${Number(x.amount||0).toFixed(2)})</option>`).join("")
+    : `<option value="">(varlık yok)</option>`;
+}
+
+function applyLoanPayment() {
+  const amt = Number($("loanPaymentAmt")?.value || 0);
+  if (!amt || amt <= 0) { alert("Anapara ödemesi gir (0’dan büyük)"); return; }
+
+  const ymKey = getSelectedYMKey();
+  const data = loadData();
+  const sheet = ensureBalanceMonth(ymKey);
+
+  const liabId = $("loanLiabSelect")?.value;
+  const assetId = $("loanAssetSelect")?.value;
+  if (!liabId || !assetId) { alert("Kredi ve varlık kalemlerini seç"); return; }
+
+  const liab = (sheet.liabilities || []).find(x => x.id === liabId);
+  const asset = (sheet.assets || []).find(x => x.id === assetId);
+  if (!liab || !asset) { alert("Seçimler bulunamadı"); return; }
+
+  const beforeLiab = Number(liab.amount || 0);
+  const beforeAsset = Number(asset.amount || 0);
+
+  liab.amount = Math.max(0, beforeLiab - amt);
+  asset.amount = beforeAsset + amt;
+
+  data.balanceSheets[ymKey] = sheet;
+  saveData(data);
+
+  const info = $("loanInfo");
+  if (info) {
+    info.textContent =
+      `Uygulandı ✅\n` +
+      `Ay: ${ymKey}\n` +
+      `Kredi: ${liab.name} | ${beforeLiab.toFixed(2)} → ${liab.amount.toFixed(2)}\n` +
+      `Varlık: ${asset.name} | ${beforeAsset.toFixed(2)} → ${asset.amount.toFixed(2)}\n`;
+  }
+
+  render();
+}
+
+/* =========================
+   BALANCE RENDER + SUMMARY
+========================= */
+function renderBalance() {
+  const ymKey = getSelectedYMKey();
+  const sheet = ensureBalanceMonth(ymKey);
+  const totals = calcBalanceTotals(ymKey);
+
+  renderItemsTable("assetsTable", sheet.assets, "asset");
+  renderItemsTable("liabTable", sheet.liabilities, "liab");
+
+  if ($("balTotals") && totals) {
+    $("balTotals").textContent =
+      `Toplam Varlıklar: ${totals.assets.toFixed(2)} USD\n` +
+      `Toplam Yükümlülükler: ${totals.liab.toFixed(2)} USD\n` +
+      `Özsermaye (Equity): ${totals.equity.toFixed(2)} USD`;
+  }
+
+  if ($("planAssets")) $("planAssets").value = Number(sheet.plan?.assets || 0);
+  if ($("planLiab")) $("planLiab").value = Number(sheet.plan?.liab || 0);
+  if ($("planEquity")) $("planEquity").value = Number(sheet.plan?.equity || 0);
+
+  const prevKey = prevMonth(ymKey);
+  const prevTotals = calcBalanceTotals(prevKey);
+  const baseKey = getYtdBaseMonth(ymKey);
+  const baseTotals = baseKey ? calcBalanceTotals(baseKey) : null;
+
+  const momA = prevTotals ? (totals.assets - prevTotals.assets) : 0;
+  const momL = prevTotals ? (totals.liab - prevTotals.liab) : 0;
+  const momE = prevTotals ? (totals.equity - prevTotals.equity) : 0;
+
+  const ytdA = baseTotals ? (totals.assets - baseTotals.assets) : 0;
+  const ytdL = baseTotals ? (totals.liab - baseTotals.liab) : 0;
+  const ytdE = baseTotals ? (totals.equity - baseTotals.equity) : 0;
+
+  if ($("balSummary")) {
+    $("balSummary").textContent =
+      `Ay: ${ymKey}\n` +
+      `MoM (Önceki ay): Varlık ${momA.toFixed(2)} | Yükümlülük ${momL.toFixed(2)} | Equity ${momE.toFixed(2)}\n` +
+      `YTD (Başlangıç: ${baseKey ?? "-"}) : Varlık ${ytdA.toFixed(2)} | Yükümlülük ${ytdL.toFixed(2)} | Equity ${ytdE.toFixed(2)}\n\n` +
+      `Plan vs Gerçekleşen (Δ):\n` +
+      `- Varlık Δ: ${totals.deltaA.toFixed(2)}\n` +
+      `- Yükümlülük Δ: ${totals.deltaL.toFixed(2)}\n` +
+      `- Equity Δ: ${totals.deltaE.toFixed(2)}\n`;
+  }
+
+  fillLoanSelectors();
+}
+
+/* =========================
+   TREND GRAPH (Plan vs Actual Equity)
+========================= */
+function getInRangeMonths(fromYM, toYM) {
   const all = getAllBalanceMonthsSorted();
-  const from = fromYM;
-  const to = toYM;
+  return all.filter(k => k >= fromYM && k <= toYM);
+}
 
-  const inRange = all.filter(k => k >= from && k <= to);
-  if (!inRange.length) return "Seçilen aralıkta bilanço verisi yok.";
+function drawTrendChart(canvas, labels, actualEq, planEq) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+
+  // clear
+  ctx.clearRect(0, 0, w, h);
+
+  // padding
+  const pad = 40;
+  const plotW = w - pad * 2;
+  const plotH = h - pad * 2;
+
+  const allVals = [...actualEq, ...planEq].filter(v => Number.isFinite(v));
+  const minV = Math.min(...allVals, 0);
+  const maxV = Math.max(...allVals, 1);
+
+  const xFor = (i) => pad + (labels.length <= 1 ? 0 : (i * plotW) / (labels.length - 1));
+  const yFor = (v) => {
+    const t = (v - minV) / (maxV - minV || 1);
+    return pad + (1 - t) * plotH;
+  };
+
+  // axes
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#bbb";
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, pad + plotH);
+  ctx.lineTo(pad + plotW, pad + plotH);
+  ctx.stroke();
+
+  // helper grid ticks
+  ctx.fillStyle = "#666";
+  ctx.font = "12px sans-serif";
+  ctx.fillText(`${maxV.toFixed(0)}`, 6, pad + 12);
+  ctx.fillText(`${minV.toFixed(0)}`, 6, pad + plotH);
+
+  // lines
+  const drawLine = (arr, stroke) => {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    arr.forEach((v, i) => {
+      const x = xFor(i);
+      const y = yFor(v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+
+  // Actual (black) + Plan (gray)
+  drawLine(actualEq, "#111");
+  drawLine(planEq, "#888");
+
+  // legend
+  ctx.fillStyle = "#111"; ctx.fillText("Actual Equity", pad, h - 10);
+  ctx.fillStyle = "#888"; ctx.fillText("Plan Equity", pad + 120, h - 10);
+
+  // x labels (sparse)
+  ctx.fillStyle = "#666";
+  const step = Math.max(1, Math.floor(labels.length / 6));
+  labels.forEach((lab, i) => {
+    if (i % step !== 0 && i !== labels.length - 1) return;
+    const x = xFor(i);
+    ctx.fillText(lab, Math.min(x - 18, w - 60), pad + plotH + 16);
+  });
+}
+
+function buildTrendAndDraw(fromYM, toYM) {
+  if (!isYM(fromYM) || !isYM(toYM)) return "Tarih formatı yanlış. YYYY-MM olmalı.";
+  const months = getInRangeMonths(fromYM, toYM);
+  if (!months.length) return "Seçilen aralıkta bilanço verisi yok.";
+
+  const labels = [];
+  const actualEq = [];
+  const planEq = [];
 
   const lines = [];
-  lines.push("Ay | Assets | Liab | Equity | PlanEq | ΔEq");
-  lines.push("----------------------------------------------------");
+  lines.push("Ay | Equity(Actual) | Equity(Plan) | Δ");
+  lines.push("--------------------------------------");
 
-  for (const k of inRange) {
+  months.forEach(k => {
     const t = calcBalanceTotals(k);
-    if (!t) continue;
-    lines.push(
-      `${k} | ${t.assets.toFixed(0)} | ${t.liab.toFixed(0)} | ${t.equity.toFixed(0)} | ${t.planE.toFixed(0)} | ${(t.equity - t.planE).toFixed(0)}`
-    );
-  }
+    if (!t) return;
+    labels.push(k);
+    actualEq.push(t.equity);
+    planEq.push(t.planE);
+    lines.push(`${k} | ${t.equity.toFixed(0)} | ${t.planE.toFixed(0)} | ${(t.equity - t.planE).toFixed(0)}`);
+  });
+
+  drawTrendChart($("trendCanvas"), labels, actualEq, planEq);
   return lines.join("\n");
 }
 
@@ -680,7 +834,6 @@ function render() {
   const data = loadData();
   ensureYearMonthSelectors();
 
-  // Budget UI
   ensureMonthInputs();
   renderCategoryList();
   fillTxCategorySelect($("txType")?.value || "expense");
@@ -711,15 +864,14 @@ function render() {
         const sign = t.type === "expense" ? "-" : "+";
         const cat = getCategoryNameById(t.type, t.categoryId) || "-";
         const usd = (t.usdAmount != null) ? Number(t.usdAmount).toFixed(2) : "-";
-        return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${cat} | ${t.note} | USD:${usd}</div>`;
+        return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${escapeHtml(cat)} | ${escapeHtml(t.note||"")} | USD:${usd}</div>`;
       }).join("");
     }
   }
 
-  // Balance render
+  // Balance
   renderBalance();
 
-  // Status
   setStatus([
     `Kategoriler (Gelir): ${data.categories.income.length}`,
     `Kategoriler (Gider): ${data.categories.expense.length}`,
@@ -731,15 +883,6 @@ function render() {
 /* =========================
    EVENTS
 ========================= */
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
 // Tabs
 $("tabBtnBudget")?.addEventListener("click", () => setTab("budget"));
 $("tabBtnBalance")?.addEventListener("click", () => setTab("balance"));
@@ -752,12 +895,15 @@ $("selMonth")?.addEventListener("change", render);
 $("btnOpenYM")?.addEventListener("click", () => {
   const v = String($("quickYM")?.value || "").trim();
   if (!isYM(v)) { alert("YYYY-MM formatı gir (örn 2023-01)"); return; }
-  ensureBalanceMonth(v); // create if missing
+  ensureBalanceMonth(v);
   setSelectedYMKey(v);
   render();
 });
 
-// FX buttons
+// Copy prev month
+$("btnCopyPrevMonth")?.addEventListener("click", copyPrevMonthSnapshot);
+
+// FX
 $("btnFxSave")?.addEventListener("click", () => {
   const data = loadData();
   const ymKey = getSelectedYMKey();
@@ -784,7 +930,7 @@ $("btnFxUpdate")?.addEventListener("click", async () => {
     const avg = await fetchMonthlyAvgRatesUSD(ymKey);
     data.fx.monthlyAvg[ymKey] = avg;
     data.fx.lastUpdatedAt = new Date().toISOString();
-    if (data.fx?.overrides?.[ymKey]) delete data.fx.overrides[ymKey]; // internet esas
+    if (data.fx?.overrides?.[ymKey]) delete data.fx.overrides[ymKey];
     saveData(data);
     render();
     alert("Kurlar güncellendi ✅");
@@ -897,11 +1043,14 @@ $("btnSavePlan")?.addEventListener("click", () => {
   render();
 });
 
+// Loan automation
+$("btnApplyLoanPayment")?.addEventListener("click", applyLoanPayment);
+
 // Trend
 $("btnTrendBuild")?.addEventListener("click", () => {
   const fromYM = String($("trendFrom")?.value || "").trim();
   const toYM = String($("trendTo")?.value || "").trim();
-  const out = buildTrend(fromYM, toYM);
+  const out = buildTrendAndDraw(fromYM, toYM);
   if ($("trendBox")) $("trendBox").textContent = out;
 });
 
