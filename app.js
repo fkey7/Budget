@@ -5,11 +5,20 @@ const STORAGE_KEY = "butce_data_v1";
 ========================= */
 function defaultData() {
   return {
-    app: { version: 2, locale: "tr", baseCurrency: "USD" },
+    app: { version: 3, locale: "tr", baseCurrency: "USD" },
+
+    // FX:
+    // monthlyAvg: internetten çekilen aylık ortalama (1 USD = X CUR)
+    // overrides: manuel override (1 USD = X CUR) - avg'nin üstüne geçer
+    fx: { monthlyAvg: {}, overrides: {}, lastUpdatedAt: null },
+
     categories: { income: [], expense: [] },
     transactions: [],
     monthlyRates: {},
+
+    // Fallback (eski sistem)
     exchangeRates: { USD: 1, TRY: 1, EUR: 1, RUB: 1 },
+
     nextCategoryId: 1,
   };
 }
@@ -35,6 +44,7 @@ function migrateIfNeeded(d) {
     ...base,
     ...d,
     app: { ...base.app, ...(d.app || {}) },
+    fx: { ...base.fx, ...(d.fx || {}) },
     categories: d.categories ?? base.categories,
     transactions: d.transactions ?? base.transactions,
     monthlyRates: d.monthlyRates ?? base.monthlyRates,
@@ -46,8 +56,12 @@ function migrateIfNeeded(d) {
 /* =========================
    UTIL
 ========================= */
+function $(id) {
+  return document.getElementById(id);
+}
+
 function setStatus(text) {
-  const el = document.getElementById("status");
+  const el = $("status");
   if (el) el.textContent = text;
 }
 
@@ -72,21 +86,103 @@ function ymFromDate(d) {
   return { y, m };
 }
 
-function toUSD(amount, currency) {
+function getSelectedYMKey() {
+  const y = $("selYear")?.value;
+  const m = $("selMonth")?.value;
+  if (y && m) return `${y}-${m}`;
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// 1 USD = X CUR (override > monthlyAvg > exchangeRates > 1)
+function getEffectiveUsdRate(ymKey, currency) {
+  if (currency === "USD") return 1;
+
   const data = loadData();
-  const rate = data.exchangeRates?.[currency] || 1;
-  return currency === "USD" ? Number(amount) : Number(amount) / Number(rate);
+  const o = data.fx?.overrides?.[ymKey];
+  const a = data.fx?.monthlyAvg?.[ymKey];
+
+  const v =
+    (o && o[currency] != null ? Number(o[currency]) : null) ??
+    (a && a[currency] != null ? Number(a[currency]) : null) ??
+    (data.exchangeRates?.[currency] != null ? Number(data.exchangeRates[currency]) : null);
+
+  return v && v > 0 ? v : 1;
+}
+
+// PLAN dönüşümü için (ay bazlı ortalama/override kullanır)
+function toUSD_plan(amount, currency, ymKey) {
+  if (currency === "USD") return Number(amount);
+  const rate = getEffectiveUsdRate(ymKey, currency); // 1 USD = X CUR
+  return Number(amount) / rate;
+}
+
+/* =========================
+   FX: Monthly Avg (Internet) + Daily (Transaction snapshot)
+========================= */
+function daysInMonth(year, month) {
+  const y = Number(year),
+    m = Number(month);
+  return new Date(y, m, 0).getDate();
+}
+
+async function fetchMonthlyAvgRatesUSD(ymKey) {
+  const [y, m] = ymKey.split("-");
+  const start = `${y}-${m}-01`;
+  const end = `${y}-${m}-${String(daysInMonth(y, m)).padStart(2, "0")}`;
+
+  const url = `https://api.frankfurter.app/${start}..${end}?from=USD&to=TRY,EUR,RUB`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("FX monthly fetch failed");
+  const json = await res.json();
+
+  const sums = { TRY: 0, EUR: 0, RUB: 0 };
+  let count = 0;
+
+  for (const d in json.rates || {}) {
+    const r = json.rates[d];
+    if (!r) continue;
+    if (r.TRY && r.EUR && r.RUB) {
+      sums.TRY += Number(r.TRY);
+      sums.EUR += Number(r.EUR);
+      sums.RUB += Number(r.RUB);
+      count++;
+    }
+  }
+  if (!count) throw new Error("FX monthly no data");
+
+  return {
+    TRY: Number((sums.TRY / count).toFixed(6)),
+    EUR: Number((sums.EUR / count).toFixed(6)),
+    RUB: Number((sums.RUB / count).toFixed(6)),
+    _days: count,
+  };
+}
+
+async function fetchDailyUsdRates(dateISO) {
+  const url = `https://api.frankfurter.app/${dateISO}?from=USD&to=TRY,EUR,RUB`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("FX daily fetch failed");
+  const json = await res.json();
+  if (!json.rates) throw new Error("FX daily missing rates");
+
+  // 1 USD = X CUR
+  return {
+    TRY: Number(json.rates.TRY),
+    EUR: Number(json.rates.EUR),
+    RUB: Number(json.rates.RUB),
+  };
 }
 
 /* =========================
    CATEGORIES (plan)
 ========================= */
 function monthKey(i) {
-  return String(i).padStart(2, "0"); // "01".."12"
+  return String(i).padStart(2, "0");
 }
 
 function ensureMonthInputs() {
-  const box = document.getElementById("catMonths");
+  const box = $("catMonths");
   if (!box || box.children.length) return;
 
   for (let i = 1; i <= 12; i++) {
@@ -102,7 +198,7 @@ function ensureMonthInputs() {
 function readMonthInputs() {
   const obj = {};
   for (let i = 1; i <= 12; i++) {
-    obj[monthKey(i)] = Number(document.getElementById(`m_${i}`)?.value || 0);
+    obj[monthKey(i)] = Number($(`m_${i}`)?.value || 0);
   }
   return obj;
 }
@@ -110,7 +206,7 @@ function readMonthInputs() {
 function writeMonthInputs(obj) {
   for (let i = 1; i <= 12; i++) {
     const k = monthKey(i);
-    const el = document.getElementById(`m_${i}`);
+    const el = $(`m_${i}`);
     if (el) el.value = obj?.[k] ?? 0;
   }
 }
@@ -121,7 +217,7 @@ function addCategory({ type, name, currency, yearly, monthly }) {
 
   const cat = {
     id,
-    type, // income/expense
+    type,
     name,
     currency,
     yearlyBudget: Number(yearly) || 0,
@@ -135,7 +231,7 @@ function addCategory({ type, name, currency, yearly, monthly }) {
 
 function renderCategoryList() {
   const data = loadData();
-  const list = document.getElementById("catList");
+  const list = $("catList");
   if (!list) return;
 
   const lines = [];
@@ -150,7 +246,7 @@ function renderCategoryList() {
 
 function fillTxCategorySelect(type) {
   const data = loadData();
-  const sel = document.getElementById("txCategory");
+  const sel = $("txCategory");
   if (!sel) return;
 
   const arr = data.categories[type] || [];
@@ -167,19 +263,52 @@ function getCategoryNameById(type, id) {
 }
 
 /* =========================
-   TRANSACTIONS
+   TRANSACTIONS (daily FX snapshot)
 ========================= */
-function addTransaction({ type, date, amount, currency, note, categoryId }) {
+async function addTransaction({ type, date, amount, currency, note, categoryId }) {
   const data = loadData();
 
+  const amt = Number(amount);
+  const cur = currency;
+
+  let usdAmount = amt;
+  let usdRateUsed = 1; // 1 USD = X CUR
+  let fxSource = "none";
+
+  if (cur !== "USD") {
+    try {
+      const daily = await fetchDailyUsdRates(date);
+      usdRateUsed = Number(daily[cur]);
+      usdAmount = amt / usdRateUsed;
+      fxSource = "daily_frankfurter";
+    } catch (e) {
+      // fallback: monthly avg -> exchangeRates
+      const ymKey = `${date.slice(0, 4)}-${date.slice(5, 7)}`;
+      const avg = data.fx?.monthlyAvg?.[ymKey];
+      const fallbackRate =
+        (avg && avg[cur] != null ? Number(avg[cur]) : null) ??
+        (data.exchangeRates?.[cur] != null ? Number(data.exchangeRates[cur]) : null);
+
+      if (!fallbackRate) throw e;
+      usdRateUsed = Number(fallbackRate);
+      usdAmount = amt / usdRateUsed;
+      fxSource = avg && avg[cur] != null ? "monthly_avg_fallback" : "exchangeRates_fallback";
+    }
+  }
+
   const tx = {
-    id: (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now())),
-    type, // income/expense
-    date, // YYYY-MM-DD
-    amount: Number(amount),
-    currency,
+    id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    type,
+    date,
+    amount: amt,
+    currency: cur,
     note: note || "",
     categoryId: Number(categoryId) || 0,
+
+    // 🔒 snapshot
+    usdAmount: Number(usdAmount.toFixed(6)),
+    usdRateUsed: Number(usdRateUsed.toFixed(6)),
+    fxSource,
   };
 
   data.transactions.push(tx);
@@ -188,30 +317,33 @@ function addTransaction({ type, date, amount, currency, note, categoryId }) {
 
 /* =========================
    MONTHLY SUMMARY (USD)
+   - Plan: ayın effective kuru (override/avg)
+   - Actual: tx.usdAmount (sabit)
 ========================= */
 function calcMonthlySummary(year, month) {
   const data = loadData();
+  const ymKey = `${year}-${month}`;
 
   let planIncome = 0;
   let planExpense = 0;
   let actualIncome = 0;
   let actualExpense = 0;
 
-  // Plans from categories
+  // Plans (categories)
   for (const c of data.categories.income) {
     const v = c.monthlyBudgets?.[month] || 0;
-    planIncome += toUSD(v, c.currency);
+    planIncome += toUSD_plan(v, c.currency, ymKey);
   }
   for (const c of data.categories.expense) {
     const v = c.monthlyBudgets?.[month] || 0;
-    planExpense += toUSD(v, c.currency);
+    planExpense += toUSD_plan(v, c.currency, ymKey);
   }
 
-  // Actuals from transactions
+  // Actuals (transactions) - use snapshot
   for (const t of data.transactions) {
     const ym = ymFromDate(t.date);
     if (ym.y === year && ym.m === month) {
-      const usd = toUSD(t.amount, t.currency);
+      const usd = t.usdAmount != null ? Number(t.usdAmount) : toUSD_plan(t.amount, t.currency, ymKey);
       if (t.type === "income") actualIncome += usd;
       if (t.type === "expense") actualExpense += usd;
     }
@@ -232,10 +364,9 @@ function calcMonthlySummary(year, month) {
 ========================= */
 function ensureYearMonthSelectors() {
   const data = loadData();
-  const yearSel = document.getElementById("selYear");
-  const monthSel = document.getElementById("selMonth");
+  const yearSel = $("selYear");
+  const monthSel = $("selMonth");
 
-  // Year
   if (yearSel && !yearSel.children.length) {
     const years = new Set();
     data.transactions.forEach((t) => years.add(String(t.date).slice(0, 4)));
@@ -251,10 +382,41 @@ function ensureYearMonthSelectors() {
     yearSel.value = [...years][0];
   }
 
-  // Month
   if (monthSel && !monthSel.value) {
     monthSel.value = new Date().toISOString().slice(5, 7);
   }
+}
+
+/* =========================
+   FX PANEL
+========================= */
+function renderFxPanel() {
+  const data = loadData();
+  const ymKey = getSelectedYMKey();
+
+  const fxTRY = $("fxTRY");
+  const fxEUR = $("fxEUR");
+  const fxRUB = $("fxRUB");
+  const fxInfo = $("fxInfo");
+
+  if (!fxTRY || !fxEUR || !fxRUB || !fxInfo) return;
+
+  const effTRY = getEffectiveUsdRate(ymKey, "TRY");
+  const effEUR = getEffectiveUsdRate(ymKey, "EUR");
+  const effRUB = getEffectiveUsdRate(ymKey, "RUB");
+
+  fxTRY.value = effTRY;
+  fxEUR.value = effEUR;
+  fxRUB.value = effRUB;
+
+  const hasOverride = !!(data.fx?.overrides?.[ymKey]);
+  const avg = data.fx?.monthlyAvg?.[ymKey];
+
+  fxInfo.textContent =
+    `Ay: ${ymKey}\n` +
+    `Kaynak: ${hasOverride ? "Manual Override (öncelikli)" : avg ? "Internet Avg (Frankfurter/ECB)" : "Fallback"}\n` +
+    (avg ? `Avg gün sayısı: ${avg._days ?? "-"}\n` : "") +
+    (data.fx?.lastUpdatedAt ? `Last update: ${data.fx.lastUpdatedAt}` : "");
 }
 
 /* =========================
@@ -263,24 +425,20 @@ function ensureYearMonthSelectors() {
 function render() {
   const data = loadData();
 
-  // If category UI exists
   ensureMonthInputs();
   renderCategoryList();
-  fillTxCategorySelect(document.getElementById("txType")?.value || "expense");
-
+  fillTxCategorySelect($("txType")?.value || "expense");
   ensureYearMonthSelectors();
 
-  // Status
   setStatus([
     `Kategoriler (Gelir): ${data.categories.income.length}`,
     `Kategoriler (Gider): ${data.categories.expense.length}`,
     `İşlem sayısı: ${data.transactions.length}`,
-    `Kur: ${JSON.stringify(data.exchangeRates)}`,
-    `monthlyRates anahtar sayısı: ${Object.keys(data.monthlyRates).length}`,
+    `Kur (fallback): ${JSON.stringify(data.exchangeRates)}`,
   ].join("\n"));
 
   // Transactions list
-  const txList = document.getElementById("txList");
+  const txList = $("txList");
   if (txList) {
     if (!data.transactions.length) {
       txList.textContent = "(işlem yok)";
@@ -290,17 +448,17 @@ function render() {
         .map((t) => {
           const sign = t.type === "expense" ? "-" : "+";
           const cat = getCategoryNameById(t.type, t.categoryId) || "-";
-          return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${cat} | ${t.note}</div>`;
+          const usd = (t.usdAmount != null) ? Number(t.usdAmount).toFixed(2) : "-";
+          return `<div>${t.date} | ${sign}${t.amount} ${t.currency} | ${cat} | ${t.note} | USD:${usd}</div>`;
         })
         .join("");
     }
   }
 
   // Monthly summary
-  const y = document.getElementById("selYear")?.value;
-  const m = document.getElementById("selMonth")?.value;
-  const box = document.getElementById("monthlySummary");
-
+  const y = $("selYear")?.value;
+  const m = $("selMonth")?.value;
+  const box = $("monthlySummary");
   if (y && m && box) {
     const s = calcMonthlySummary(y, m);
     box.textContent =
@@ -311,18 +469,21 @@ function render() {
       `Net (Plan): ${s.netPlan.toFixed(2)} USD\n` +
       `Net (Gerçek): ${s.netActual.toFixed(2)} USD`;
   }
+
+  // FX panel
+  renderFxPanel();
 }
 
 /* =========================
    EVENTS
 ========================= */
-document.getElementById("btnExport")?.addEventListener("click", () => {
+$("btnExport")?.addEventListener("click", () => {
   const data = loadData();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   downloadJson(`butce-yedek-${today}.json`, data);
 });
 
-document.getElementById("fileImport")?.addEventListener("change", async (e) => {
+$("fileImport")?.addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
@@ -340,55 +501,65 @@ document.getElementById("fileImport")?.addEventListener("change", async (e) => {
   }
 });
 
-document.getElementById("btnReset")?.addEventListener("click", () => {
+$("btnReset")?.addEventListener("click", () => {
   if (!confirm("Tüm veriyi sıfırlamak istiyor musun?")) return;
   localStorage.removeItem(STORAGE_KEY);
   render();
 });
 
-// Transaction form defaults + save
-const dateInput = document.getElementById("txDate");
+// Transaction defaults + save (daily fx snapshot)
+const dateInput = $("txDate");
 if (dateInput && !dateInput.value) dateInput.value = todayISO();
 
-document.getElementById("txType")?.addEventListener("change", (e) => {
+$("txType")?.addEventListener("change", (e) => {
   fillTxCategorySelect(e.target.value);
+  render(); // özet vs güncellensin
 });
 
-document.getElementById("btnAddTx")?.addEventListener("click", () => {
-  const type = document.getElementById("txType")?.value || "expense";
-  const date = document.getElementById("txDate")?.value || todayISO();
-  const amount = document.getElementById("txAmount")?.value;
-  const currency = document.getElementById("txCurrency")?.value || "USD";
-  const note = document.getElementById("txNote")?.value || "";
-  const categoryId = document.getElementById("txCategory")?.value || 0;
+$("btnAddTx")?.addEventListener("click", async () => {
+  const btn = $("btnAddTx");
+  if (btn) btn.disabled = true;
 
-  if (!amount || Number(amount) <= 0) {
-    alert("Tutar gir (0'dan büyük) ❗️");
-    return;
+  try {
+    const type = $("txType")?.value || "expense";
+    const date = $("txDate")?.value || todayISO();
+    const amount = $("txAmount")?.value;
+    const currency = $("txCurrency")?.value || "USD";
+    const note = $("txNote")?.value || "";
+    const categoryId = $("txCategory")?.value || 0;
+
+    if (!amount || Number(amount) <= 0) {
+      alert("Tutar gir (0'dan büyük) ❗️");
+      return;
+    }
+
+    await addTransaction({ type, date, amount, currency, note, categoryId });
+
+    if ($("txAmount")) $("txAmount").value = "";
+    if ($("txNote")) $("txNote").value = "";
+
+    render();
+  } catch {
+    alert("Kur çekilemedi / işlem kaydedilemedi ❌");
+  } finally {
+    if (btn) btn.disabled = false;
   }
-
-  addTransaction({ type, date, amount, currency, note, categoryId });
-
-  if (document.getElementById("txAmount")) document.getElementById("txAmount").value = "";
-  if (document.getElementById("txNote")) document.getElementById("txNote").value = "";
-
-  render();
 });
 
 // Category buttons
-document.getElementById("btnEqualSplit")?.addEventListener("click", () => {
-  const yearly = Number(document.getElementById("catYearly")?.value || 0);
+$("btnEqualSplit")?.addEventListener("click", () => {
+  const yearly = Number($("catYearly")?.value || 0);
   const each = yearly / 12;
   const obj = {};
   for (let i = 1; i <= 12; i++) obj[monthKey(i)] = Number(each.toFixed(2));
   writeMonthInputs(obj);
 });
 
-document.getElementById("btnAddCategory")?.addEventListener("click", () => {
-  const type = document.getElementById("catType")?.value || "expense";
-  const currency = document.getElementById("catCurrency")?.value || "USD";
-  const name = document.getElementById("catName")?.value?.trim() || "";
-  const yearly = document.getElementById("catYearly")?.value || 0;
+$("btnAddCategory")?.addEventListener("click", () => {
+  const type = $("catType")?.value || "expense";
+  const currency = $("catCurrency")?.value || "USD";
+  const name = $("catName")?.value?.trim() || "";
+  const yearly = $("catYearly")?.value || 0;
   const monthly = readMonthInputs();
 
   if (!name) {
@@ -398,16 +569,58 @@ document.getElementById("btnAddCategory")?.addEventListener("click", () => {
 
   addCategory({ type, name, currency, yearly, monthly });
 
-  if (document.getElementById("catName")) document.getElementById("catName").value = "";
-  if (document.getElementById("catYearly")) document.getElementById("catYearly").value = "";
+  if ($("catName")) $("catName").value = "";
+  if ($("catYearly")) $("catYearly").value = "";
   writeMonthInputs({});
 
   render();
 });
 
+// FX buttons
+$("btnFxSave")?.addEventListener("click", () => {
+  const data = loadData();
+  const ymKey = getSelectedYMKey();
+
+  const vTRY = Number($("fxTRY")?.value || 0);
+  const vEUR = Number($("fxEUR")?.value || 0);
+  const vRUB = Number($("fxRUB")?.value || 0);
+
+  data.fx.overrides[ymKey] = { TRY: vTRY, EUR: vEUR, RUB: vRUB };
+  saveData(data);
+  render();
+});
+
+$("btnFxClear")?.addEventListener("click", () => {
+  const data = loadData();
+  const ymKey = getSelectedYMKey();
+  if (data.fx?.overrides?.[ymKey]) delete data.fx.overrides[ymKey];
+  saveData(data);
+  render();
+});
+
+$("btnFxUpdate")?.addEventListener("click", async () => {
+  const data = loadData();
+  const ymKey = getSelectedYMKey();
+
+  try {
+    const avg = await fetchMonthlyAvgRatesUSD(ymKey);
+    data.fx.monthlyAvg[ymKey] = avg;
+    data.fx.lastUpdatedAt = new Date().toISOString();
+
+    // Update basınca internet değeri esas: override temizle
+    if (data.fx?.overrides?.[ymKey]) delete data.fx.overrides[ymKey];
+
+    saveData(data);
+    render();
+    alert("Kurlar güncellendi ✅");
+  } catch {
+    alert("Kur çekilemedi ❌");
+  }
+});
+
 // Year/Month change
-document.getElementById("selYear")?.addEventListener("change", render);
-document.getElementById("selMonth")?.addEventListener("change", render);
+$("selYear")?.addEventListener("change", render);
+$("selMonth")?.addEventListener("change", render);
 
 // Initial paint
 render();
