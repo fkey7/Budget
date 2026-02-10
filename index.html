@@ -6,7 +6,6 @@
   <title>Bütçe</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Basit sekme stili (style.css’inle çakışmasın diye minimal) */
     .tabs { display:flex; gap:10px; flex-wrap:wrap; }
     .tabbtn { padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; }
     .tabbtn.active { border-color:#000; font-weight:700; }
@@ -18,18 +17,19 @@
     .pill { display:inline-block; padding:6px 10px; border:1px solid #eee; border-radius:999px; }
     .table { width:100%; border-collapse:collapse; }
     .table th, .table td { border-bottom:1px solid #eee; padding:8px; vertical-align:middle; }
-    .table input { width:100%; }
+    .table input, .table select { width:100%; }
     .right { text-align:right; }
     .mono { white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .small { font-size: 12px; }
     .card { border:1px solid #eee; border-radius:16px; padding:14px; margin:12px 0; background:#fff; }
-    .container { max-width: 1000px; margin: 0 auto; padding: 14px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 14px; }
     .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
     .full { grid-column: 1 / -1; }
     .actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .months { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
     .months input { text-align:center; }
     .hr { border:none; border-top:1px solid #eee; margin:14px 0; }
+    canvas { width:100%; height:280px; border:1px solid #eee; border-radius:12px; }
   </style>
 </head>
 
@@ -202,11 +202,16 @@
       <section class="card">
         <h2>Bilanço (USD)</h2>
         <div class="muted">
-          Bu ekranda ay ay <b>Varlıklar</b>, <b>Yükümlülükler</b> ve <b>Özsermaye</b> (Equity) takip edilir.
+          Ay ay <b>Varlıklar</b>, <b>Yükümlülükler</b> ve <b>Özsermaye</b> (Equity) takip edilir.
         </div>
         <div class="hr"></div>
 
-        <div class="grid">
+        <div class="actions">
+          <button class="btn" id="btnCopyPrevMonth">Önceki Aydan Kopyala</button>
+          <span class="muted small">Seçili ay boşsa önceki ayın snapshot’ını tek tıkla devral.</span>
+        </div>
+
+        <div class="grid" style="margin-top:12px;">
           <div class="full">
             <h3>Özet</h3>
             <div id="balSummary" class="mono"></div>
@@ -256,8 +261,36 @@
       </section>
 
       <section class="card">
-        <h2>Trend (Çok Yıllı)</h2>
-        <div class="muted small">2023’ten başlayıp 10 yıllık plan/gerçekleşen takibi için.</div>
+        <h2>Kredi Otomasyonu (v2)</h2>
+        <div class="muted small">
+          Mantık: Bir <b>kredi anapara ödemesi</b> girince, seçtiğin kredi yükümlülüğü azalır ve seçtiğin varlık kalemi artar.
+          (Faiz ayrı; bu v2’de sadece anapara etkisi.)
+        </div>
+        <div class="hr"></div>
+
+        <div class="grid">
+          <div>
+            <label>Kredi (Yükümlülük kalemi)</label>
+            <select id="loanLiabSelect"></select>
+          </div>
+          <div>
+            <label>Artacak Varlık Kalemi (Örn: Ev/Net Değer)</label>
+            <select id="loanAssetSelect"></select>
+          </div>
+          <div>
+            <label>Anapara Ödemesi (USD)</label>
+            <input id="loanPaymentAmt" type="number" step="0.01" />
+          </div>
+          <div class="actions" style="align-self:end;">
+            <button class="btn" id="btnApplyLoanPayment">Uygula</button>
+          </div>
+          <div class="full mono small" id="loanInfo"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Trend (Grafik)</h2>
+        <div class="muted small">Plan vs Actual Equity çizgisi. (2023 → 10 yıl plan için)</div>
         <div class="hr"></div>
 
         <div class="grid">
@@ -270,7 +303,10 @@
             <input id="trendTo" type="text" placeholder="2026-06" />
           </div>
           <div class="full actions">
-            <button class="btn" id="btnTrendBuild">Trend Hesapla</button>
+            <button class="btn" id="btnTrendBuild">Grafiği Oluştur</button>
+          </div>
+          <div class="full">
+            <canvas id="trendCanvas" width="1000" height="280"></canvas>
           </div>
           <div class="full">
             <div id="trendBox" class="mono small"></div>
