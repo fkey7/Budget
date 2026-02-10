@@ -3,115 +3,282 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Budget</title>
+  <title>Bütçe</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Basit sekme stili (style.css’inle çakışmasın diye minimal) */
+    .tabs { display:flex; gap:10px; flex-wrap:wrap; }
+    .tabbtn { padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+    .tabbtn.active { border-color:#000; font-weight:700; }
+    .hidden { display:none !important; }
+    .muted { opacity:.75; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn { padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+    .btn.danger { border-color:#f2b8b8; }
+    .pill { display:inline-block; padding:6px 10px; border:1px solid #eee; border-radius:999px; }
+    .table { width:100%; border-collapse:collapse; }
+    .table th, .table td { border-bottom:1px solid #eee; padding:8px; vertical-align:middle; }
+    .table input { width:100%; }
+    .right { text-align:right; }
+    .mono { white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .small { font-size: 12px; }
+    .card { border:1px solid #eee; border-radius:16px; padding:14px; margin:12px 0; background:#fff; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 14px; }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+    .full { grid-column: 1 / -1; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .months { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+    .months input { text-align:center; }
+    .hr { border:none; border-top:1px solid #eee; margin:14px 0; }
+  </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <h1>Budget</h1>
-    <div class="actions">
-      <button id="btnExport">JSON Dışa Aktar</button>
-
-      <label class="file">
-        JSON İçe Aktar
-        <input id="fileImport" type="file" accept="application/json" />
-      </label>
-
-      <button id="btnReset" class="danger">Sıfırla</button>
-    </div>
-  </header>
-
   <main class="container">
     <section class="card">
-  <div class="grid">
-    <div>
-      <label>Yıl</label>
-      <select id="selYear"></select>
-    </div>
+      <div class="row" style="justify-content:space-between;">
+        <div class="tabs">
+          <button class="tabbtn active" id="tabBtnBudget">Bütçe</button>
+          <button class="tabbtn" id="tabBtnBalance">Bilanço</button>
+        </div>
 
-    <div>
-      <label>Ay</label>
-      <select id="selMonth">
-        <option value="01">Ocak</option>
-        <option value="02">Şubat</option>
-        <option value="03">Mart</option>
-        <option value="04">Nisan</option>
-        <option value="05">Mayıs</option>
-        <option value="06">Haziran</option>
-        <option value="07">Temmuz</option>
-        <option value="08">Ağustos</option>
-        <option value="09">Eylül</option>
-        <option value="10">Ekim</option>
-        <option value="11">Kasım</option>
-        <option value="12">Aralık</option>
-      </select>
-    </div>
-  </div>
-</section>
+        <div class="row">
+          <span class="pill">Dönem</span>
+          <label class="muted">Yıl</label>
+          <select id="selYear"></select>
 
-<section class="card">
-  <h2>Aylık Özet (USD)</h2>
-  <div class="grid">
-    <div class="full mono" id="monthlySummary"></div>
-  </div>
-</section>
+          <label class="muted">Ay</label>
+          <select id="selMonth">
+            <option value="01">Ocak</option><option value="02">Şubat</option><option value="03">Mart</option><option value="04">Nisan</option>
+            <option value="05">Mayıs</option><option value="06">Haziran</option><option value="07">Temmuz</option><option value="08">Ağustos</option>
+            <option value="09">Eylül</option><option value="10">Ekim</option><option value="11">Kasım</option><option value="12">Aralık</option>
+          </select>
+        </div>
+      </div>
 
-    <section class="card">
-      <h2>Durum</h2>
-      <pre id="status" class="mono"></pre>
+      <div class="row" style="margin-top:10px;">
+        <input id="quickYM" type="text" placeholder="YYYY-MM (örn 2023-01)" />
+        <button class="btn" id="btnOpenYM">Ay Aç / Git</button>
+        <span class="muted small">2023’ten başlayarak geçmiş ayları da açıp girebilirsin.</span>
+      </div>
     </section>
-<section class="card">
-  <h2>İşlem Ekle</h2>
 
-  <div class="grid">
-    <div>
-      <label>Tür</label>
-      <select id="txType">
-        <option value="expense">Gider</option>
-        <option value="income">Gelir</option>
-      </select>
+    <!-- =======================
+         BÜTÇE SEKME
+    ======================== -->
+    <div id="tabBudget">
+      <section class="card">
+        <h2>Aylık Özet (USD)</h2>
+        <div class="mono" id="monthlySummary"></div>
+      </section>
+
+      <section class="card">
+        <h2>Kurlar (Aylık Ortalama)</h2>
+        <div class="grid">
+          <div class="full muted">Seçili ay için: <b>1 USD</b> kaç TRY/EUR/RUB? (Plan dönüşümlerinde kullanılır)</div>
+          <div><label>TRY</label><input id="fxTRY" type="number" step="0.000001" /></div>
+          <div><label>EUR</label><input id="fxEUR" type="number" step="0.000001" /></div>
+          <div><label>RUB</label><input id="fxRUB" type="number" step="0.000001" /></div>
+          <div class="full actions">
+            <button class="btn" id="btnFxUpdate">Update (Internet)</button>
+            <button class="btn" id="btnFxSave">Kaydet (Manual)</button>
+            <button class="btn danger" id="btnFxClear">Manual Override Temizle</button>
+          </div>
+          <div class="full mono small" id="fxInfo"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Kategoriler</h2>
+        <div class="grid">
+          <div>
+            <label>Tür</label>
+            <select id="catType">
+              <option value="income">Gelir</option>
+              <option value="expense">Gider</option>
+            </select>
+          </div>
+          <div>
+            <label>Para Birimi (Plan)</label>
+            <select id="catCurrency">
+              <option value="USD">USD</option>
+              <option value="TRY">TRY</option>
+              <option value="EUR">EUR</option>
+              <option value="RUB">RUB</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Kategori adı</label>
+            <input id="catName" type="text" placeholder="Örn: Maaş, Kira, Market..." />
+          </div>
+          <div>
+            <label>Yıllık Plan (seçilen para birimi)</label>
+            <input id="catYearly" type="number" step="0.01" placeholder="0" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button class="btn" id="btnEqualSplit">Eşit Dağıt (12 ay)</button>
+          </div>
+          <div class="full">
+            <label>Aylık Planlar</label>
+            <div id="catMonths" class="months"></div>
+          </div>
+          <div class="full">
+            <button class="btn" id="btnAddCategory">Kategori Kaydet</button>
+          </div>
+        </div>
+
+        <hr class="hr" />
+
+        <h3>Mevcut Kategoriler</h3>
+        <div id="catList" class="mono small"></div>
+      </section>
+
+      <section class="card">
+        <h2>İşlem Ekle</h2>
+        <div class="grid">
+          <div>
+            <label>Tür</label>
+            <select id="txType">
+              <option value="expense">Gider</option>
+              <option value="income">Gelir</option>
+            </select>
+          </div>
+          <div>
+            <label>Tarih</label>
+            <input id="txDate" type="date" />
+          </div>
+          <div>
+            <label>Tutar</label>
+            <input id="txAmount" type="number" step="0.01" />
+          </div>
+          <div>
+            <label>Para Birimi</label>
+            <select id="txCurrency">
+              <option value="USD">USD</option>
+              <option value="TRY">TRY</option>
+              <option value="EUR">EUR</option>
+              <option value="RUB">RUB</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Kategori</label>
+            <select id="txCategory"></select>
+          </div>
+          <div class="full">
+            <label>Açıklama</label>
+            <input id="txNote" type="text" placeholder="Not..." />
+          </div>
+          <div class="full actions">
+            <button class="btn" id="btnAddTx">Kaydet</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Son İşlemler</h2>
+        <div id="txList" class="mono small"></div>
+      </section>
+
+      <section class="card">
+        <h2>Yedek / Geri Yükle</h2>
+        <div class="actions">
+          <button class="btn" id="btnExport">Export JSON</button>
+          <input id="fileImport" type="file" accept="application/json" />
+          <button class="btn danger" id="btnReset">Reset</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Durum</h2>
+        <div id="status" class="mono small"></div>
+      </section>
     </div>
 
-    <div>
-      <label>Tarih</label>
-      <input id="txDate" type="date" />
+    <!-- =======================
+         BİLANÇO SEKME
+    ======================== -->
+    <div id="tabBalance" class="hidden">
+      <section class="card">
+        <h2>Bilanço (USD)</h2>
+        <div class="muted">
+          Bu ekranda ay ay <b>Varlıklar</b>, <b>Yükümlülükler</b> ve <b>Özsermaye</b> (Equity) takip edilir.
+        </div>
+        <div class="hr"></div>
+
+        <div class="grid">
+          <div class="full">
+            <h3>Özet</h3>
+            <div id="balSummary" class="mono"></div>
+          </div>
+
+          <div>
+            <h3>Plan (Toplam)</h3>
+            <div class="grid">
+              <div><label>Plan Varlıklar</label><input id="planAssets" type="number" step="0.01" /></div>
+              <div><label>Plan Yükümlülükler</label><input id="planLiab" type="number" step="0.01" /></div>
+              <div class="full"><label>Plan Özsermaye</label><input id="planEquity" type="number" step="0.01" /></div>
+            </div>
+            <div class="actions" style="margin-top:10px;">
+              <button class="btn" id="btnSavePlan">Planı Kaydet</button>
+            </div>
+          </div>
+
+          <div>
+            <h3>Gerçekleşen (Toplam)</h3>
+            <div id="balTotals" class="mono"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="grid">
+          <div class="full">
+            <h3>Varlıklar</h3>
+            <div class="actions">
+              <input id="newAssetName" type="text" placeholder="Yeni varlık kalemi adı" />
+              <input id="newAssetAmt" type="number" step="0.01" placeholder="Tutar (USD)" />
+              <button class="btn" id="btnAddAsset">Ekle</button>
+            </div>
+            <table class="table" id="assetsTable"></table>
+          </div>
+
+          <div class="full">
+            <h3>Yükümlülükler</h3>
+            <div class="actions">
+              <input id="newLiabName" type="text" placeholder="Yeni yükümlülük kalemi adı" />
+              <input id="newLiabAmt" type="number" step="0.01" placeholder="Tutar (USD)" />
+              <button class="btn" id="btnAddLiab">Ekle</button>
+            </div>
+            <table class="table" id="liabTable"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Trend (Çok Yıllı)</h2>
+        <div class="muted small">2023’ten başlayıp 10 yıllık plan/gerçekleşen takibi için.</div>
+        <div class="hr"></div>
+
+        <div class="grid">
+          <div>
+            <label>Başlangıç (YYYY-MM)</label>
+            <input id="trendFrom" type="text" placeholder="2023-01" />
+          </div>
+          <div>
+            <label>Bitiş (YYYY-MM)</label>
+            <input id="trendTo" type="text" placeholder="2026-06" />
+          </div>
+          <div class="full actions">
+            <button class="btn" id="btnTrendBuild">Trend Hesapla</button>
+          </div>
+          <div class="full">
+            <div id="trendBox" class="mono small"></div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <div>
-      <label>Tutar</label>
-      <input id="txAmount" type="number" step="0.01" placeholder="0" />
-    </div>
-
-    <div>
-      <label>Para Birimi</label>
-      <select id="txCurrency">
-        <option value="TRY">TRY</option>
-        <option value="USD">USD</option>
-        <option value="EUR">EUR</option>
-        <option value="RUB">RUB</option>
-      </select>
-    </div>
-<div>
-  <label>Kategori</label>
-  <select id="txCategory"></select>
-</div>
-
-    <div class="full">
-      <label>Açıklama</label>
-      <input id="txNote" type="text" placeholder="Market, maaş, fatura..." />
-    </div>
-
-    <div class="full">
-      <button id="btnAddTx">Kaydet</button>
-    </div>
-  </div>
-</section>
-
-    <section class="card">
-      <h2>Son İşlemler</h2>
-      <div id="txList" class="mono small"></div>
-      <p class="muted">Şimdilik sadece iskelet. Bir sonraki adımda işlem ekleme ekranını yapacağız.</p>
-    </section>
   </main>
 
   <script src="app.js"></script>
