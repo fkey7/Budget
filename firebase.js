@@ -1,5 +1,4 @@
-// firebase.js  (type="module")
-// Redirect login + FULL DEBUG (shows real auth error codes)
+// firebase.js (type="module") - STABLE VERSION
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
@@ -8,9 +7,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  onAuthStateChanged,
-  setPersistence,
-  browserLocalPersistence
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getDatabase,
@@ -28,16 +25,13 @@ const firebaseConfig = {
   projectId: "budget-pro-1cfcc",
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W"
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-
 const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
 
 const STORAGE_KEY = "butce_data_v1";
 
@@ -68,17 +62,6 @@ function setUserUI(user) {
   }
 }
 
-function safeRender() {
-  try { window.render && window.render(); } catch {}
-}
-
-function showAuthError(prefix, e) {
-  const code = e?.code || "";
-  const msg = e?.message || String(e);
-  console.error(prefix, code, msg, e);
-  alert(`${prefix}\n\n${code}\n${msg}`);
-}
-
 async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
@@ -88,65 +71,40 @@ async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
-window.addEventListener("DOMContentLoaded", async () => {
-  // ✅ persistence (bazı tarayıcılarda gerekli)
-  try {
-    await setPersistence(auth, browserLocalPersistence);
-  } catch (e) {
-    console.warn("setPersistence error:", e);
-  }
+function safeRender() {
+  try { window.render && window.render(); } catch {}
+}
 
+window.addEventListener("DOMContentLoaded", async () => {
+  // Butonlar submit olmasın
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogin) {
-    btnLogin.onclick = null;
     btnLogin.setAttribute("type", "button");
-
-    btnLogin.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      try {
-        console.log("LOGIN: signInWithRedirect starting...");
-        await signInWithRedirect(auth, provider);
-      } catch (e) {
-        showAuthError("Login başlatılamadı", e);
-      }
+    btnLogin.onclick = null;
+    btnLogin.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signInWithRedirect(auth, provider);
     });
   }
 
   if (btnLogout) {
-    btnLogout.onclick = null;
     btnLogout.setAttribute("type", "button");
-
-    btnLogout.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      try {
-        await signOut(auth);
-        setUserUI(null);
-        lockApp(true);
-      } catch (e) {
-        showAuthError("Çıkış hatası", e);
-      }
+    btnLogout.onclick = null;
+    btnLogout.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await signOut(auth);
+      setUserUI(null);
+      lockApp(true);
     });
   }
 
-  // ✅ Redirect dönüşü burada yakalanır. Hata varsa buradan öğreniriz.
-  try {
-    const res = await getRedirectResult(auth);
-    if (res?.user) {
-      alert("Redirect OK: " + (res.user.email || res.user.uid));
-      console.log("Redirect OK:", res.user);
-    } else {
-      console.log("Redirect result: empty (ilk açılış olabilir)");
-    }
-  } catch (e) {
-    showAuthError("Redirect sonucu alınamadı", e);
-  }
+  // Redirect dönüşünü yakala (hata yoksa sessiz)
+  try { await getRedirectResult(auth); } catch {}
 });
 
 onAuthStateChanged(auth, async (user) => {
-  alert("Auth state changed: " + (user ? (user.email || user.uid) : "NO USER"));
   setUserUI(user);
 
   if (!user) {
@@ -155,27 +113,27 @@ onAuthStateChanged(auth, async (user) => {
   }
   lockApp(false);
 
-  // 1) Cloud -> local
+  // Cloud -> local (varsa)
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
     safeRender();
   } else {
-    // 2) local -> cloud (first login)
+    // Cloud yoksa local -> cloud (ilk kurulum)
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try { await cloudSave(user.uid, JSON.parse(raw)); } catch {}
     }
   }
 
-  // 3) Live sync
+  // Live sync
   onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
     if (!snap.exists()) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
     safeRender();
   });
 
-  // 4) saveData override
+  // saveData override
   const originalSaveData = window.saveData;
   if (typeof originalSaveData === "function") {
     window.saveData = (data) => {
