@@ -1,13 +1,14 @@
-// firebase.js  (type="module")
+// firebase.js (type="module")
+// ONLY REDIRECT LOGIN (no popup)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
-  getRedirectResult
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getDatabase,
@@ -15,11 +16,10 @@ import {
   set,
   get,
   child,
-  onValue
+  onValue,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-// ✅ Firebase Console > Project settings > (Web app) config
-// ⚠️ databaseURL mutlaka dolu olmalı (Realtime Database URL)
+// ✅ Firebase Console > Project settings > Your apps (Web app) config
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
@@ -28,7 +28,7 @@ const firebaseConfig = {
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
   appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W"
+  measurementId: "G-NRMF74RK7W",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -36,12 +36,17 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
 
-// app.js içindeki localStorage key’in
 const STORAGE_KEY = "butce_data_v1";
 
 function show(el, yes) {
   if (!el) return;
   el.style.display = yes ? "" : "none";
+}
+
+function lockApp(locked) {
+  const lock = document.getElementById("appLock");
+  if (!lock) return;
+  lock.classList.toggle("hidden", !locked);
 }
 
 function setUserUI(user) {
@@ -69,74 +74,76 @@ async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
-function lockApp(locked) {
-  const lock = document.getElementById("appLock");
-  if (!lock) return;
-  lock.classList.toggle("hidden", !locked);
+function safeRender() {
+  try { window.render && window.render(); } catch {}
 }
 
-// Login/Logout events
+// ---- IMPORTANT: make sure button has NO inline onclick that calls popup ----
 window.addEventListener("DOMContentLoaded", async () => {
-  document.getElementById("btnLogin")?.addEventListener("click", async () => {
-    // ✅ Redirect login (popup yok)
-    await signInWithRedirect(auth, provider);
-  });
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
 
-  document.getElementById("btnLogout")?.addEventListener("click", async () => {
-    await signOut(auth);
-    setUserUI(null);
-    lockApp(true);
-  });
+  if (btnLogin) {
+    // wipe any existing inline handler (prevents old popup code)
+    btnLogin.onclick = null;
 
-  // Redirect dönüş sonucunu yakala (bazı tarayıcılarda gerekli)
+    btnLogin.addEventListener("click", async () => {
+      // Redirect flow (no popup)
+      await signInWithRedirect(auth, provider);
+    });
+  }
+
+  if (btnLogout) {
+    btnLogout.onclick = null;
+    btnLogout.addEventListener("click", async () => {
+      await signOut(auth);
+      setUserUI(null);
+      lockApp(true);
+    });
+  }
+
+  // Handle redirect result (must be called once per load)
   try {
     await getRedirectResult(auth);
   } catch (e) {
-    console.warn("Redirect result error:", e?.code || e?.message || e);
+    console.warn("getRedirectResult:", e?.code || e?.message || e);
   }
 });
 
-// Auth state
 onAuthStateChanged(auth, async (user) => {
   setUserUI(user);
 
-  // Login yoksa: ekranı kilitle
   if (!user) {
     lockApp(true);
     return;
   }
-
-  // Login varsa: kilidi kaldır
   lockApp(false);
 
-  // 1) Cloud varsa → local’e yaz
+  // 1) Load from cloud → local
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-    if (window.render) window.render();
+    safeRender();
   } else {
-    // 2) Cloud yoksa → local varsa cloud’a yükle (ilk giriş)
+    // 2) First login: local → cloud (if any)
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      try {
-        const local = JSON.parse(raw);
-        await cloudSave(user.uid, local);
-      } catch {}
+      try { await cloudSave(user.uid, JSON.parse(raw)); } catch {}
     }
   }
 
-  // 3) Canlı sync: cloud değişirse local’i güncelle
+  // 3) Live sync: cloud → local
   onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
     if (!snap.exists()) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
-    if (window.render) window.render();
+    safeRender();
   });
 
-  // 4) saveData() override: her kayıtta cloud’a da yaz
+  // 4) Override saveData: local + cloud
   const originalSaveData = window.saveData;
   if (typeof originalSaveData === "function") {
     window.saveData = (data) => {
-      originalSaveData(data); // local
+      originalSaveData(data);
       cloudSave(user.uid, data).catch(() => {});
     };
   }
