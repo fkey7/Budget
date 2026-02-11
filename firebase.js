@@ -1,11 +1,25 @@
+// firebase.js  (type="module") — FINAL, NO-CONFLICT, WITH GUARANTEED LOGS
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
-  signOut, onAuthStateChanged, setPersistence, browserLocalPersistence
+  getAuth,
+  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
-  getDatabase, ref, set, get, child, onValue
+  getDatabase,
+  ref,
+  set,
+  get,
+  child,
+  onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+console.log("FIREBASE_LOADED_VFINAL ✅");
 
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
@@ -14,7 +28,7 @@ const firebaseConfig = {
   projectId: "budget-pro-1cfcc",
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -28,19 +42,22 @@ const STORAGE_KEY = "butce_data_v1";
 const $ = (id) => document.getElementById(id);
 
 function show(el, yes) { if (el) el.style.display = yes ? "" : "none"; }
-function lockApp(locked) { const el = $("appLock"); if (el) el.classList.toggle("hidden", !locked); }
 function safeRender() { try { window.render && window.render(); } catch {} }
+function lockApp(locked) { const el = $("appLock"); if (el) el.classList.toggle("hidden", !locked); }
 
 function setUserUI(user) {
   const userLabel = $("userLabel");
   const btnLogin = $("btnLogin");
   const btnLogout = $("btnLogout");
+
   if (!user) {
     if (userLabel) userLabel.textContent = "Giriş yapılmadı";
-    show(btnLogin, true); show(btnLogout, false);
+    show(btnLogin, true);
+    show(btnLogout, false);
   } else {
     if (userLabel) userLabel.textContent = user.email || user.uid;
-    show(btnLogin, false); show(btnLogout, true);
+    show(btnLogin, false);
+    show(btnLogout, true);
   }
 }
 
@@ -55,13 +72,16 @@ async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
 }
-
 async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-  try { await setPersistence(auth, browserLocalPersistence); } catch (e) { console.warn(e); }
+  console.log("FIREBASE_DOM_READY ✅");
+
+  // persistence
+  try { await setPersistence(auth, browserLocalPersistence); }
+  catch (e) { console.warn("PERSISTENCE_WARN", e); }
 
   const btnLogin = $("btnLogin");
   const btnLogout = $("btnLogout");
@@ -71,9 +91,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     btnLogin.onclick = null;
     btnLogin.addEventListener("click", async (ev) => {
       ev.preventDefault();
-      try { await signInWithRedirect(auth, provider); }
-      catch (e) { showAuthError("Login başlatılamadı", e); }
+      ev.stopPropagation();
+      console.log("LOGIN_CLICK ✅");
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (e) {
+        showAuthError("Login başlatılamadı", e);
+      }
     });
+  } else {
+    console.warn("btnLogin not found");
   }
 
   if (btnLogout) {
@@ -81,17 +108,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     btnLogout.onclick = null;
     btnLogout.addEventListener("click", async (ev) => {
       ev.preventDefault();
+      ev.stopPropagation();
+      console.log("LOGOUT_CLICK ✅");
       try { await signOut(auth); }
       catch (e) { showAuthError("Çıkış hatası", e); }
     });
   }
 
-  // Redirect dönüşünü oku — hata varsa alert göreceksin
-  try { await getRedirectResult(auth); }
-  catch (e) { showAuthError("Redirect sonucu alınamadı", e); }
+  // redirect result
+  try {
+    const res = await getRedirectResult(auth);
+    console.log("REDIRECT_RESULT", res ? "HAS_RESULT" : "EMPTY");
+  } catch (e) {
+    showAuthError("Redirect sonucu alınamadı", e);
+  }
 });
 
 onAuthStateChanged(auth, async (user) => {
+  console.log("AUTH_STATE", user ? (user.email || user.uid) : "NO_USER");
+
   setUserUI(user);
 
   if (!user) { lockApp(true); return; }
@@ -118,5 +153,7 @@ onAuthStateChanged(auth, async (user) => {
       originalSaveData(data);
       cloudSave(user.uid, data).catch(() => {});
     };
+  } else {
+    console.warn("saveData not found (app.js not loaded?)");
   }
 });
