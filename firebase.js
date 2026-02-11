@@ -1,4 +1,4 @@
-// firebase.js (type="module") - STABLE VERSION
+// firebase.js (type="module") - DEBUG VERSION
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
@@ -27,6 +27,8 @@ const firebaseConfig = {
   messagingSenderId: "756796109010",
   appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
 };
+
+console.log("Firebase config:", firebaseConfig);
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -72,27 +74,42 @@ async function cloudSave(uid, data) {
 }
 
 function safeRender() {
-  try { window.render && window.render(); } catch {}
+  try { window.render && window.render(); } catch(e) { console.error("Render hatası:", e); }
 }
 
 // ============ DOMContentLoaded ============
 window.addEventListener("DOMContentLoaded", async () => {
+  console.log("DOMContentLoaded tetiklendi");
+  
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
+  
+  console.log("btnLogin element:", btnLogin);
+  console.log("btnLogout element:", btnLogout);
 
   if (btnLogin) {
+    console.log("Login butonu bulundu, event ekleniyor...");
     btnLogin.setAttribute("type", "button");
+    
+    // Önceki event'leri temizle (varsa)
+    btnLogin.onclick = null;
+    
     btnLogin.addEventListener("click", async (e) => {
+      console.log("Login butonuna tıklandı!");
       e.preventDefault();
-      e.stopPropagation(); // YENİ: Event bubbling'i durdur
-      console.log("Login tıklandı"); // Debug için
+      e.stopPropagation();
+      
       try {
+        console.log("signInWithRedirect çağrılıyor...");
         await signInWithRedirect(auth, provider);
+        console.log("signInWithRedirect tamamlandı");
       } catch (err) {
         console.error("Login hatası:", err);
         alert("Giriş hatası: " + err.message);
       }
     });
+  } else {
+    console.error("btnLogin bulunamadı!");
   }
 
   if (btnLogout) {
@@ -108,9 +125,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // Redirect dönüşünü yakala
   try {
+    console.log("Redirect result kontrol ediliyor...");
     const result = await getRedirectResult(auth);
+    console.log("Redirect result:", result);
     if (result) {
-      console.log("Redirect sonucu:", result.user);
+      console.log("Redirect sonucu - user:", result.user);
     }
   } catch (err) {
     console.error("Redirect hatası:", err);
@@ -119,7 +138,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 // ============ Auth State Değişikliği ============
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state:", user ? user.email : "null");
+  console.log("Auth state değişti:", user ? user.email : "null");
   setUserUI(user);
 
   if (!user) {
