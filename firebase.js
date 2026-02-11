@@ -20,14 +20,27 @@ import {
    🔴 BURAYI DOLDUR
    Firebase Console > Project Settings > Your Apps > Web App
 ========================= */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "BURAYA_APIKEY",
-  authDomain: "BURAYA_AUTHDOMAIN",
-  databaseURL: "BURAYA_DATABASEURL",
-  projectId: "BURAYA_PROJECTID",
-  storageBucket: "BURAYA_STORAGEBUCKET",
-  messagingSenderId: "BURAYA_SENDERID",
-  appId: "BURAYA_APPID"
+  apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
+  authDomain: "budget-pro-1cfcc.firebaseapp.com",
+  projectId: "budget-pro-1cfcc",
+  storageBucket: "budget-pro-1cfcc.firebasestorage.app",
+  messagingSenderId: "756796109010",
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
+  measurementId: "G-NRMF74RK7W"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 };
 
 /* ========================= */
