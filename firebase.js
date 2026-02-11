@@ -23,13 +23,13 @@ import {
 ========================= */
 
 const firebaseConfig = {
-  apiKey: "BURAYA_APIKEY",
+  apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
-  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
   projectId: "budget-pro-1cfcc",
-  storageBucket: "budget-pro-1cfcc.appspot.com",
+  storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
+  measurementId: "G-NRMF74RK7W"
 };
 
 
