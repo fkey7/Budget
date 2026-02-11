@@ -158,6 +158,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 onAuthStateChanged(auth, async (user) => {
+    alert("Auth state changed: " + (user ? (user.email || user.uid) : "NO USER"));
   setUserUI(user);
 
   if (!user) {
