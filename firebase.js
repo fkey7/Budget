@@ -1,4 +1,5 @@
-// firebase.js  (type="module") — FINAL, NO-CONFLICT, WITH GUARANTEED LOGS
+// firebase.js (type="module") - STABLE VERSION
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
@@ -6,9 +7,7 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  onAuthStateChanged,
-  setPersistence,
-  browserLocalPersistence
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getDatabase,
@@ -18,8 +17,6 @@ import {
   child,
   onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-
-console.log("FIREBASE_LOADED_VFINAL ✅");
 
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
@@ -34,21 +31,25 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-
 const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
 
 const STORAGE_KEY = "butce_data_v1";
-const $ = (id) => document.getElementById(id);
 
-function show(el, yes) { if (el) el.style.display = yes ? "" : "none"; }
-function safeRender() { try { window.render && window.render(); } catch {} }
-function lockApp(locked) { const el = $("appLock"); if (el) el.classList.toggle("hidden", !locked); }
+function show(el, yes) {
+  if (!el) return;
+  el.style.display = yes ? "" : "none";
+}
+
+function lockApp(locked) {
+  const lock = document.getElementById("appLock");
+  if (!lock) return;
+  lock.classList.toggle("hidden", !locked);
+}
 
 function setUserUI(user) {
-  const userLabel = $("userLabel");
-  const btnLogin = $("btnLogin");
-  const btnLogout = $("btnLogout");
+  const userLabel = document.getElementById("userLabel");
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
 
   if (!user) {
     if (userLabel) userLabel.textContent = "Giriş yapılmadı";
@@ -61,99 +62,101 @@ function setUserUI(user) {
   }
 }
 
-function showAuthError(prefix, e) {
-  const code = e?.code || "";
-  const msg = e?.message || String(e);
-  console.error(prefix, code, msg, e);
-  alert(`${prefix}\n\n${code}\n${msg}`);
-}
-
 async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
 }
+
 async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
+function safeRender() {
+  try { window.render && window.render(); } catch {}
+}
+
+// ============ DOMContentLoaded ============
 window.addEventListener("DOMContentLoaded", async () => {
-  console.log("FIREBASE_DOM_READY ✅");
-
-  // persistence
-  try { await setPersistence(auth, browserLocalPersistence); }
-  catch (e) { console.warn("PERSISTENCE_WARN", e); }
-
-  const btnLogin = $("btnLogin");
-  const btnLogout = $("btnLogout");
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogin) {
     btnLogin.setAttribute("type", "button");
-    btnLogin.onclick = null;
-    btnLogin.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      console.log("LOGIN_CLICK ✅");
+    btnLogin.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // YENİ: Event bubbling'i durdur
+      console.log("Login tıklandı"); // Debug için
       try {
         await signInWithRedirect(auth, provider);
-      } catch (e) {
-        showAuthError("Login başlatılamadı", e);
+      } catch (err) {
+        console.error("Login hatası:", err);
+        alert("Giriş hatası: " + err.message);
       }
     });
-  } else {
-    console.warn("btnLogin not found");
   }
 
   if (btnLogout) {
     btnLogout.setAttribute("type", "button");
-    btnLogout.onclick = null;
-    btnLogout.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      console.log("LOGOUT_CLICK ✅");
-      try { await signOut(auth); }
-      catch (e) { showAuthError("Çıkış hatası", e); }
+    btnLogout.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await signOut(auth);
+      setUserUI(null);
+      lockApp(true);
     });
   }
 
-  // redirect result
+  // Redirect dönüşünü yakala
   try {
-    const res = await getRedirectResult(auth);
-    console.log("REDIRECT_RESULT", res ? "HAS_RESULT" : "EMPTY");
-  } catch (e) {
-    showAuthError("Redirect sonucu alınamadı", e);
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log("Redirect sonucu:", result.user);
+    }
+  } catch (err) {
+    console.error("Redirect hatası:", err);
   }
 });
 
+// ============ Auth State Değişikliği ============
 onAuthStateChanged(auth, async (user) => {
-  console.log("AUTH_STATE", user ? (user.email || user.uid) : "NO_USER");
-
+  console.log("Auth state:", user ? user.email : "null");
   setUserUI(user);
 
-  if (!user) { lockApp(true); return; }
+  if (!user) {
+    lockApp(true);
+    return;
+  }
   lockApp(false);
 
+  // Cloud -> local
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
     safeRender();
   } else {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { try { await cloudSave(user.uid, JSON.parse(raw)); } catch {} }
+    if (raw) {
+      try {
+        await cloudSave(user.uid, JSON.parse(raw));
+      } catch (e) {
+        console.error("Cloud save hatası:", e);
+      }
+    }
   }
 
+  // Live sync
   onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
     if (!snap.exists()) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
     safeRender();
   });
 
+  // saveData override
   const originalSaveData = window.saveData;
   if (typeof originalSaveData === "function") {
     window.saveData = (data) => {
       originalSaveData(data);
-      cloudSave(user.uid, data).catch(() => {});
+      cloudSave(user.uid, data).catch((e) => console.error("Sync hatası:", e));
     };
-  } else {
-    console.warn("saveData not found (app.js not loaded?)");
   }
 });
