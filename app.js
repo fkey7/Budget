@@ -24,9 +24,45 @@ function defaultData() {
     }
   };
 }
+function normalizeBSMonth(bs) {
+  if (bs?.assets?.cash?.items && bs?.liabilities?.credits?.items) return bs;
 
+  const mk = (title, oldObj) => {
+    const items = [];
+    if (oldObj && (oldObj.value != null || oldObj.note != null)) {
+      const v = Number(oldObj.value || 0);
+      const n = oldObj.note || "";
+      items.push({ id: "m1", name: title, valueUSD: v, note: n });
+    }
+    return { title, items };
+  };
+
+  const oldA = bs?.assets || {};
+  const oldL = bs?.liabilities || {};
+
+  return {
+    assets: {
+      cash: mk("Nakit", oldA.cash),
+      investments: mk("Yatırımlar", oldA.investments),
+      receivables: mk("Alacaklar", oldA.receivables),
+    },
+    liabilities: {
+      credits: mk("Krediler", oldL.credits),
+      cards: mk("Kredi Kartları", oldL.cards),
+      debts: mk("Borçlar", oldL.debts),
+    },
+    plan: bs?.plan || { assetsUSD: 0, liabUSD: 0, equityUSD: 0 }
+  };
+}
 function migrateIfNeeded(d) {
   const base = defaultData();
+
+  const bs = d.balanceSheets ?? base.balanceSheets;
+  const fixed = {};
+  for (const k of Object.keys(bs || {})) {
+    fixed[k] = normalizeBSMonth(bs[k]);
+  }
+
   return {
     ...base,
     ...d,
@@ -35,7 +71,7 @@ function migrateIfNeeded(d) {
     nextCategoryId: d.nextCategoryId ?? base.nextCategoryId,
     monthlyRates: d.monthlyRates ?? base.monthlyRates,
     transactions: d.transactions ?? base.transactions,
-    balanceSheets: d.balanceSheets ?? base.balanceSheets
+    balanceSheets: fixed
   };
 }
 
