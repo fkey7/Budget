@@ -1,5 +1,4 @@
-// firebase.js (type="module")
-// ONLY REDIRECT LOGIN (no popup)
+// firebase.js (type="module") — Redirect Login (NO POPUP) + Debug Alerts
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
@@ -19,7 +18,6 @@ import {
   onValue,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-// ✅ Firebase Console > Project settings > Your apps (Web app) config
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
@@ -34,7 +32,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
+
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
 
 const STORAGE_KEY = "butce_data_v1";
 
@@ -78,35 +78,82 @@ function safeRender() {
   try { window.render && window.render(); } catch {}
 }
 
-// ---- IMPORTANT: make sure button has NO inline onclick that calls popup ----
+function alertAuthError(e, prefix = "Login başarısız") {
+  const code = e?.code || "";
+  const msg = e?.message || String(e);
+  console.error(prefix, code, msg, e);
+
+  // Kullanıcıya direkt net hata gösterelim
+  alert(`${prefix}\n\n${code}\n${msg}`);
+
+  // En sık görülen hatalarda ne yapacağını da söyleyelim
+  if (code === "auth/unauthorized-domain") {
+    alert(
+      "ÇÖZÜM:\nFirebase Console > Authentication > Settings > Authorized domains\nBuraya şunu ekle:\n\nfkey7.github.io"
+    );
+  }
+  if (code === "auth/operation-not-allowed") {
+    alert(
+      "ÇÖZÜM:\nFirebase Console > Authentication > Sign-in method\nGoogle provider'ı ENABLE yap."
+    );
+  }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
 
-  if (btnLogin) {
-    // wipe any existing inline handler (prevents old popup code)
+  if (!btnLogin) {
+    console.warn("btnLogin bulunamadı. ID doğru mu? (id='btnLogin')");
+  } else {
+    // inline handler varsa iptal
     btnLogin.onclick = null;
 
-    btnLogin.addEventListener("click", async () => {
-      // Redirect flow (no popup)
-      await signInWithRedirect(auth, provider);
+    // Eğer buton form içindeyse submit olmasın diye:
+    btnLogin.setAttribute("type", "button");
+
+    btnLogin.addEventListener("click", async (e) => {
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log("Login click -> redirect başlatılıyor...");
+
+        // Bu çağrı normalde sayfayı Google'a yönlendirir
+        await signInWithRedirect(auth, provider);
+
+        // Buraya normalde gelmez (redirect olur)
+        console.log("Redirect çağrısı döndü (normalde dönmemeli).");
+      } catch (err) {
+        alertAuthError(err, "Login başlatılamadı");
+      }
     });
   }
 
   if (btnLogout) {
     btnLogout.onclick = null;
-    btnLogout.addEventListener("click", async () => {
-      await signOut(auth);
-      setUserUI(null);
-      lockApp(true);
+    btnLogout.setAttribute("type", "button");
+    btnLogout.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await signOut(auth);
+        setUserUI(null);
+        lockApp(true);
+      } catch (err) {
+        alert(`Çıkış hatası: ${err?.message || err}`);
+      }
     });
   }
 
-  // Handle redirect result (must be called once per load)
+  // Redirect dönüşünü yakala (her yüklemede bir kez)
   try {
-    await getRedirectResult(auth);
-  } catch (e) {
-    console.warn("getRedirectResult:", e?.code || e?.message || e);
+    const res = await getRedirectResult(auth);
+    if (res?.user) {
+      console.log("Redirect result OK:", res.user.email || res.user.uid);
+    }
+  } catch (err) {
+    // Burada hata görürsek artık saklamıyoruz
+    alertAuthError(err, "Redirect sonucu alınamadı");
   }
 });
 
@@ -119,27 +166,29 @@ onAuthStateChanged(auth, async (user) => {
   }
   lockApp(false);
 
-  // 1) Load from cloud → local
+  // 1) Cloud varsa → local
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
     safeRender();
   } else {
-    // 2) First login: local → cloud (if any)
+    // 2) İlk giriş: local → cloud
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      try { await cloudSave(user.uid, JSON.parse(raw)); } catch {}
+      try {
+        await cloudSave(user.uid, JSON.parse(raw));
+      } catch {}
     }
   }
 
-  // 3) Live sync: cloud → local
+  // 3) Live sync
   onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
     if (!snap.exists()) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
     safeRender();
   });
 
-  // 4) Override saveData: local + cloud
+  // 4) saveData override
   const originalSaveData = window.saveData;
   if (typeof originalSaveData === "function") {
     window.saveData = (data) => {
