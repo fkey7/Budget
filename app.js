@@ -1,15 +1,15 @@
 /* =========================
-   Budget Pro - app.js (v2)
-   - Transactions: USD snapshot at entry date
-   - Balance Sheet: store amount+currency, show USD with CURRENT FX (latest)
-   - No imports
-   - Firebase sync compatible (firebase.js overrides window.saveData)
+Budget Pro - app.js (v2)
+- Transactions: USD snapshot at entry date
+- Balance Sheet: store amount+currency, show USD with CURRENT FX (latest)
+- No imports
+- Firebase sync compatible (firebase.js overrides window.saveData)
 ========================= */
 
 const STORAGE_KEY = "butce_data_v1";
 
 /* =========================
-   Data Model
+Data Model
 ========================= */
 function defaultData() {
   return {
@@ -70,6 +70,9 @@ function migrateIfNeeded(d) {
 
 // Convert any old/partial BS to v2 structure
 function normalizeBSMonth(bs) {
+  // new format already ok?
+  if (bs?.assets?.cash?.items && bs?.liabilities?.credits?.items) return bs;
+
   const mk = (title) => ({ title, items: [] });
 
   const ensure = (obj, title) => {
@@ -147,7 +150,7 @@ function normalizeBSMonth(bs) {
 }
 
 /* =========================
-   Storage
+Storage
 ========================= */
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -165,7 +168,7 @@ function saveData(data) {
 window.saveData = saveData;
 
 /* =========================
-   Helpers
+Helpers
 ========================= */
 function $(id) { return document.getElementById(id); }
 
@@ -191,6 +194,8 @@ function getSelectedYMKey() {
   const y = $("selYear")?.value;
   const m = $("selMonth")?.value;
   if (y && m) return `${y}-${String(m).padStart(2, "0")}`;
+
+  // fallback: current month
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -201,9 +206,9 @@ function setStatus(text) {
 }
 
 /* =========================
-   FX (USD base)
-   - fetchUsdPerUnit(currency, dateISO):
-     returns USD per 1 unit of currency.
+FX (USD base)
+- fetchUsdPerUnit(currency, dateISO):
+  returns USD per 1 unit of currency.
 ========================= */
 async function fetchUsdPerUnit(currency, dateISO) {
   if (!currency || currency === "USD") return 1;
@@ -251,52 +256,7 @@ async function getUsdPerUnitLatest(currency) {
 }
 
 /* =========================
-   Transactions (USD snapshot at entry)
-========================= */
-async function addTransaction({ type, date, amount, currency, note, categoryId }) {
-  const data = loadData();
-  const amt = Number(amount);
-  if (!amt || !isFinite(amt) || amt <= 0) throw new Error("Tutar geçersiz");
-
-  const usdRate = await fetchUsdPerUnit(currency, date); // USD per 1 currency
-  const usdAmount = (currency === "USD") ? amt : (amt * usdRate);
-
-  const tx = {
-    id: data.nextTxId++,
-    type: type === "income" ? "income" : "expense",
-    date: date || todayISO(),
-    ym: ymFromISO(date || todayISO()),
-    amount: amt,
-    currency: currency || "USD",
-    usdRate: Number(usdRate),
-    usdAmount: Number(usdAmount),
-    note: note || "",
-    categoryId: categoryId ?? null
-  };
-
-  data.transactions.push(tx);
-  saveData(data);
-}
-
-function getTxForMonth(ymKey) {
-  const data = loadData();
-  return (data.transactions || []).filter(t => t?.ym === ymKey);
-}
-
-function calcMonthlySummary(ymKey) {
-  const tx = getTxForMonth(ymKey);
-  const actualIncome = tx.filter(t => t.type === "income").reduce((a, t) => a + (t.usdAmount || 0), 0);
-  const actualExpense = tx.filter(t => t.type === "expense").reduce((a, t) => a + (t.usdAmount || 0), 0);
-
-  return {
-    actualIncome,
-    actualExpense,
-    netActual: actualIncome - actualExpense
-  };
-}
-
-/* =========================
-   Balance Sheets (store amount+currency; display current FX to USD)
+Balance Sheets (store amount+currency; display current FX to USD)
 ========================= */
 function ensureBalanceMonth(ymKey) {
   const data = loadData();
@@ -383,7 +343,128 @@ function saveBalancePlan(ymKey, assetsUSD, liabUSD, equityUSD) {
 }
 
 /* =========================
-   UI Renders
+Automation helpers (NEW)
+========================= */
+function _normName(x){ return String(x||"").trim().toLowerCase(); }
+
+function _findNamedItem(groups, name){
+  const n = _normName(name);
+  for (const groupKey of Object.keys(groups || {})) {
+    const g = groups[groupKey];
+    const items = g?.items || [];
+    for (const it of items) {
+      if (_normName(it.name) === n) return { groupKey, item: it };
+    }
+  }
+  return null;
+}
+
+// Automation: expense tx with tx.note matches a liability item name in SAME MONTH balance sheet.
+// - Decrease matched liability amount (in its own currency) by tx amount converted using tx's entry-date FX snapshot.
+// - If an asset item with same name exists, increase it by the same converted amount (in asset currency).
+async function applyBalanceAutomationForTx(data, tx){
+  try{
+    if(!tx || tx.type !== "expense") return;
+    const match = String(tx.note || "").trim();
+    if(!match) return;
+    const ym = tx.ym;
+    if(!ym) return;
+
+    // Ensure BS exists for that month
+    const bs = ensureBalanceMonth(ym);
+
+    // Find liability item (credits/cards/debts)
+    const liabHit = _findNamedItem(bs.liabilities, match);
+    if(!liabHit) return;
+
+    const liabItem = liabHit.item;
+    const liabCur = liabItem.currency || "USD";
+
+    // Convert tx.usdAmount (USD snapshot at tx.date) into liability currency
+    let deltaLiab = 0;
+    if (liabCur === "USD") {
+      deltaLiab = Number(tx.usdAmount || 0);
+    } else {
+      const usdPerUnit = await fetchUsdPerUnit(liabCur, tx.date); // USD per 1 liabCur
+      deltaLiab = usdPerUnit ? (Number(tx.usdAmount || 0) / usdPerUnit) : 0;
+    }
+
+    liabItem.amount = Math.max(0, Number(liabItem.amount || 0) - Number(deltaLiab || 0));
+
+    // If asset item exists with same name, add there too
+    const assetHit = _findNamedItem(bs.assets, match);
+    if (assetHit) {
+      const assetItem = assetHit.item;
+      const assetCur = assetItem.currency || "USD";
+      let deltaAsset = 0;
+      if (assetCur === "USD") {
+        deltaAsset = Number(tx.usdAmount || 0);
+      } else {
+        const usdPerUnitA = await fetchUsdPerUnit(assetCur, tx.date);
+        deltaAsset = usdPerUnitA ? (Number(tx.usdAmount || 0) / usdPerUnitA) : 0;
+      }
+      assetItem.amount = Number(assetItem.amount || 0) + Number(deltaAsset || 0);
+    }
+
+    data.balanceSheets = data.balanceSheets || {};
+    data.balanceSheets[ym] = bs;
+  } catch (e) {
+    // fail silently; do not block transaction save
+    console.warn("Automation skipped:", e?.message || e);
+  }
+}
+
+/* =========================
+Transactions (USD snapshot at entry)
+========================= */
+async function addTransaction({ type, date, amount, currency, note, categoryId }) {
+  const data = loadData();
+  const amt = Number(amount);
+  if (!amt || !isFinite(amt) || amt <= 0) throw new Error("Tutar geçersiz");
+
+  const usdRate = await fetchUsdPerUnit(currency, date); // USD per 1 currency
+  const usdAmount = (currency === "USD") ? amt : (amt * usdRate);
+
+  const tx = {
+    id: data.nextTxId++,
+    type: type === "income" ? "income" : "expense",
+    date: date || todayISO(),
+    ym: ymFromISO(date || todayISO()),
+    amount: amt,
+    currency: currency || "USD",
+    usdRate: Number(usdRate),
+    usdAmount: Number(usdAmount),
+    note: note || "",
+    categoryId: categoryId ?? null
+  };
+
+  data.transactions.push(tx);
+
+  // NEW: apply automation after push
+  await applyBalanceAutomationForTx(data, tx);
+
+  saveData(data);
+}
+
+function getTxForMonth(ymKey) {
+  const data = loadData();
+  return (data.transactions || []).filter(t => t?.ym === ymKey);
+}
+
+function calcMonthlySummary(ymKey) {
+  const tx = getTxForMonth(ymKey);
+  const actualIncome = tx.filter(t => t.type === "income").reduce((a, t) => a + (t.usdAmount || 0), 0);
+  const actualExpense = tx.filter(t => t.type === "expense").reduce((a, t) => a + (t.usdAmount || 0), 0);
+
+  return {
+    actualIncome,
+    actualExpense,
+    netActual: actualIncome - actualExpense
+  };
+}
+
+/* =========================
+UI Renders
 ========================= */
 function ensureMonthInputs() {
   const y = $("selYear");
@@ -590,7 +671,7 @@ async function renderBalanceUI() {
 }
 
 /* =========================
-   Main Render
+Main Render
 ========================= */
 async function render() {
   const data = loadData();
@@ -608,7 +689,7 @@ async function render() {
 window.render = render;
 
 /* =========================
-   Wire UI Events (if exist)
+Wire UI Events (if exist)
 ========================= */
 function wireEvents() {
   // Export
@@ -693,7 +774,7 @@ function wireEvents() {
 }
 
 /* =========================
-   Boot
+Boot
 ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
   wireEvents();
