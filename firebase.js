@@ -1,4 +1,5 @@
-// firebase.js (type="module") — Redirect Login (NO POPUP) + Debug Alerts
+// firebase.js  (type="module")
+// Redirect login + FULL DEBUG (shows real auth error codes)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
@@ -8,6 +9,8 @@ import {
   getRedirectResult,
   signOut,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getDatabase,
@@ -15,7 +18,7 @@ import {
   set,
   get,
   child,
-  onValue,
+  onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -26,7 +29,7 @@ const firebaseConfig = {
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
   appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W",
+  measurementId: "G-NRMF74RK7W"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -65,6 +68,17 @@ function setUserUI(user) {
   }
 }
 
+function safeRender() {
+  try { window.render && window.render(); } catch {}
+}
+
+function showAuthError(prefix, e) {
+  const code = e?.code || "";
+  const msg = e?.message || String(e);
+  console.error(prefix, code, msg, e);
+  alert(`${prefix}\n\n${code}\n${msg}`);
+}
+
 async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
@@ -74,58 +88,29 @@ async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
-function safeRender() {
-  try { window.render && window.render(); } catch {}
-}
-
-function alertAuthError(e, prefix = "Login başarısız") {
-  const code = e?.code || "";
-  const msg = e?.message || String(e);
-  console.error(prefix, code, msg, e);
-
-  // Kullanıcıya direkt net hata gösterelim
-  alert(`${prefix}\n\n${code}\n${msg}`);
-
-  // En sık görülen hatalarda ne yapacağını da söyleyelim
-  if (code === "auth/unauthorized-domain") {
-    alert(
-      "ÇÖZÜM:\nFirebase Console > Authentication > Settings > Authorized domains\nBuraya şunu ekle:\n\nfkey7.github.io"
-    );
-  }
-  if (code === "auth/operation-not-allowed") {
-    alert(
-      "ÇÖZÜM:\nFirebase Console > Authentication > Sign-in method\nGoogle provider'ı ENABLE yap."
-    );
-  }
-}
-
 window.addEventListener("DOMContentLoaded", async () => {
+  // ✅ persistence (bazı tarayıcılarda gerekli)
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (e) {
+    console.warn("setPersistence error:", e);
+  }
+
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
 
-  if (!btnLogin) {
-    console.warn("btnLogin bulunamadı. ID doğru mu? (id='btnLogin')");
-  } else {
-    // inline handler varsa iptal
+  if (btnLogin) {
     btnLogin.onclick = null;
-
-    // Eğer buton form içindeyse submit olmasın diye:
     btnLogin.setAttribute("type", "button");
 
-    btnLogin.addEventListener("click", async (e) => {
+    btnLogin.addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       try {
-        e.preventDefault();
-        e.stopPropagation();
-
-        console.log("Login click -> redirect başlatılıyor...");
-
-        // Bu çağrı normalde sayfayı Google'a yönlendirir
+        console.log("LOGIN: signInWithRedirect starting...");
         await signInWithRedirect(auth, provider);
-
-        // Buraya normalde gelmez (redirect olur)
-        console.log("Redirect çağrısı döndü (normalde dönmemeli).");
-      } catch (err) {
-        alertAuthError(err, "Login başlatılamadı");
+      } catch (e) {
+        showAuthError("Login başlatılamadı", e);
       }
     });
   }
@@ -133,32 +118,35 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (btnLogout) {
     btnLogout.onclick = null;
     btnLogout.setAttribute("type", "button");
-    btnLogout.addEventListener("click", async (e) => {
-      e.preventDefault();
+
+    btnLogout.addEventListener("click", async (ev) => {
+      ev.preventDefault();
       try {
         await signOut(auth);
         setUserUI(null);
         lockApp(true);
-      } catch (err) {
-        alert(`Çıkış hatası: ${err?.message || err}`);
+      } catch (e) {
+        showAuthError("Çıkış hatası", e);
       }
     });
   }
 
-  // Redirect dönüşünü yakala (her yüklemede bir kez)
+  // ✅ Redirect dönüşü burada yakalanır. Hata varsa buradan öğreniriz.
   try {
     const res = await getRedirectResult(auth);
     if (res?.user) {
-      console.log("Redirect result OK:", res.user.email || res.user.uid);
+      alert("Redirect OK: " + (res.user.email || res.user.uid));
+      console.log("Redirect OK:", res.user);
+    } else {
+      console.log("Redirect result: empty (ilk açılış olabilir)");
     }
-  } catch (err) {
-    // Burada hata görürsek artık saklamıyoruz
-    alertAuthError(err, "Redirect sonucu alınamadı");
+  } catch (e) {
+    showAuthError("Redirect sonucu alınamadı", e);
   }
 });
 
 onAuthStateChanged(auth, async (user) => {
-    alert("Auth state changed: " + (user ? (user.email || user.uid) : "NO USER"));
+  alert("Auth state changed: " + (user ? (user.email || user.uid) : "NO USER"));
   setUserUI(user);
 
   if (!user) {
@@ -167,18 +155,16 @@ onAuthStateChanged(auth, async (user) => {
   }
   lockApp(false);
 
-  // 1) Cloud varsa → local
+  // 1) Cloud -> local
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
     safeRender();
   } else {
-    // 2) İlk giriş: local → cloud
+    // 2) local -> cloud (first login)
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      try {
-        await cloudSave(user.uid, JSON.parse(raw));
-      } catch {}
+      try { await cloudSave(user.uid, JSON.parse(raw)); } catch {}
     }
   }
 
