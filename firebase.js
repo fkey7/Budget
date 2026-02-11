@@ -1,13 +1,18 @@
-// firebase.js (type="module") - DÜZELTİLMİŞ VERSION
+// firebase.js  (type="module")
+// ✅ Stabil Google Login: önce POPUP, olmazsa REDIRECT fallback
+// ✅ Realtime DB sync: users/{uid}/appData
+// ✅ saveData override: local + cloud
+// ✅ Hata olursa alert + console
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getDatabase,
@@ -15,19 +20,18 @@ import {
   set,
   get,
   child,
-  onValue
+  onValue,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-// 🔴 DÜZELTME: databaseURL'deki boşluk kaldırıldı!
+// ====== Firebase Config (Budget Pro) ======
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
-  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com", // ← BOŞLUK YOK!
+  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
   projectId: "budget-pro-1cfcc",
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
   appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W" // ← Analytics için eklendi
 };
 
 console.log("Firebase config:", firebaseConfig);
@@ -35,15 +39,14 @@ console.log("Firebase config:", firebaseConfig);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
+
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
 
-// 🔴 EKLEME: Google login ayarları
-provider.setCustomParameters({
-  prompt: 'select_account' // Her zaman hesap seçimi göster
-});
-
+// app.js localStorage key
 const STORAGE_KEY = "butce_data_v1";
 
+// ====== UI helpers ======
 function show(el, yes) {
   if (!el) return;
   el.style.display = yes ? "" : "none";
@@ -71,6 +74,15 @@ function setUserUI(user) {
   }
 }
 
+function safeRender() {
+  try {
+    if (typeof window.render === "function") window.render();
+  } catch (e) {
+    console.error("render() hatası:", e);
+  }
+}
+
+// ====== Cloud helpers ======
 async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
@@ -80,118 +92,136 @@ async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
-function safeRender() {
-  try { window.render && window.render(); } catch(e) { console.error("Render hatası:", e); }
+// ====== Login logic (POPUP -> REDIRECT fallback) ======
+async function loginGoogle() {
+  console.log("Login başladı (popup denenecek)...");
+  try {
+    const res = await signInWithPopup(auth, provider);
+    console.log("✅ Popup login OK:", res?.user?.email);
+    return;
+  } catch (e) {
+    console.warn("⚠️ Popup login başarısız. Redirect denenecek:", e);
+
+    // Popup engellenmiş olabilir; redirect’e düş
+    try {
+      await signInWithRedirect(auth, provider);
+      // redirect sonrası sayfa değişir
+      return;
+    } catch (e2) {
+      console.error("❌ Redirect login de başarısız:", e2);
+      alert("Google giriş başarısız: " + (e2?.message || e2));
+      throw e2;
+    }
+  }
 }
 
-// ============ DOMContentLoaded ============
+async function logoutGoogle() {
+  await signOut(auth);
+  setUserUI(null);
+  lockApp(true);
+}
+
+// ====== DOM events + redirect result ======
 window.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOMContentLoaded tetiklendi");
-  
+  console.log("firebase.js DOMContentLoaded");
+
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
-  
-  console.log("btnLogin element:", btnLogin);
-  console.log("btnLogout element:", btnLogout);
+
+  console.log("btnLogin:", btnLogin);
+  console.log("btnLogout:", btnLogout);
 
   if (btnLogin) {
-    console.log("Login butonu bulundu, event ekleniyor...");
     btnLogin.setAttribute("type", "button");
-    
-    // Önceki event'leri temizle
-    const newBtn = btnLogin.cloneNode(true);
-    btnLogin.parentNode.replaceChild(newBtn, btnLogin);
-    
-    newBtn.addEventListener("click", async (e) => {
-      console.log("Login butonuna tıklandı!");
+    btnLogin.onclick = null;
+    btnLogin.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
       try {
-        console.log("signInWithRedirect çağrılıyor...");
-        await signInWithRedirect(auth, provider);
-        console.log("signInWithRedirect tamamlandı");
-      } catch (err) {
-        console.error("Login hatası:", err);
-        alert("Giriş hatası: " + err.message);
-      }
+        await loginGoogle();
+      } catch (_) {}
     });
-  } else {
-    console.error("btnLogin bulunamadı!");
   }
 
   if (btnLogout) {
     btnLogout.setAttribute("type", "button");
+    btnLogout.onclick = null;
     btnLogout.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      await signOut(auth);
-      setUserUI(null);
-      lockApp(true);
+      try {
+        await logoutGoogle();
+      } catch (err) {
+        console.error("Logout hatası:", err);
+      }
     });
   }
 
-  // Redirect dönüşünü yakala - DÜZELTİLMİŞ
+  // Redirect dönüşünü yakala (redirect fallback kullanırsak buradan user gelir)
   try {
     console.log("Redirect result kontrol ediliyor...");
-    const result = await getRedirectResult(auth);
-    console.log("Redirect result:", result);
-    
-    if (result) {
-      console.log("✅ Redirect başarılı! User:", result.user);
-      // Kullanıcı bilgilerini göster
-      alert("Giriş başarılı! Hoş geldin " + result.user.displayName);
-    } else {
-      console.log("ℹ️ Redirect result null - ilk yükleme veya redirect yok");
+    const rr = await getRedirectResult(auth);
+    console.log("Redirect result:", rr ? (rr.user?.email || rr.user?.uid) : null);
+    if (rr?.user) {
+      alert("Giriş başarılı ✅ " + (rr.user.email || rr.user.uid));
     }
   } catch (err) {
-    console.error("❌ Redirect hatası:", err);
-    console.error("Hata kodu:", err.code);
-    console.error("Hata mesajı:", err.message);
-    alert("Redirect hatası: " + err.message);
+    console.error("getRedirectResult hata:", err);
+    alert("Redirect sonucu okunamadı: " + (err?.message || err));
   }
 });
 
-// ============ Auth State Değişikliği ============
+// ====== Auth state + Sync ======
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state değişti:", user ? user.email : "null");
+  console.log("Auth state:", user ? (user.email || user.uid) : "null");
+
   setUserUI(user);
 
   if (!user) {
     lockApp(true);
     return;
   }
+
   lockApp(false);
 
-  // Cloud -> local
   try {
+    // 1) Cloud varsa local'e al
     const cloud = await cloudLoad(user.uid);
     if (cloud) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
       safeRender();
     } else {
+      // 2) Cloud yoksa local'i cloud'a yükle
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        await cloudSave(user.uid, JSON.parse(raw));
+        try {
+          await cloudSave(user.uid, JSON.parse(raw));
+        } catch (e) {
+          console.warn("İlk cloud push hata:", e);
+        }
       }
     }
 
-    // Live sync
+    // 3) Live sync: cloud değişirse local güncelle
     onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
       if (!snap.exists()) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
       safeRender();
     });
 
-    // saveData override
+    // 4) saveData override: her kayıtta cloud'a da yaz
     const originalSaveData = window.saveData;
     if (typeof originalSaveData === "function") {
       window.saveData = (data) => {
-        originalSaveData(data);
-        cloudSave(user.uid, data).catch((e) => console.error("Sync hatası:", e));
+        originalSaveData(data); // local
+        cloudSave(user.uid, data).catch((e) => console.error("Cloud save hata:", e));
       };
+      console.log("saveData override OK");
+    } else {
+      console.warn("window.saveData bulunamadı (app.js global değil).");
     }
   } catch (err) {
     console.error("Auth state işleme hatası:", err);
+    alert("Sync hatası: " + (err?.message || err));
   }
 });
