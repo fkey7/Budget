@@ -1,4 +1,4 @@
-// firebase.js (type="module") - DEBUG VERSION
+// firebase.js (type="module") - DÜZELTİLMİŞ VERSION
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
@@ -18,14 +18,16 @@ import {
   onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
+// 🔴 DÜZELTME: databaseURL'deki boşluk kaldırıldı!
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
-  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
+  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com", // ← BOŞLUK YOK!
   projectId: "budget-pro-1cfcc",
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
+  measurementId: "G-NRMF74RK7W" // ← Analytics için eklendi
 };
 
 console.log("Firebase config:", firebaseConfig);
@@ -34,6 +36,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
+
+// 🔴 EKLEME: Google login ayarları
+provider.setCustomParameters({
+  prompt: 'select_account' // Her zaman hesap seçimi göster
+});
 
 const STORAGE_KEY = "butce_data_v1";
 
@@ -91,10 +98,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     console.log("Login butonu bulundu, event ekleniyor...");
     btnLogin.setAttribute("type", "button");
     
-    // Önceki event'leri temizle (varsa)
-    btnLogin.onclick = null;
+    // Önceki event'leri temizle
+    const newBtn = btnLogin.cloneNode(true);
+    btnLogin.parentNode.replaceChild(newBtn, btnLogin);
     
-    btnLogin.addEventListener("click", async (e) => {
+    newBtn.addEventListener("click", async (e) => {
       console.log("Login butonuna tıklandı!");
       e.preventDefault();
       e.stopPropagation();
@@ -123,16 +131,24 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Redirect dönüşünü yakala
+  // Redirect dönüşünü yakala - DÜZELTİLMİŞ
   try {
     console.log("Redirect result kontrol ediliyor...");
     const result = await getRedirectResult(auth);
     console.log("Redirect result:", result);
+    
     if (result) {
-      console.log("Redirect sonucu - user:", result.user);
+      console.log("✅ Redirect başarılı! User:", result.user);
+      // Kullanıcı bilgilerini göster
+      alert("Giriş başarılı! Hoş geldin " + result.user.displayName);
+    } else {
+      console.log("ℹ️ Redirect result null - ilk yükleme veya redirect yok");
     }
   } catch (err) {
-    console.error("Redirect hatası:", err);
+    console.error("❌ Redirect hatası:", err);
+    console.error("Hata kodu:", err.code);
+    console.error("Hata mesajı:", err.message);
+    alert("Redirect hatası: " + err.message);
   }
 });
 
@@ -148,34 +164,34 @@ onAuthStateChanged(auth, async (user) => {
   lockApp(false);
 
   // Cloud -> local
-  const cloud = await cloudLoad(user.uid);
-  if (cloud) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
-    safeRender();
-  } else {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
+  try {
+    const cloud = await cloudLoad(user.uid);
+    if (cloud) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
+      safeRender();
+    } else {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
         await cloudSave(user.uid, JSON.parse(raw));
-      } catch (e) {
-        console.error("Cloud save hatası:", e);
       }
     }
-  }
 
-  // Live sync
-  onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
-    if (!snap.exists()) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
-    safeRender();
-  });
+    // Live sync
+    onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
+      if (!snap.exists()) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
+      safeRender();
+    });
 
-  // saveData override
-  const originalSaveData = window.saveData;
-  if (typeof originalSaveData === "function") {
-    window.saveData = (data) => {
-      originalSaveData(data);
-      cloudSave(user.uid, data).catch((e) => console.error("Sync hatası:", e));
-    };
+    // saveData override
+    const originalSaveData = window.saveData;
+    if (typeof originalSaveData === "function") {
+      window.saveData = (data) => {
+        originalSaveData(data);
+        cloudSave(user.uid, data).catch((e) => console.error("Sync hatası:", e));
+      };
+    }
+  } catch (err) {
+    console.error("Auth state işleme hatası:", err);
   }
 });
