@@ -1,7 +1,9 @@
 /* =========================
-   Budget Pro - app.js (v1)
+   Budget Pro - app.js (v2)
+   - Transactions: USD snapshot at entry date
+   - Balance Sheet: store amount+currency, show USD with CURRENT FX (latest)
    - No imports
-   - Works with Firebase sync wrapper (firebase.js overrides saveData)
+   - Firebase sync compatible (firebase.js overrides window.saveData)
 ========================= */
 
 const STORAGE_KEY = "butce_data_v1";
@@ -11,28 +13,26 @@ const STORAGE_KEY = "butce_data_v1";
 ========================= */
 function defaultData() {
   return {
-    app: { version: 1, baseCurrency: "USD", currencies: ["USD", "TRY", "RUB"] },
+    app: { version: 2, baseCurrency: "USD", currencies: ["USD", "TRY", "RUB"] },
 
-    // Optional categories (if your UI has it)
     categories: { income: [], expense: [] },
     nextCategoryId: 1,
 
-    // Budget forecast monthly rates (manual): monthlyRates[CUR]["YYYY-MM"]=rate (CUR per 1 USD) OR (USD per 1 CUR) – we store USD per 1 CUR
+    // Budget forecast monthly rates (optional future use)
     monthlyRates: { TRY: {}, RUB: {} },
 
-    // Transactions (actual): stores USD snapshot at entry time
+    // Transactions: store usdAmount snapshot at entry time
     transactions: [],
     nextTxId: 1,
 
-    // Balance sheets (actual & plan)
-    balanceSheets: {
-      // "YYYY-MM": { assets:{...}, liabilities:{...}, plan:{...} }
-    }
+    // Balance sheets: store items with {amount, currency} (current FX to USD for display)
+    balanceSheets: {}
   };
 }
 
 function migrateIfNeeded(d) {
   const base = defaultData();
+
   const out = {
     ...base,
     ...d,
@@ -45,20 +45,21 @@ function migrateIfNeeded(d) {
     balanceSheets: d.balanceSheets ?? base.balanceSheets
   };
 
-  // Ensure transactions have usdAmount snapshot if old format
+  // Ensure tx snapshot fields exist
   if (Array.isArray(out.transactions)) {
     out.transactions = out.transactions.map((t) => {
-      if (t && typeof t.usdAmount === "number") return t;
-      // Try to compute a best-effort snapshot if missing
-      const amount = Number(t?.amount || 0);
-      const currency = t?.currency || "USD";
-      const rate = Number(t?.usdRate || (currency === "USD" ? 1 : 0));
-      const usdAmount = currency === "USD" ? amount : (rate ? amount * rate : amount);
-      return { ...t, usdRate: currency === "USD" ? 1 : rate, usdAmount };
+      if (!t) return t;
+      if (typeof t.usdAmount === "number" && typeof t.usdRate === "number") return t;
+
+      const amount = Number(t.amount || 0);
+      const currency = t.currency || "USD";
+      const usdRate = Number(t.usdRate || (currency === "USD" ? 1 : 0));
+      const usdAmount = currency === "USD" ? amount : (usdRate ? amount * usdRate : amount);
+      return { ...t, usdRate: currency === "USD" ? 1 : usdRate, usdAmount };
     });
   }
 
-  // Normalize balance sheet months to expected structure
+  // Normalize balance sheets to v2 format (amount+currency)
   const bs = out.balanceSheets || {};
   const fixed = {};
   for (const k of Object.keys(bs)) fixed[k] = normalizeBSMonth(bs[k]);
@@ -67,11 +68,16 @@ function migrateIfNeeded(d) {
   return out;
 }
 
+// Convert any old/partial BS to v2 structure
 function normalizeBSMonth(bs) {
-  // New format ok?
-  if (bs?.assets?.cash?.items && bs?.liabilities?.credits?.items) return bs;
-
   const mk = (title) => ({ title, items: [] });
+
+  const ensure = (obj, title) => {
+    if (!obj || typeof obj !== "object") return mk(title);
+    if (!Array.isArray(obj.items)) obj.items = [];
+    if (!obj.title) obj.title = title;
+    return obj;
+  };
 
   const out = {
     assets: {
@@ -87,23 +93,55 @@ function normalizeBSMonth(bs) {
     plan: bs?.plan || { assetsUSD: 0, liabUSD: 0, equityUSD: 0 }
   };
 
-  // Carry single-value old formats if present
-  const tryCarry = (src, dstGroup, title) => {
-    if (!src) return;
-    const v = (src.valueUSD != null) ? src.valueUSD : src.value;
-    const note = src.note || "";
-    if (v != null) {
-      dstGroup.items.push({ id: "m1", name: title, valueUSD: Number(v || 0), note });
-    }
+  // If already has v2-ish groups, adopt them
+  if (bs?.assets || bs?.liabilities) {
+    out.assets.cash = ensure(bs.assets?.cash, "Nakit");
+    out.assets.investments = ensure(bs.assets?.investments, "Yatırımlar");
+    out.assets.receivables = ensure(bs.assets?.receivables, "Alacaklar");
+
+    out.liabilities.credits = ensure(bs.liabilities?.credits, "Krediler");
+    out.liabilities.cards = ensure(bs.liabilities?.cards, "Kredi Kartları");
+    out.liabilities.debts = ensure(bs.liabilities?.debts, "Borçlar");
+  }
+
+  // MIGRATE OLD item formats:
+  // - old item: { valueUSD } or { valueUSD, note, name }
+  // - new item: { amount, currency, ... }
+  const migrateItems = (items) => {
+    const arr = Array.isArray(items) ? items : [];
+    return arr.map((it) => {
+      if (!it || typeof it !== "object") return it;
+
+      // Already v2:
+      if (typeof it.amount === "number" && it.currency) {
+        return {
+          id: it.id || (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+          name: String(it.name || ""),
+          amount: Number(it.amount || 0),
+          currency: it.currency || "USD",
+          note: String(it.note || "")
+        };
+      }
+
+      // Old v1:
+      const v = (it.valueUSD != null) ? Number(it.valueUSD || 0) : Number(it.value || 0);
+      return {
+        id: it.id || (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+        name: String(it.name || ""),
+        amount: v,
+        currency: "USD",
+        note: String(it.note || "")
+      };
+    });
   };
 
-  tryCarry(bs?.assets?.cash, out.assets.cash, "Nakit");
-  tryCarry(bs?.assets?.investments, out.assets.investments, "Yatırımlar");
-  tryCarry(bs?.assets?.receivables, out.assets.receivables, "Alacaklar");
+  out.assets.cash.items = migrateItems(out.assets.cash.items);
+  out.assets.investments.items = migrateItems(out.assets.investments.items);
+  out.assets.receivables.items = migrateItems(out.assets.receivables.items);
 
-  tryCarry(bs?.liabilities?.credits, out.liabilities.credits, "Krediler");
-  tryCarry(bs?.liabilities?.cards, out.liabilities.cards, "Kredi Kartları");
-  tryCarry(bs?.liabilities?.debts, out.liabilities.debts, "Borçlar");
+  out.liabilities.credits.items = migrateItems(out.liabilities.credits.items);
+  out.liabilities.cards.items = migrateItems(out.liabilities.cards.items);
+  out.liabilities.debts.items = migrateItems(out.liabilities.debts.items);
 
   return out;
 }
@@ -121,8 +159,6 @@ function loadData() {
   }
 }
 
-// IMPORTANT: firebase.js overrides window.saveData to also cloudSave.
-// So keep this name stable.
 function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
@@ -147,7 +183,6 @@ function todayISO() {
 }
 
 function ymFromISO(dateISO) {
-  // "YYYY-MM-DD" -> "YYYY-MM"
   if (!dateISO || typeof dateISO !== "string") return "";
   return dateISO.slice(0, 7);
 }
@@ -156,8 +191,6 @@ function getSelectedYMKey() {
   const y = $("selYear")?.value;
   const m = $("selMonth")?.value;
   if (y && m) return `${y}-${String(m).padStart(2, "0")}`;
-
-  // fallback: current month
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -169,14 +202,12 @@ function setStatus(text) {
 
 /* =========================
    FX (USD base)
-   - returns usdPerUnit(currency) (i.e., 1 TRY => x USD)
+   - fetchUsdPerUnit(currency, dateISO):
+     returns USD per 1 unit of currency.
 ========================= */
 async function fetchUsdPerUnit(currency, dateISO) {
   if (!currency || currency === "USD") return 1;
 
-  // 1) Frankfurter: supports many currencies, base EUR by default; we can request USD base and quote currency:
-  // Example: https://api.frankfurter.app/2026-02-11?from=USD&to=TRY
-  // Response: { rates: { TRY: 30.0 } } meaning 1 USD = 30 TRY => 1 TRY = 1/30 USD
   const date = dateISO || "latest";
   const frankUrl = `https://api.frankfurter.app/${date}?from=USD&to=${encodeURIComponent(currency)}`;
 
@@ -188,8 +219,6 @@ async function fetchUsdPerUnit(currency, dateISO) {
     if (!perUSD || !isFinite(perUSD)) throw new Error("Frankfurter bad rate");
     return 1 / perUSD;
   } catch (_) {
-    // 2) Fallback: open.er-api.com latest only (no historical). Still better than failing.
-    // https://open.er-api.com/v6/latest/USD => rates[TRY] = 30 means 1 USD = 30 TRY => 1 TRY = 1/30 USD
     try {
       const r2 = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
       if (!r2.ok) throw new Error("ER API not ok");
@@ -198,21 +227,38 @@ async function fetchUsdPerUnit(currency, dateISO) {
       if (!perUSD2 || !isFinite(perUSD2)) throw new Error("ER API bad rate");
       return 1 / perUSD2;
     } catch (e2) {
-      // last resort
-      throw new Error(`Kur çekilemedi: ${currency}. İnternet/servis hatası.`);
+      throw new Error(`Kur çekilemedi: ${currency}.`);
     }
   }
 }
 
+// Cache latest FX for balance sheet (current FX)
+const FX_CACHE = { ts: 0, usdPerUnit: { USD: 1 } };
+async function getUsdPerUnitLatest(currency) {
+  const now = Date.now();
+  if (currency === "USD") return 1;
+
+  // refresh every 10 min
+  if (now - FX_CACHE.ts > 10 * 60 * 1000) {
+    FX_CACHE.ts = now;
+    FX_CACHE.usdPerUnit = { USD: 1 };
+  }
+
+  if (FX_CACHE.usdPerUnit[currency] != null) return FX_CACHE.usdPerUnit[currency];
+  const v = await fetchUsdPerUnit(currency, "latest");
+  FX_CACHE.usdPerUnit[currency] = v;
+  return v;
+}
+
 /* =========================
-   Transactions
+   Transactions (USD snapshot at entry)
 ========================= */
 async function addTransaction({ type, date, amount, currency, note, categoryId }) {
   const data = loadData();
   const amt = Number(amount);
   if (!amt || !isFinite(amt) || amt <= 0) throw new Error("Tutar geçersiz");
 
-  const usdRate = await fetchUsdPerUnit(currency, date); // 1 unit currency => USD
+  const usdRate = await fetchUsdPerUnit(currency, date); // USD per 1 currency
   const usdAmount = (currency === "USD") ? amt : (amt * usdRate);
 
   const tx = {
@@ -239,27 +285,18 @@ function getTxForMonth(ymKey) {
 
 function calcMonthlySummary(ymKey) {
   const tx = getTxForMonth(ymKey);
-
   const actualIncome = tx.filter(t => t.type === "income").reduce((a, t) => a + (t.usdAmount || 0), 0);
   const actualExpense = tx.filter(t => t.type === "expense").reduce((a, t) => a + (t.usdAmount || 0), 0);
 
-  // Plan side is not fully implemented here (depends on your budget plan UI).
-  // We'll keep placeholders.
-  const planIncome = 0;
-  const planExpense = 0;
-
   return {
-    planIncome,
-    planExpense,
     actualIncome,
     actualExpense,
-    netPlan: planIncome - planExpense,
     netActual: actualIncome - actualExpense
   };
 }
 
 /* =========================
-   Balance Sheets (USD)
+   Balance Sheets (store amount+currency; display current FX to USD)
 ========================= */
 function ensureBalanceMonth(ymKey) {
   const data = loadData();
@@ -284,36 +321,7 @@ function ensureBalanceMonth(ymKey) {
   return data.balanceSheets[ymKey];
 }
 
-function sumItems(items) {
-  return (items || []).reduce((a, x) => a + Number(x.valueUSD || 0), 0);
-}
-
-function balanceTotals(ymKey) {
-  const data = loadData();
-  const bs = data.balanceSheets?.[ymKey];
-  if (!bs) return null;
-
-  const assets =
-    sumItems(bs.assets.cash.items) +
-    sumItems(bs.assets.investments.items) +
-    sumItems(bs.assets.receivables.items);
-
-  const liab =
-    sumItems(bs.liabilities.credits.items) +
-    sumItems(bs.liabilities.cards.items) +
-    sumItems(bs.liabilities.debts.items);
-
-  return {
-    assets,
-    liab,
-    equity: assets - liab,
-    planA: Number(bs.plan.assetsUSD || 0),
-    planL: Number(bs.plan.liabUSD || 0),
-    planE: Number(bs.plan.equityUSD || 0)
-  };
-}
-
-function addBalanceItem(ymKey, side, groupKey, name, valueUSD, note = "") {
+function addBalanceItem(ymKey, side, groupKey, name, amount, currency, note = "") {
   const data = loadData();
   const bs = ensureBalanceMonth(ymKey);
 
@@ -323,7 +331,8 @@ function addBalanceItem(ymKey, side, groupKey, name, valueUSD, note = "") {
   grp.items.push({
     id: (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
     name: String(name || "").trim(),
-    valueUSD: Number(valueUSD || 0),
+    amount: Number(amount || 0),
+    currency: currency || "USD",
     note: String(note || "")
   });
 
@@ -341,7 +350,8 @@ function updateBalanceItem(ymKey, side, groupKey, id, patch) {
   if (!it) return;
 
   if ("name" in patch) it.name = String(patch.name || "");
-  if ("valueUSD" in patch) it.valueUSD = Number(patch.valueUSD || 0);
+  if ("amount" in patch) it.amount = Number(patch.amount || 0);
+  if ("currency" in patch) it.currency = String(patch.currency || "USD");
   if ("note" in patch) it.note = String(patch.note || "");
 
   data.balanceSheets[ymKey] = bs;
@@ -375,6 +385,15 @@ function saveBalancePlan(ymKey, assetsUSD, liabUSD, equityUSD) {
 /* =========================
    UI Renders
 ========================= */
+function ensureMonthInputs() {
+  const y = $("selYear");
+  const m = $("selMonth");
+  if (!y || !m) return;
+
+  if (!y.value) y.value = String(new Date().getFullYear());
+  if (!m.value) m.value = String(new Date().getMonth() + 1).padStart(2, "0");
+}
+
 function renderTxList() {
   const txList = $("txList");
   if (!txList) return;
@@ -392,7 +411,7 @@ function renderTxList() {
     const sign = t.type === "expense" ? "-" : "+";
     return `<div>
       ${escapeHtml(t.date)} | ${sign}${Number(t.amount).toFixed(2)} ${escapeHtml(t.currency)}
-      <span class="muted small">→ ${Number(t.usdAmount).toFixed(2)} USD</span>
+      <span class="muted small">→ ${Number(t.usdAmount).toFixed(2)} USD (snapshot)</span>
       ${t.note ? ` | ${escapeHtml(t.note)}` : ""}
     </div>`;
   }).join("");
@@ -412,20 +431,46 @@ function renderMonthlySummary() {
     `Net (Gerçek): ${(s.netActual).toFixed(2)} USD`;
 }
 
-function renderBalanceUI() {
+async function renderBalanceUI() {
   const ymKey = getSelectedYMKey();
   const bs = ensureBalanceMonth(ymKey);
-  const totals = balanceTotals(ymKey);
 
+  // Current FX rates for display
+  const usdTRY = await getUsdPerUnitLatest("TRY");
+  const usdRUB = await getUsdPerUnitLatest("RUB");
+
+  const toUSD = (amount, currency) => {
+    const a = Number(amount || 0);
+    if (currency === "USD") return a;
+    if (currency === "TRY") return a * usdTRY;
+    if (currency === "RUB") return a * usdRUB;
+    return a;
+  };
+
+  const sumUSD = (items) => (items || []).reduce((acc, it) => acc + toUSD(it.amount, it.currency), 0);
+
+  const assetsUSD =
+    sumUSD(bs.assets.cash.items) +
+    sumUSD(bs.assets.investments.items) +
+    sumUSD(bs.assets.receivables.items);
+
+  const liabUSD =
+    sumUSD(bs.liabilities.credits.items) +
+    sumUSD(bs.liabilities.cards.items) +
+    sumUSD(bs.liabilities.debts.items);
+
+  const equityUSD = assetsUSD - liabUSD;
+
+  // Summary
   const sumBox = $("balSummary");
-  if (sumBox && totals) {
+  if (sumBox) {
     sumBox.textContent =
       `Ay: ${ymKey}\n` +
-      `Toplam Varlık: ${totals.assets.toFixed(2)} USD\n` +
-      `Toplam Borç:  ${totals.liab.toFixed(2)} USD\n` +
-      `Equity:       ${totals.equity.toFixed(2)} USD\n\n` +
-      `Plan Equity:  ${totals.planE.toFixed(2)} USD\n` +
-      `Δ (Equity):   ${(totals.equity - totals.planE).toFixed(2)} USD`;
+      `Toplam Varlık: ${assetsUSD.toFixed(2)} USD (current FX)\n` +
+      `Toplam Borç:  ${liabUSD.toFixed(2)} USD (current FX)\n` +
+      `Equity:       ${equityUSD.toFixed(2)} USD\n\n` +
+      `Plan Equity:  ${Number(bs.plan?.equityUSD || 0).toFixed(2)} USD\n` +
+      `Δ (Equity):   ${(equityUSD - Number(bs.plan?.equityUSD || 0)).toFixed(2)} USD`;
   }
 
   // Plan inputs
@@ -440,25 +485,47 @@ function renderBalanceUI() {
   const liabBox = $("liabBox");
   if (!assetsBox || !liabBox) return;
 
+  const mkCurrencySelect = (val, side, groupKey, id) => {
+    const opts = ["USD","TRY","RUB"].map(c => {
+      const sel = c === val ? "selected" : "";
+      return `<option value="${c}" ${sel}>${c}</option>`;
+    }).join("");
+    return `<select data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${id}" data-field="currency">${opts}</select>`;
+  };
+
   const mkTable = (side, groupKey, title, items) => {
-    const total = sumItems(items);
+    const totalUSD = sumUSD(items);
     return `
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center;">
-          <div><b>${title}</b> <span class="muted small">(Toplam: ${total.toFixed(2)} USD)</span></div>
+          <div><b>${title}</b> <span class="muted small">(Toplam: ${totalUSD.toFixed(2)} USD)</span></div>
           <button class="btn" data-badd="1" data-side="${side}" data-group="${groupKey}">+ Ekle</button>
         </div>
         <table>
-          <thead><tr><th>İsim</th><th class="right">USD</th><th>Not</th><th></th></tr></thead>
+          <thead>
+            <tr>
+              <th>İsim</th>
+              <th class="right">Tutar</th>
+              <th>PB</th>
+              <th class="right">USD (current)</th>
+              <th>Not</th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
-            ${(items || []).map(it => `
-              <tr>
-                <td><input data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="name" value="${escapeHtml(it.name)}"></td>
-                <td class="right"><input type="number" step="0.01" data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="valueUSD" value="${Number(it.valueUSD || 0)}"></td>
-                <td><input data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="note" value="${escapeHtml(it.note || "")}"></td>
-                <td><button class="btn danger" data-bdel="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}">Sil</button></td>
-              </tr>
-            `).join("")}
+            ${(items || []).map(it => {
+              const usd = toUSD(it.amount, it.currency);
+              return `
+                <tr>
+                  <td><input data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="name" value="${escapeHtml(it.name)}"></td>
+                  <td class="right"><input type="number" step="0.01" data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="amount" value="${Number(it.amount || 0)}"></td>
+                  <td>${mkCurrencySelect(it.currency || "USD", side, groupKey, it.id)}</td>
+                  <td class="right"><span class="muted">${usd.toFixed(2)}</span></td>
+                  <td><input data-bedit="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}" data-field="note" value="${escapeHtml(it.note || "")}"></td>
+                  <td><button class="btn danger" data-bdel="1" data-side="${side}" data-group="${groupKey}" data-id="${it.id}">Sil</button></td>
+                </tr>
+              `;
+            }).join("")}
           </tbody>
         </table>
       </div>
@@ -482,8 +549,15 @@ function renderBalanceUI() {
       const group = btn.getAttribute("data-group");
       const name = prompt("İsim (örn: Akbank, Kripto, Ahmet):");
       if (!name) return;
-      const v = Number(prompt("Tutar (USD):", "0") || 0);
-      addBalanceItem(ymKey, side, group, name, v, "");
+
+      const currency = (prompt("Para birimi (USD/TRY/RUB):", "USD") || "USD").toUpperCase();
+      if (!["USD","TRY","RUB"].includes(currency)) {
+        alert("Para birimi sadece USD/TRY/RUB olabilir.");
+        return;
+      }
+
+      const amt = Number(prompt(`Tutar (${currency}):`, "0") || 0);
+      addBalanceItem(ymKey, side, group, name, amt, currency, "");
       render();
     };
   });
@@ -500,49 +574,37 @@ function renderBalanceUI() {
   });
 
   // Inline edit
-  document.querySelectorAll("input[data-bedit='1']").forEach(inp => {
-    inp.onchange = () => {
-      const side = inp.getAttribute("data-side");
-      const group = inp.getAttribute("data-group");
-      const id = inp.getAttribute("data-id");
-      const field = inp.getAttribute("data-field");
+  document.querySelectorAll("[data-bedit='1']").forEach(el => {
+    el.onchange = () => {
+      const side = el.getAttribute("data-side");
+      const group = el.getAttribute("data-group");
+      const id = el.getAttribute("data-id");
+      const field = el.getAttribute("data-field");
       const patch = {};
-      if (field === "valueUSD") patch.valueUSD = Number(inp.value || 0);
-      else patch[field] = inp.value;
+      if (field === "amount") patch.amount = Number(el.value || 0);
+      else patch[field] = el.value;
       updateBalanceItem(ymKey, side, group, id, patch);
       render();
     };
   });
 }
 
-function ensureMonthInputs() {
-  // Optional: if your UI has year/month selects, keep defaults
-  const y = $("selYear");
-  const m = $("selMonth");
-  if (!y || !m) return;
-
-  if (!y.value) y.value = String(new Date().getFullYear());
-  if (!m.value) m.value = String(new Date().getMonth() + 1).padStart(2, "0");
-}
-
 /* =========================
    Main Render
 ========================= */
-function render() {
+async function render() {
   const data = loadData();
-
   ensureMonthInputs();
 
   setStatus([
     `Tx: ${data.transactions.length}`,
-    `Balance months: ${Object.keys(data.balanceSheets || {}).length}`,
+    `Balance months: ${Object.keys(data.balanceSheets || {}).length}`
   ].join("\n"));
 
   renderTxList();
   renderMonthlySummary();
-  renderBalanceUI();
+  await renderBalanceUI();
 }
-
 window.render = render;
 
 /* =========================
@@ -573,7 +635,7 @@ function wireEvents() {
       const parsed = JSON.parse(text);
       const data = migrateIfNeeded(parsed);
       saveData(data);
-      render();
+      await render();
       alert("JSON içe aktarıldı ✅");
     } catch {
       alert("JSON okunamadı ❌");
@@ -583,10 +645,10 @@ function wireEvents() {
   });
 
   // Reset
-  $("btnReset")?.addEventListener("click", () => {
+  $("btnReset")?.addEventListener("click", async () => {
     if (!confirm("Tüm veriyi sıfırlamak istiyor musun?")) return;
     localStorage.removeItem(STORAGE_KEY);
-    render();
+    await render();
   });
 
   // Month change
@@ -610,14 +672,14 @@ function wireEvents() {
       if ($("txAmount")) $("txAmount").value = "";
       if ($("txNote")) $("txNote").value = "";
 
-      render();
+      await render();
     } catch (e) {
       alert(e.message || String(e));
     }
   });
 
   // Save Balance plan
-  $("btnSavePlan")?.addEventListener("click", () => {
+  $("btnSavePlan")?.addEventListener("click", async () => {
     const ymKey = getSelectedYMKey();
     saveBalancePlan(
       ymKey,
@@ -625,7 +687,7 @@ function wireEvents() {
       Number($("planLiab")?.value || 0),
       Number($("planEquity")?.value || 0)
     );
-    render();
+    await render();
     alert("Bilanço planı kaydedildi ✅");
   });
 }
@@ -633,7 +695,7 @@ function wireEvents() {
 /* =========================
    Boot
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   wireEvents();
-  render();
+  await render();
 });
