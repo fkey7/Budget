@@ -54,13 +54,58 @@ function normalizeBSMonth(bs) {
     plan: bs?.plan || { assetsUSD: 0, liabUSD: 0, equityUSD: 0 }
   };
 }
+function normalizeBSMonth(bs) {
+  // yeni format zaten doğruysa
+  if (bs?.assets?.cash?.items && bs?.liabilities?.credits?.items) return bs;
+
+  const mk = (title) => ({ title, items: [] });
+
+  // eski formatı kaybetmeden yeniye çevir (en azından boş ama kırılmaz)
+  const out = {
+    assets: {
+      cash: mk("Nakit"),
+      investments: mk("Yatırımlar"),
+      receivables: mk("Alacaklar")
+    },
+    liabilities: {
+      credits: mk("Krediler"),
+      cards: mk("Kredi Kartları"),
+      debts: mk("Borçlar")
+    },
+    plan: bs?.plan || { assetsUSD: 0, liabUSD: 0, equityUSD: 0 }
+  };
+
+  // Eğer eski format tek değer tutuyorsa (value/valueUSD) onu “tek item” olarak al
+  const tryCarry = (src, dstGroup, title) => {
+    if (!src) return;
+    const v = (src.valueUSD != null) ? src.valueUSD : src.value;
+    const note = src.note || "";
+    if (v != null) {
+      dstGroup.items.push({ id: "m1", name: title, valueUSD: Number(v || 0), note });
+    }
+  };
+
+  tryCarry(bs?.assets?.cash, out.assets.cash, "Nakit");
+  tryCarry(bs?.assets?.investments, out.assets.investments, "Yatırımlar");
+  tryCarry(bs?.assets?.receivables, out.assets.receivables, "Alacaklar");
+
+  tryCarry(bs?.liabilities?.credits, out.liabilities.credits, "Krediler");
+  tryCarry(bs?.liabilities?.cards, out.liabilities.cards, "Kredi Kartları");
+  tryCarry(bs?.liabilities?.debts, out.liabilities.debts, "Borçlar");
+
+  return out;
+}
+
 function migrateIfNeeded(d) {
   const base = defaultData();
 
+  // balanceSheets varsa normalize et, yoksa boş
   const bs = d.balanceSheets ?? base.balanceSheets;
   const fixed = {};
   for (const k of Object.keys(bs || {})) {
-    fixed[k] = normalizeBSMonth(bs[k]);
+    fixed[k] = (typeof normalizeBSMonth === "function")
+      ? normalizeBSMonth(bs[k])
+      : bs[k];
   }
 
   return {
