@@ -210,30 +210,27 @@ FX (USD base)
 - fetchUsdPerUnit(currency, dateISO):
   returns USD per 1 unit of currency.
 ========================= */
+// USD per 1 unit of currency
 async function fetchUsdPerUnit(currency, dateISO) {
   if (!currency || currency === "USD") return 1;
 
-  const date = dateISO || "latest";
-  const frankUrl = `https://api.frankfurter.app/${date}?from=USD&to=${encodeURIComponent(currency)}`;
-
   try {
-    const r = await fetch(frankUrl, { cache: "no-store" });
-    if (!r.ok) throw new Error("Frankfurter not ok");
+    const url = "https://open.er-api.com/v6/latest/USD";
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) throw new Error("ER API not ok");
+
     const j = await r.json();
-    const perUSD = Number(j?.rates?.[currency]);
-    if (!perUSD || !isFinite(perUSD)) throw new Error("Frankfurter bad rate");
-    return 1 / perUSD;
-  } catch (_) {
-    try {
-      const r2 = await fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" });
-      if (!r2.ok) throw new Error("ER API not ok");
-      const j2 = await r2.json();
-      const perUSD2 = Number(j2?.rates?.[currency]);
-      if (!perUSD2 || !isFinite(perUSD2)) throw new Error("ER API bad rate");
-      return 1 / perUSD2;
-    } catch (e2) {
-      throw new Error(`Kur çekilemedi: ${currency}.`);
+    const perUSD = Number(j?.rates?.[currency]); // currency per 1 USD
+
+    if (!perUSD || !isFinite(perUSD)) {
+      throw new Error("ER API bad rate");
     }
+
+    // 1 currency = ? USD
+    return 1 / perUSD;
+
+  } catch (e) {
+    throw new Error(`Kur çekilemedi: ${currency}.`);
   }
 }
 
