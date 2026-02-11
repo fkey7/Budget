@@ -5,182 +5,100 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bütçe</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    :root { --bd:#e9e9e9; --bg:#fff; --muted:#666; }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#fafafa; }
-    .container{ max-width:1100px; margin:0 auto; padding:14px; }
-    .card{ background:var(--bg); border:1px solid var(--bd); border-radius:16px; padding:14px; margin:12px 0; }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .right{ text-align:right; }
-    .muted{ color:var(--muted); }
-    .btn{ padding:10px 14px; border:1px solid var(--bd); background:#fff; border-radius:12px; cursor:pointer; }
-    .btn.primary{ border-color:#111; }
-    .btn.danger{ border-color:#f0b4b4; }
-    input, select{ padding:10px 12px; border:1px solid var(--bd); border-radius:12px; width:100%; box-sizing:border-box; }
-    .grid{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
-    .full{ grid-column: 1 / -1; }
-    .tabs{ display:flex; gap:10px; flex-wrap:wrap; }
-    .tabbtn{ padding:10px 14px; border-radius:12px; border:1px solid var(--bd); background:#fff; cursor:pointer; }
-    .tabbtn.active{ border-color:#111; font-weight:700; }
-    .hidden{ display:none !important; }
-    .mono{ white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    table{ width:100%; border-collapse:collapse; }
-    th,td{ border-bottom:1px solid var(--bd); padding:8px; vertical-align:middle; }
-    th{ text-align:left; }
-    .small{ font-size:12px; }
-    .pill{ display:inline-block; padding:6px 10px; border:1px solid var(--bd); border-radius:999px; }
-    canvas{ width:100%; height:260px; border:1px solid var(--bd); border-radius:12px; background:#fff; }
-    .monthgrid{ display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; }
-    .monthgrid input{ text-align:center; }
-  </style>
 </head>
 
 <body>
+  <!-- Login kilidi -->
+  <div id="appLock" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:520px;width:92%;border-radius:14px;padding:18px;">
+      <h3 style="margin:0 0 8px 0;">Giriş gerekiyor</h3>
+      <div class="muted small" style="margin-bottom:10px;">
+        Devam etmek için Google ile giriş yap.
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <span id="userLabel" class="muted">Giriş yapılmadı</span>
+        <button id="btnLogin" class="btn primary" type="button">Google ile Giriş</button>
+        <button id="btnLogout" class="btn" type="button" style="display:none;">Çıkış</button>
+      </div>
+    </div>
+  </div>
+
   <main class="container">
 
-    <!-- TOP BAR: LOGIN + PERIOD -->
-    <section class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div class="tabs">
-          <button class="tabbtn active" id="tabBtnBudget">Bütçe</button>
-          <button class="tabbtn" id="tabBtnTx">İşlemler</button>
-          <button class="tabbtn" id="tabBtnBal">Bilanço</button>
-        </div>
+    <!-- Basit sekmeler -->
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:14px 0;">
+      <button class="btn" id="btnTabBudget" type="button">Bütçe</button>
+      <button class="btn" id="btnTabTx" type="button">İşlemler</button>
+      <button class="btn" id="btnTabBal" type="button">Bilanço</button>
 
-        <div class="row">
-          <span class="pill">Dönem</span>
-          <label class="muted">Yıl</label>
+      <div style="margin-left:auto;" class="row">
+        <div>
+          <label class="small muted">Yıl</label>
           <select id="selYear"></select>
-          <label class="muted">Ay</label>
-          <select id="selMonth">
-            <option value="01">Ocak</option><option value="02">Şubat</option><option value="03">Mart</option><option value="04">Nisan</option>
-            <option value="05">Mayıs</option><option value="06">Haziran</option><option value="07">Temmuz</option><option value="08">Ağustos</option>
-            <option value="09">Eylül</option><option value="10">Ekim</option><option value="11">Kasım</option><option value="12">Aralık</option>
-          </select>
+        </div>
+        <div>
+          <label class="small muted">Ay</label>
+          <select id="selMonth"></select>
         </div>
       </div>
-
-      <div class="row" style="justify-content:space-between; margin-top:10px;">
-        <div class="row">
-          <input id="quickYM" style="max-width:180px;" type="text" placeholder="YYYY-MM (örn 2026-03)" />
-          <button class="btn" id="btnOpenYM">Ay Aç / Git</button>
-          <span class="muted small">Geçmiş yılları açıp veri girebilirsin.</span>
-        </div>
-
-        <div class="row" style="justify-content:flex-end;">
-          <span id="userLabel" class="muted">Giriş yapılmadı</span>
-          <button id="btnLogin" class="btn primary" type="button">Google ile Giriş</button>
-          <button id="btnLogout" class="btn" type="button">Çıkış</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- LOCK SCREEN -->
-    <section id="appLock" class="card">
-      <h2>Giriş gerekli</h2>
-      <div class="muted">
-        Verilerini görmek ve senkron kullanmak için <b>Google ile giriş</b> yap.
-      </div>
-    </section>
+    </div>
 
     <!-- ===================== BÜTÇE ===================== -->
-    <div id="tabBudget" class="hidden">
-      <section class="card">
-        <h2>Aylık Özet (USD)</h2>
-        <div id="budgetSummary" class="mono"></div>
-      </section>
+    <div id="tabBudget">
 
       <section class="card">
-        <h2>Kur Tahminleri (Bütçe için)</h2>
+        <h2>Bütçe (Plan / Gerçekleşen)</h2>
         <div class="muted small">
-          Burada <b>aylık tahmin</b> giriyorsun (1 USD = kaç TRY/RUB). Bütçe planları USD’ye bu tahminle çevrilir.
-          İşlemler ise girildiği gün internetten kur çeker ve geçmiş sabit kalır.
+          Planlar USD bazlıdır. Kur tahmini: Aylık Kur bölümünden girilir.
+          İşlemler: işlem girildiği anda kur çekilir ve USD değeri sabitlenir.
         </div>
         <hr />
         <div class="grid">
-          <div>
-            <h3>TRY (1 USD = ?)</h3>
-            <div id="tryMonths" class="monthgrid"></div>
-          </div>
-          <div>
-            <h3>RUB (1 USD = ?)</h3>
-            <div id="rubMonths" class="monthgrid"></div>
-          </div>
-          <div class="full row">
-            <button class="btn primary" id="btnSaveMonthlyRates">Kaydet</button>
-            <span class="muted small" id="ratesInfo"></span>
+          <div class="full">
+            <h3>Kategoriler</h3>
+            <div class="muted small">Gelir / Gider kategorilerini ekle, aylık planlarını gir.</div>
+            <div id="catBox"></div>
           </div>
         </div>
       </section>
 
       <section class="card">
-        <h2>Kategoriler (Plan)</h2>
-        <div class="grid">
-          <div>
-            <label>Tür</label>
-            <select id="catType">
-              <option value="income">Gelir</option>
-              <option value="expense">Gider</option>
-            </select>
-          </div>
-          <div>
-            <label>Para Birimi (Plan)</label>
-            <select id="catCurrency">
-              <option value="USD">USD</option>
-              <option value="TRY">TRY</option>
-              <option value="RUB">RUB</option>
-            </select>
-          </div>
-
-          <div class="full">
-            <label>Kategori adı</label>
-            <input id="catName" type="text" placeholder="Örn: Maaş, Kira, Market, Akbank..." />
-          </div>
-
-          <div>
-            <label>Yıllık Plan (seçilen para birimi)</label>
-            <input id="catYearly" type="number" step="0.01" placeholder="0" />
-          </div>
-          <div class="row" style="align-self:end;">
-            <button class="btn" id="btnEqualSplit">12 aya eşit dağıt</button>
-          </div>
-
-          <div class="full">
-            <label>Aylık Planlar</label>
-            <div id="catMonths" class="monthgrid"></div>
-          </div>
-
-          <div class="full row">
-            <button class="btn primary" id="btnAddCategory">Kategori Kaydet</button>
-          </div>
-        </div>
-
-        <hr />
-        <h3>Mevcut Kategoriler</h3>
-        <div id="catList" class="mono small"></div>
+        <h2>Aylık Kur Tahmini (Bütçe için)</h2>
+        <div class="muted small">Bu kurlar sadece bütçe plan dönüşümleri içindir (TRY/RUB).</div>
+        <div id="rateBox"></div>
       </section>
+
+      <section class="card">
+        <h2>Aylık Özet</h2>
+        <div id="monthlySummary" class="mono"></div>
+      </section>
+
     </div>
 
     <!-- ===================== İŞLEMLER ===================== -->
     <div id="tabTx" class="hidden">
+
       <section class="card">
         <h2>Yeni İşlem Ekle</h2>
         <div class="grid">
           <div>
-            <label>Tür</label>
+            <label>Tip</label>
             <select id="txType">
               <option value="expense">Gider</option>
               <option value="income">Gelir</option>
             </select>
           </div>
+
           <div>
             <label>Tarih</label>
             <input id="txDate" type="date" />
           </div>
+
           <div>
             <label>Tutar</label>
-            <input id="txAmount" type="number" step="0.01" />
+            <input id="txAmount" type="number" step="0.01" placeholder="0.00" />
           </div>
+
           <div>
             <label>Para Birimi</label>
             <select id="txCurrency">
@@ -189,16 +107,24 @@
               <option value="RUB">RUB</option>
             </select>
           </div>
+
           <div class="full">
             <label>Kategori</label>
             <select id="txCategory"></select>
+            <div class="muted small" style="margin-top:6px;">
+              🔁 **Otomasyon:** Eğer kategori adı bilanço kalem adıyla aynıysa:  
+              - Borç kalemi ise **borç düşer** + aynı isimli yatırım kalemi **artar**  
+              - Varlık kalemi ise **varlık artar**
+            </div>
           </div>
+
           <div class="full">
             <label>Not</label>
             <input id="txNote" type="text" placeholder="Açıklama..." />
           </div>
+
           <div class="full row">
-            <button class="btn primary" id="btnAddTx">Kaydet</button>
+            <button class="btn primary" id="btnAddTx" type="button">Kaydet</button>
             <span class="muted small" id="txInfo"></span>
           </div>
         </div>
@@ -212,9 +138,9 @@
       <section class="card">
         <h2>Yedek / Geri Yükle</h2>
         <div class="row">
-          <button class="btn" id="btnExport">Export JSON</button>
+          <button class="btn" id="btnExport" type="button">Export JSON</button>
           <input id="fileImport" type="file" accept="application/json" />
-          <button class="btn danger" id="btnReset">Reset</button>
+          <button class="btn danger" id="btnReset" type="button">Reset</button>
         </div>
       </section>
 
@@ -226,11 +152,15 @@
 
     <!-- ===================== BİLANÇO ===================== -->
     <div id="tabBal" class="hidden">
+
       <section class="card">
-        <h2>Bilanço (USD)</h2>
-        <div class="muted small">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;">Bilanço (USD)</h2>
+          <button class="btn" id="btnCopyPrevMonth" type="button">Önceki aydan kopyala</button>
+        </div>
+
+        <div class="muted small" style="margin-top:10px;">
           Varlıklar ve Borçlar detaylı kalemlerle tutulur. Toplamlar otomatik hesaplanır. Equity = Assets - Liabilities.
-          Ayrıca işlem eklerken kategori adı bilanço kalem adıyla eşleşirse otomatik günceller (borç düşer, varlık artar).
         </div>
         <hr />
         <div id="balSummary" class="mono"></div>
@@ -243,7 +173,7 @@
           <div><label>Plan Borç (USD)</label><input id="planLiab" type="number" step="0.01" /></div>
           <div class="full"><label>Plan Equity (USD)</label><input id="planEquity" type="number" step="0.01" /></div>
           <div class="full row">
-            <button class="btn primary" id="btnSavePlan">Planı Kaydet</button>
+            <button class="btn primary" id="btnSavePlan" type="button">Planı Kaydet</button>
           </div>
         </div>
       </section>
@@ -265,12 +195,12 @@
       </section>
 
       <section class="card">
-        <h2>Trend (Aylık)</h2>
+        <h2>Trend (Plan vs Actual Equity)</h2>
         <div class="grid">
           <div><label>Başlangıç (YYYY-MM)</label><input id="trendFrom" type="text" placeholder="2026-01" /></div>
           <div><label>Bitiş (YYYY-MM)</label><input id="trendTo" type="text" placeholder="2026-12" /></div>
           <div class="full row">
-            <button class="btn primary" id="btnTrend">Grafiği Oluştur</button>
+            <button class="btn primary" id="btnTrend" type="button">Grafiği Oluştur</button>
           </div>
           <div class="full">
             <canvas id="trendCanvas" width="1000" height="260"></canvas>
@@ -280,6 +210,7 @@
           </div>
         </div>
       </section>
+
     </div>
 
   </main>
