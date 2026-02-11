@@ -1,4 +1,5 @@
 // firebase.js  (ES Module)
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
@@ -16,34 +17,25 @@ import {
   onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
+
 /* =========================
-   🔴 BURAYI DOLDUR
-   Firebase Console > Project Settings > Your Apps > Web App
+   🔴 BURAYA kendi config'in gelecek
 ========================= */
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
+  apiKey: "BURAYA_APIKEY",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
+  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
   projectId: "budget-pro-1cfcc",
-  storageBucket: "budget-pro-1cfcc.firebasestorage.app",
+  storageBucket: "budget-pro-1cfcc.appspot.com",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W"
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-};
 
-/* ========================= */
+/* =========================
+   INIT
+========================= */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -52,8 +44,9 @@ const provider = new GoogleAuthProvider();
 
 const STORAGE_KEY = "butce_data_v1";
 
+
 /* =========================
-   UI Helpers
+   UI
 ========================= */
 
 function setUserUI(user) {
@@ -75,8 +68,9 @@ function setUserUI(user) {
   }
 }
 
+
 /* =========================
-   Cloud
+   CLOUD
 ========================= */
 
 async function cloudLoad(uid) {
@@ -88,8 +82,9 @@ async function cloudSave(uid, data) {
   await set(ref(db, `users/${uid}/appData`), data);
 }
 
+
 /* =========================
-   Login Events
+   LOGIN BUTTON EVENTS
 ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -108,8 +103,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
 });
 
+
 /* =========================
-   Auth State
+   AUTH STATE
 ========================= */
 
 onAuthStateChanged(auth, async (user) => {
