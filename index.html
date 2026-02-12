@@ -7,18 +7,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Bütçe" />
   <meta name="theme-color" content="#6c5ce7" />
-
   <title>Bütçe Takip</title>
-
-  <!-- iOS icon -->
-  <link rel="apple-touch-icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236c5ce7' width='100' height='100' rx='20'/><text x='50' y='62' text-anchor='middle' font-size='45' fill='white'>%F0%9F%92%B0</text></svg>">
 
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
-  <link rel="stylesheet" href="style.css" />
+  <!-- ✅ cache kır -->
+  <link rel="stylesheet" href="style.css?v=20260212-1" />
 </head>
 
 <body>
@@ -32,29 +28,25 @@
       </div>
     </div>
 
-    <!-- Mini login (UI bozmasın) -->
     <div class="auth">
       <span id="userLabel" class="auth-label">Giriş yapılmadı</span>
-      <button id="btnLogin" class="auth-btn">Giriş</button>
-      <button id="btnLogout" class="auth-btn ghost" style="display:none;">Çıkış</button>
+      <button id="btnLogin" class="auth-btn" type="button">Giriş</button>
+      <button id="btnLogout" class="auth-btn ghost" type="button" style="display:none;">Çıkış</button>
     </div>
   </header>
 
   <main class="container">
-    <!-- TOP SUMMARY -->
     <section class="summary">
       <div class="summary-card income">
         <div class="summary-title">Gelir</div>
         <div class="summary-value" id="sumIncome">$0</div>
         <div class="summary-sub" id="sumIncomeSub">Plan / Gerçek</div>
       </div>
-
       <div class="summary-card expense">
         <div class="summary-title">Gider</div>
         <div class="summary-value" id="sumExpense">$0</div>
         <div class="summary-sub" id="sumExpenseSub">Plan / Gerçek</div>
       </div>
-
       <div class="summary-card net">
         <div class="summary-title">Net</div>
         <div class="summary-value" id="sumNet">$0</div>
@@ -62,63 +54,50 @@
       </div>
     </section>
 
-    <!-- TABS -->
     <div class="tabs">
       <div class="tab active" data-tab="budget">Bütçe</div>
       <div class="tab" data-tab="transactions">İşlemler</div>
       <div class="tab" data-tab="balance">Bilanço</div>
     </div>
 
-    <!-- BUDGET -->
     <section class="section active" id="budget-section">
       <div class="section-title">
         <span>Kur Tahminleri (Plan)</span>
-        <button class="add-btn" id="btnRatesEdit">
+        <button class="add-btn" id="btnRatesEdit" type="button">
           <i class="fas fa-pen"></i> Düzenle
         </button>
       </div>
       <div class="rates-card" id="ratesCard"></div>
 
-      <div class="section-title" style="margin-top: 18px;">
+      <div class="section-title" style="margin-top:18px;">
         <span>Gelir Kalemleri</span>
-        <button class="add-btn" onclick="openCategoryModal('income')">
+        <button class="add-btn" type="button" onclick="openCategoryModal('income')">
           <i class="fas fa-plus"></i> Ekle
         </button>
       </div>
       <div id="incomeBudgets"></div>
 
-      <div class="section-title" style="margin-top: 18px;">
+      <div class="section-title" style="margin-top:18px;">
         <span>Gider Kalemleri</span>
-        <button class="add-btn" onclick="openCategoryModal('expense')">
+        <button class="add-btn" type="button" onclick="openCategoryModal('expense')">
           <i class="fas fa-plus"></i> Ekle
         </button>
       </div>
       <div id="expenseBudgets"></div>
     </section>
 
-    <!-- TRANSACTIONS -->
     <section class="section" id="transactions-section">
       <div class="month-filter" id="monthFilter"></div>
       <div id="transactionsList"></div>
     </section>
 
-    <!-- BALANCE -->
     <section class="section" id="balance-section">
       <div class="month-filter" id="balMonthFilter"></div>
 
       <div class="balance-top">
-        <div class="balance-kpi">
-          <div class="kpi-title">Varlıklar</div>
-          <div class="kpi-value" id="balAssets">$0</div>
-        </div>
-        <div class="balance-kpi">
-          <div class="kpi-title">Borçlar</div>
-          <div class="kpi-value" id="balLiab">$0</div>
-        </div>
-        <div class="balance-kpi">
-          <div class="kpi-title">Öz Sermaye</div>
-          <div class="kpi-value" id="balEquity">$0</div>
-        </div>
+        <div class="balance-kpi"><div class="kpi-title">Varlıklar</div><div class="kpi-value" id="balAssets">$0</div></div>
+        <div class="balance-kpi"><div class="kpi-title">Borçlar</div><div class="kpi-value" id="balLiab">$0</div></div>
+        <div class="balance-kpi"><div class="kpi-title">Öz Sermaye</div><div class="kpi-value" id="balEquity">$0</div></div>
       </div>
 
       <div class="chart-card">
@@ -126,221 +105,25 @@
         <canvas id="balanceChart"></canvas>
       </div>
 
-      <div class="balance-grid">
-        <div class="balance-col">
-          <div class="section-title">
-            <span>Varlıklar</span>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Nakit</span>
-              <button class="mini-btn" onclick="openBalItemModal('asset','cash')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="asset-cash"></div>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Yatırımlar</span>
-              <button class="mini-btn" onclick="openBalItemModal('asset','invest')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="asset-invest"></div>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Alacaklar</span>
-              <button class="mini-btn" onclick="openBalItemModal('asset','recv')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="asset-recv"></div>
-          </div>
-        </div>
-
-        <div class="balance-col">
-          <div class="section-title">
-            <span>Borçlar</span>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Krediler</span>
-              <button class="mini-btn" onclick="openBalItemModal('liab','loan')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="liab-loan"></div>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Kredi Kartı</span>
-              <button class="mini-btn" onclick="openBalItemModal('liab','card')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="liab-card"></div>
-          </div>
-
-          <div class="group">
-            <div class="group-head">
-              <span>Diğer Borçlar</span>
-              <button class="mini-btn" onclick="openBalItemModal('liab','other')"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="group-body" id="liab-other"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="note muted">
-        Kural: İşlem kategorisi adı bilanço alt kalem adıyla eşleşirse otomasyon çalışır.
-        <br/>• Aynı isimli borç varsa → borç düşer
-        <br/>• Aynı isimli varlık da varsa → varlık artar
-        <br/>• Varlık yoksa → varlık tarafına dokunma
-      </div>
+      <div class="note muted">Bilanço ekranı çalışmıyorsa %99 app.js yüklenmiyordur.</div>
     </section>
   </main>
 
-  <!-- FAB -->
-  <button class="fab" onclick="openTransactionModal()">
+  <button class="fab" type="button" onclick="openTransactionModal()">
     <i class="fas fa-plus"></i>
   </button>
 
-  <!-- Install Banner -->
-  <div class="install-banner" id="installBanner">
-    <h3>📱 iPhone'a Yükle</h3>
-    <p>Bu uygulamayı ana ekranınıza ekleyebilirsiniz:</p>
-    <div class="steps">
-      1️⃣ Safari'de <strong>Paylaş</strong> butonuna tıklayın <i class="fas fa-share-square"></i><br>
-      2️⃣ <strong>"Ana Ekrana Ekle"</strong> seçin<br>
-      3️⃣ <strong>"Ekle"</strong> butonuna tıklayın
-    </div>
-    <button class="install-close" onclick="hideInstallBanner()">Anladım</button>
-  </div>
+  <!-- Modalların div’leri sende mevcutsa kalsın; yoksa app.js zaten patlar. -->
 
-  <!-- Category Modal -->
-  <div class="modal-overlay" id="categoryModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="catModalTitle">Kategori</h2>
-        <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
-      </div>
+  <!-- ✅ Sıra önemli: önce firebase module, sonra app -->
+  <script type="module" src="firebase.js?v=20260212-1"></script>
+  <script defer src="app.js?v=20260212-1"></script>
 
-      <div class="modal-body">
-        <label>Kategori Adı</label>
-        <input id="catName" type="text" placeholder="Örn: Maaş, Kira, Akbank..." />
-
-        <div class="row2">
-          <div>
-            <label>Para Birimi (Plan)</label>
-            <select id="catCurrency">
-              <option value="USD">USD</option>
-              <option value="TRY">TRY</option>
-              <option value="RUB">RUB</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Yıllık Plan</label>
-            <input id="catYearly" type="number" step="0.01" placeholder="0" />
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn primary" id="btnSaveCategory">Kaydet</button>
-        </div>
-
-        <div class="muted small">Not: Yıllık plan, seçili ay için 12’ye bölünüp ay bazına yazılır. İstersen sonra ay bazında düzenlersin.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transaction Modal -->
-  <div class="modal-overlay" id="transactionModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Yeni İşlem</h2>
-        <button class="modal-close" onclick="closeModal('transactionModal')">×</button>
-      </div>
-
-      <div class="type-toggle">
-        <button class="type-btn income active" onclick="setTransactionType('income')">
-          <i class="fas fa-arrow-down"></i> Gelir
-        </button>
-        <button class="type-btn expense" onclick="setTransactionType('expense')">
-          <i class="fas fa-arrow-up"></i> Gider
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="row2">
-          <div>
-            <label>Tarih</label>
-            <input id="txDate" type="date" />
-          </div>
-          <div>
-            <label>Para Birimi</label>
-            <select id="txCurrency">
-              <option value="USD">USD</option>
-              <option value="TRY">TRY</option>
-              <option value="RUB">RUB</option>
-            </select>
-          </div>
-        </div>
-
-        <label>Tutar</label>
-        <input id="txAmount" type="number" step="0.01" placeholder="0" />
-
-        <label>Kategori</label>
-        <select id="txCategory"></select>
-
-        <label>Not</label>
-        <input id="txNote" type="text" placeholder="Açıklama..." />
-
-        <div class="modal-actions">
-          <button class="btn primary" id="btnAddTx">Kaydet</button>
-        </div>
-
-        <div class="muted small" id="txInfo"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Balance Item Modal -->
-  <div class="modal-overlay" id="balItemModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="balItemTitle">Kalem Ekle</h2>
-        <button class="modal-close" onclick="closeModal('balItemModal')">×</button>
-      </div>
-
-      <div class="modal-body">
-        <label>Kategori Adı</label>
-        <input id="balItemName" type="text" placeholder="Örn: Akbank, Ahmet, BTC..." />
-
-        <div class="row2">
-          <div>
-            <label>Para Birimi</label>
-            <select id="balItemCurrency">
-              <option value="USD">USD</option>
-              <option value="TRY">TRY</option>
-              <option value="RUB">RUB</option>
-            </select>
-          </div>
-          <div>
-            <label>Tutar</label>
-            <input id="balItemAmount" type="number" step="0.01" placeholder="0" />
-          </div>
-        </div>
-
-        <label>Not</label>
-        <input id="balItemNote" type="text" placeholder="Açıklama..." />
-
-        <div class="modal-actions">
-          <button class="btn primary" id="btnSaveBalItem">Kaydet</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script type="module" src="firebase.js"></script>
-  <script src="app.js"></script>
+  <!-- ✅ app.js yüklenmezse bunu gör -->
+  <script>
+    window.addEventListener("error", (e)=> {
+      if ((e.filename||"").includes("app.js")) alert("app.js yüklenemedi / hata verdi. Dosya adı (app.js) ve GitHub Pages path kontrol.");
+    });
+  </script>
 </body>
 </html>
