@@ -1774,7 +1774,7 @@
         </div>
     </div>
 
-    <script type="module">
+    <script>
         // ==================== DARK MODE ====================
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
@@ -1783,54 +1783,6 @@
             document.documentElement.classList.toggle('dark', e.matches);
         });
 
-    // ==================== FIREBASE STORAGE ====================
-
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
-  authDomain: "budget-pro-1cfcc.firebaseapp.com",
-  databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
-  projectId: "budget-pro-1cfcc",
-  storageBucket: "budget-pro-1cfcc.firebasestorage.app",
-  messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
-};
-
-// Firebase import CDN
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const USER_ID = "defaultUser"; // tek kullanıcı şimdilik
-
-async function saveData() {
-const data = { categories, transactions, exchangeRates, monthlyRates, nextCategoryId };
-await set(ref(db, "users/" + USER_ID), data);
-}
-
-async function loadData() {
-const snap = await get(ref(db, "users/" + USER_ID));
-if (!snap.exists()) return;
-
-const data = snap.val();
-
-categories = data.categories || { income: [], expense: [] };
-transactions = data.transactions || [];
-exchangeRates = data.exchangeRates || { USD: 1, TRY: 38.5, RUB: 96 };
-
-if (data.monthlyRates) {
-monthlyRates = data.monthlyRates;
-} else if (data.exchangeRates) {
-monthlyRates = {
-TRY: Array(12).fill(data.exchangeRates.TRY || 38.5),
-RUB: Array(12).fill(data.exchangeRates.RUB || 96)
-};
-}
-
-nextCategoryId = data.nextCategoryId || 1;
-}
 
         // ==================== APP STATE ====================
         let categories = { income: [], expense: [] };
@@ -4854,5 +4806,81 @@ nextCategoryId = data.nextCategoryId || 1;
             setTimeout(showInstallBanner, 2000);
         }
     </script>
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
+    authDomain: "budget-pro-1cfcc.firebaseapp.com",
+    databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
+    projectId: "budget-pro-1cfcc",
+    storageBucket: "budget-pro-1cfcc.firebasestorage.app",
+    messagingSenderId: "756796109010",
+    appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const STORAGE_KEY = "budgetAppData";
+  const PATH = "users/defaultUser/appData";
+
+  function loadLocal() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  }
+  function saveLocal(obj) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {}
+  }
+
+  const originalSaveData = window.saveData;
+  const originalLoadData = window.loadData;
+
+  async function pullFromCloud() {
+    const snap = await get(ref(db, PATH));
+    if (!snap.exists()) return;
+    saveLocal(snap.val());
+    originalLoadData && originalLoadData();
+    window.updateAll && window.updateAll();
+  }
+
+  async function pushToCloud() {
+    const local = loadLocal();
+    if (!local) return;
+    await set(ref(db, PATH), local);
+  }
+
+  // saveData override: önce local, sonra cloud
+  window.saveData = function() {
+    if (typeof originalSaveData === "function") originalSaveData();
+    clearTimeout(window.__fbSaveTimer);
+    window.__fbSaveTimer = setTimeout(() => {
+      pushToCloud().catch(err => console.error("Firebase push error:", err));
+    }, 400);
+  };
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const snap = await get(ref(db, PATH));
+      if (snap.exists()) {
+        await pullFromCloud();
+      } else {
+        await pushToCloud();
+      }
+
+      onValue(ref(db, PATH), (s) => {
+        if (!s.exists()) return;
+        saveLocal(s.val());
+        originalLoadData && originalLoadData();
+        window.updateAll && window.updateAll();
+      });
+    } catch (e) {
+      console.error("Firebase sync error:", e);
+    }
+  });
+</script>
 </body>
 </html>
