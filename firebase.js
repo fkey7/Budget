@@ -1,16 +1,12 @@
-// firebase.js (type="module") - LOCK FIX + POPUP FIRST + REDIRECT FALLBACK
-
+// firebase.js (type="module") - STABLE POPUP VERSION
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
 import {
   getDatabase,
   ref,
@@ -20,7 +16,10 @@ import {
   onValue
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-/* === SENİN CONFIG === */
+/**
+ * ✅ Senin Budget Pro config
+ * Not: databaseURL çok önemli
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
   authDomain: "budget-pro-1cfcc.firebaseapp.com",
@@ -28,25 +27,17 @@ const firebaseConfig = {
   projectId: "budget-pro-1cfcc",
   storageBucket: "budget-pro-1cfcc.firebasestorage.app",
   messagingSenderId: "756796109010",
-  appId: "1:756796109010:web:fdc3771eb878813fa97d0b",
-  measurementId: "G-NRMF74RK7W"
+  appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
 
-const STORAGE_KEY = "butce_data_v1";
-
-/* === UI helpers (class çakışsa bile kesin çalışsın) === */
-function lockApp(locked) {
-  const lock = document.getElementById("appLock");
-  if (!lock) return;
-  lock.style.display = locked ? "flex" : "none";  // 🔥 asıl fix burada
-}
+// app.js ile aynı olmalı
+const STORAGE_KEY = "butce_data_v2";
 
 function show(el, yes) {
   if (!el) return;
@@ -69,7 +60,6 @@ function setUserUI(user) {
   }
 }
 
-/* === Cloud I/O === */
 async function cloudLoad(uid) {
   const snap = await get(child(ref(db), `users/${uid}/appData`));
   return snap.exists() ? snap.val() : null;
@@ -80,84 +70,66 @@ async function cloudSave(uid, data) {
 }
 
 function safeRender() {
-  try { window.render && window.render(); } catch (e) { console.error("render error", e); }
+  try { window.render && window.render(); } catch {}
 }
 
-/* === Boot === */
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
   const btnLogin = document.getElementById("btnLogin");
   const btnLogout = document.getElementById("btnLogout");
 
-  // login
-  btnLogin?.addEventListener("click", async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  if (btnLogin) {
+    btnLogin.type = "button";
+    btnLogin.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error("Login error:", e);
+        alert("Giriş başarısız: " + (e?.message || e));
+      }
+    });
+  }
 
-    try {
-      // 1) popup dene
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.warn("Popup başarısız, redirect denenecek:", err);
-      // 2) fallback redirect
-      await signInWithRedirect(auth, provider);
-    }
-  });
-
-  // logout
-  btnLogout?.addEventListener("click", async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await signOut(auth);
-    setUserUI(null);
-    lockApp(true);
-  });
-
-  // Redirect dönüşünü yakala (varsa)
-  try {
-    await getRedirectResult(auth);
-  } catch (e) {
-    console.warn("getRedirectResult error:", e);
+  if (btnLogout) {
+    btnLogout.type = "button";
+    btnLogout.addEventListener("click", async () => {
+      await signOut(auth);
+      setUserUI(null);
+    });
   }
 });
 
-/* === Auth state === */
 onAuthStateChanged(auth, async (user) => {
   setUserUI(user);
 
-  if (!user) {
-    lockApp(true);
-    return;
-  }
+  // giriş yoksa: local çalışsın, sync yapma
+  if (!user) return;
 
-  // ✅ login oldu: kilidi kaldır
-  lockApp(false);
-
-  // 1) Cloud varsa local'e yaz
+  // 1) cloud varsa → local'e yaz
   const cloud = await cloudLoad(user.uid);
   if (cloud) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud));
     safeRender();
   } else {
-    // 2) Cloud yoksa local'i cloud'a yükle
+    // 2) cloud yoksa → local varsa cloud'a yükle
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try { await cloudSave(user.uid, JSON.parse(raw)); } catch {}
     }
   }
 
-  // 3) Live sync
+  // 3) live sync
   onValue(ref(db, `users/${user.uid}/appData`), (snap) => {
     if (!snap.exists()) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snap.val()));
     safeRender();
   });
 
-  // 4) saveData override (local + cloud)
+  // 4) saveData override
   const originalSaveData = window.saveData;
   if (typeof originalSaveData === "function") {
     window.saveData = (data) => {
       originalSaveData(data);
-      cloudSave(user.uid, data).catch(() => {});
+      cloudSave(user.uid, data).catch(()=>{});
     };
   }
 });
