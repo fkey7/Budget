@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Bütçe" />
   <meta name="theme-color" content="#6c5ce7" />
   <title>Bütçe Takip</title>
 
@@ -13,12 +10,21 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
-  <!-- ✅ cache kır -->
-  <link rel="stylesheet" href="style.css?v=20260212-1" />
+  <link rel="stylesheet" href="style.css?v=20260212-2" />
+
+  <style>
+    #bootLog{
+      position:fixed;left:12px;right:12px;bottom:12px;
+      background:#111;color:#0f0;font:12px/1.35 ui-monospace,Menlo,monospace;
+      padding:10px;border-radius:12px;opacity:.95;z-index:9999;
+      max-height:40vh;overflow:auto;
+    }
+  </style>
 </head>
 
 <body>
-  <!-- HEADER -->
+  <div id="bootLog">Boot: başlıyor...</div>
+
   <header class="header">
     <div class="brand">
       <div class="brand-icon">💰</div>
@@ -27,7 +33,6 @@
         <div class="brand-sub" id="headerSubtitle">Plan / Gerçekleşen</div>
       </div>
     </div>
-
     <div class="auth">
       <span id="userLabel" class="auth-label">Giriş yapılmadı</span>
       <button id="btnLogin" class="auth-btn" type="button">Giriş</button>
@@ -93,7 +98,6 @@
 
     <section class="section" id="balance-section">
       <div class="month-filter" id="balMonthFilter"></div>
-
       <div class="balance-top">
         <div class="balance-kpi"><div class="kpi-title">Varlıklar</div><div class="kpi-value" id="balAssets">$0</div></div>
         <div class="balance-kpi"><div class="kpi-title">Borçlar</div><div class="kpi-value" id="balLiab">$0</div></div>
@@ -105,7 +109,7 @@
         <canvas id="balanceChart"></canvas>
       </div>
 
-      <div class="note muted">Bilanço ekranı çalışmıyorsa %99 app.js yüklenmiyordur.</div>
+      <div class="note muted">Bilanço test</div>
     </section>
   </main>
 
@@ -113,17 +117,35 @@
     <i class="fas fa-plus"></i>
   </button>
 
-  <!-- Modalların div’leri sende mevcutsa kalsın; yoksa app.js zaten patlar. -->
-
-  <!-- ✅ Sıra önemli: önce firebase module, sonra app -->
-  <script type="module" src="firebase.js?v=20260212-1"></script>
-  <script defer src="app.js?v=20260212-1"></script>
-
-  <!-- ✅ app.js yüklenmezse bunu gör -->
+  <!-- ✅ BOOT LOG -->
   <script>
-    window.addEventListener("error", (e)=> {
-      if ((e.filename||"").includes("app.js")) alert("app.js yüklenemedi / hata verdi. Dosya adı (app.js) ve GitHub Pages path kontrol.");
+    const boot = document.getElementById("bootLog");
+    const log = (s)=>{ boot.textContent += "\n" + s; boot.scrollTop = boot.scrollHeight; console.log(s); };
+    log("Boot: HTML yüklendi");
+
+    window.addEventListener("error", (e)=>{
+      log("❌ JS error: " + e.message);
+      alert("JS HATASI: " + e.message);
+    });
+
+    window.addEventListener("unhandledrejection", (e)=>{
+      log("❌ Promise error: " + (e.reason?.message||e.reason));
+      alert("PROMISE HATASI: " + (e.reason?.message||e.reason));
     });
   </script>
+
+  <!-- ✅ Önce firebase module -->
+  <script type="module">
+    const boot = document.getElementById("bootLog");
+    const log = (s)=>{ boot.textContent += "\n" + s; boot.scrollTop = boot.scrollHeight; console.log(s); };
+
+    log("firebase.js yükleniyor...");
+    import("./firebase.js?v=20260212-2")
+      .then(()=>log("✅ firebase.js OK"))
+      .catch((e)=>{ log("❌ firebase.js FAIL: " + e.message); alert("firebase.js hata: " + e.message); });
+  </script>
+
+  <!-- ✅ Sonra app.js -->
+  <script defer src="app.js?v=20260212-2" onload="document.getElementById('bootLog').textContent += '\n✅ app.js OK'" onerror="alert('app.js yüklenemedi')"></script>
 </body>
 </html>
