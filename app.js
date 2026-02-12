@@ -1,174 +1,98 @@
-/* app.js - Budget Pro v2
-   - Arkadaş UI mantığı: tabs + fab + modal
-   - Plan kur: aylık tahmin (USD->TRY, USD->RUB)
-   - İşlem kur: işlem anında çekilir, USD kilitlenir (sonradan değişmez)
-   - Bilanço: alt kalemler + isim eşleşince otomasyon
-   - Grafik: Assets / Liabilities / Equity (aylık)
-*/
+/* app.js - Budget Pro v2 (NULL-SAFE) */
 
 const STORAGE_KEY = "butce_data_v2";
-const CURRENCIES = ["USD","TRY","RUB"];
-
-let currentTxType = "income"; // income/expense
-let currentTab = "budget";
-let selectedYM = ""; // YYYY-MM
+let currentTxType = "income";
+let selectedYM = "";
 let _balanceChart = null;
 
-// Balance item modal state
-let balModalSide = null;   // 'asset' | 'liab'
-let balModalGroup = null;  // cash/invest/recv or loan/card/other
+// Modal state
+let balModalSide = null;
+let balModalGroup = null;
 
-// ----------------------- Data model -----------------------
-function defaultData() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,"0");
-  const ym = `${y}-${m}`;
+function $(id){ return document.getElementById(id); }
+function fmtUSD(n){ return `$${Number(n||0).toFixed(0)}`; }
+function fmtUSD2(n){ return `$${Number(n||0).toFixed(2)}`; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function ymFromDate(iso){ const [y,m]=iso.split("-"); return `${y}-${m}`; }
+function esc(s){ return String(s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])); }
+function norm(s){ return String(s||"").trim().toLowerCase(); }
 
+function defaultData(){
+  const ym = ymFromDate(todayISO());
   return {
     version: 2,
-    app: {
-      baseCurrency: "USD",
-      createdAt: Date.now(),
-    },
-    // plan categories
-    categories: {
-      income: [],  // {id,name,currency,yearly,months:{'YYYY-MM':amount}}
-      expense: [],
-      nextId: 1
-    },
-    // plan monthly rates: for each ym -> {TRY: number (1 USD = ? TRY), RUB: number}
-    planRates: {
-      [ym]: { TRY: null, RUB: null }
-    },
-    // transactions: {id,date,ym,type,currency,amountOriginal,usdLocked,rateUsed,note,categoryName}
+    categories: { income: [], expense: [], nextId: 1 },
+    planRates: { [ym]: { TRY:null, RUB:null } },
     transactions: [],
-    // balance snapshots per month:
-    // balance[ym] = { assets:{cash:[],invest:[],recv:[]}, liab:{loan:[],card:[],other:[]} }
-    // each item: {id,name,currency,amountOriginal,usdLocked,rateUsed,note}
     balance: {},
     balanceNextId: 1
   };
 }
-
-function loadData() {
+function loadData(){
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return defaultData();
-  try {
-    const d = JSON.parse(raw);
-    return migrate(d);
-  } catch {
-    return defaultData();
-  }
+  if(!raw) return defaultData();
+  try { return migrate(JSON.parse(raw)); } catch { return defaultData(); }
 }
-
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-window.saveData = saveData; // firebase.js override için
-
-function migrate(d) {
+function saveData(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+window.saveData = saveData;
+function migrate(d){
   const base = defaultData();
-  const out = { ...base, ...d };
-  out.app = { ...base.app, ...(d.app||{}) };
-
-  // categories
-  out.categories = d.categories || base.categories;
-  if (!out.categories.nextId) out.categories.nextId = 1;
-
-  // planRates
-  out.planRates = d.planRates || base.planRates;
-
-  // transactions
-  out.transactions = Array.isArray(d.transactions) ? d.transactions : [];
-
-  // balance
-  out.balance = d.balance || {};
-  out.balanceNextId = d.balanceNextId || 1;
-
-  return out;
+  return {
+    ...base,
+    ...d,
+    categories: d.categories || base.categories,
+    planRates: d.planRates || base.planRates,
+    transactions: Array.isArray(d.transactions) ? d.transactions : [],
+    balance: d.balance || {},
+    balanceNextId: d.balanceNextId || 1
+  };
 }
-
-// ----------------------- Helpers -----------------------
-function $(id){ return document.getElementById(id); }
-function fmtUSD(n){ return `$${Number(n||0).toFixed(0)}`; }
-function fmtUSD2(n){ return `$${Number(n||0).toFixed(2)}`; }
-function toISODate(d){
-  const x = new Date(d);
-  const y = x.getFullYear();
-  const m = String(x.getMonth()+1).padStart(2,"0");
-  const day = String(x.getDate()).padStart(2,"0");
-  return `${y}-${m}-${day}`;
-}
-function ymFromDate(iso){
-  const [y,m] = iso.split("-");
-  return `${y}-${m}`;
-}
-function todayISO(){ return toISODate(new Date()); }
 
 function ensureSelectedYM(data){
-  if (selectedYM) return;
-  // seçili ay yoksa: bugün
+  if(selectedYM) return;
   selectedYM = ymFromDate(todayISO());
-
-  // planRates yoksa oluştur
-  if (!data.planRates[selectedYM]) data.planRates[selectedYM] = { TRY:null, RUB:null };
+  if(!data.planRates[selectedYM]) data.planRates[selectedYM] = {TRY:null,RUB:null};
 }
 
-// ----------------------- Tabs -----------------------
+function openModal(id){ const el=$(id); if(el) el.classList.add("active"); }
+function closeModal(id){ const el=$(id); if(el) el.classList.remove("active"); }
+window.closeModal = closeModal;
+
 function wireTabs(){
   document.querySelectorAll(".tab").forEach(t=>{
     t.addEventListener("click", ()=>{
       const tab = t.getAttribute("data-tab");
-      setTab(tab);
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      ["budget","transactions","balance"].forEach(k=>{
+        const sec = $(`${k}-section`);
+        if(sec) sec.classList.remove("active");
+      });
+      const target = $(`${tab}-section`);
+      if(target) target.classList.add("active");
+      render();
     });
   });
 }
-function setTab(tab){
-  currentTab = tab;
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add("active");
-
-  ["budget","transactions","balance"].forEach(k=>{
-    $(`${k}-section`).classList.remove("active");
-  });
-  $(`${tab}-section`).classList.add("active");
-
-  render();
-}
-
-// ----------------------- Modals -----------------------
-function openModal(id){ $(id).classList.add("active"); }
-function closeModal(id){ $(id).classList.remove("active"); }
-window.closeModal = closeModal;
 
 function openCategoryModal(type){
-  const data = loadData();
-  ensureSelectedYM(data);
-
   window._catType = type;
-  $("catModalTitle").textContent = type === "income" ? "Gelir Kategorisi" : "Gider Kategorisi";
-  $("catName").value = "";
-  $("catCurrency").value = "USD";
-  $("catYearly").value = "";
+  const title = $("catModalTitle");
+  if(title) title.textContent = type==="income" ? "Gelir Kategorisi" : "Gider Kategorisi";
+  if($("catName")) $("catName").value="";
+  if($("catCurrency")) $("catCurrency").value="USD";
+  if($("catYearly")) $("catYearly").value="";
   openModal("categoryModal");
 }
 window.openCategoryModal = openCategoryModal;
 
 function openTransactionModal(){
-  const data = loadData();
-  ensureSelectedYM(data);
-
-  // default date
-  $("txDate").value = todayISO();
-  $("txCurrency").value = "USD";
-  $("txAmount").value = "";
-  $("txNote").value = "";
-
-  // fill categories
+  if($("txDate")) $("txDate").value = todayISO();
+  if($("txCurrency")) $("txCurrency").value="USD";
+  if($("txAmount")) $("txAmount").value="";
+  if($("txNote")) $("txNote").value="";
   fillTxCategorySelect(currentTxType);
-  $("txInfo").textContent = "İşlem girildiği an kur çekilir ve USD değeri kilitlenir.";
+  if($("txInfo")) $("txInfo").textContent="İşlem girildiği an kur çekilir ve USD değeri kilitlenir.";
   openModal("transactionModal");
 }
 window.openTransactionModal = openTransactionModal;
@@ -176,129 +100,91 @@ window.openTransactionModal = openTransactionModal;
 function setTransactionType(t){
   currentTxType = t;
   document.querySelectorAll(".type-btn").forEach(b=>b.classList.remove("active"));
-  if (t==="income") document.querySelector(".type-btn.income")?.classList.add("active");
-  if (t==="expense") document.querySelector(".type-btn.expense")?.classList.add("active");
+  if(t==="income") document.querySelector(".type-btn.income")?.classList.add("active");
+  if(t==="expense") document.querySelector(".type-btn.expense")?.classList.add("active");
   fillTxCategorySelect(t);
 }
 window.setTransactionType = setTransactionType;
 
-// Balance item modal
 function openBalItemModal(side, group){
   balModalSide = side;
   balModalGroup = group;
-
-  const sideName = side==="asset" ? "Varlık" : "Borç";
-  const groupNameMap = {
-    cash:"Nakit", invest:"Yatırımlar", recv:"Alacaklar",
-    loan:"Krediler", card:"Kredi Kartı", other:"Diğer Borçlar"
-  };
-  $("balItemTitle").textContent = `${sideName} Kalemi Ekle • ${groupNameMap[group]||""}`;
-
-  $("balItemName").value = "";
-  $("balItemCurrency").value = "USD";
-  $("balItemAmount").value = "";
-  $("balItemNote").value = "";
+  const title = $("balItemTitle");
+  if(title) title.textContent = "Kalem Ekle";
+  if($("balItemName")) $("balItemName").value="";
+  if($("balItemCurrency")) $("balItemCurrency").value="USD";
+  if($("balItemAmount")) $("balItemAmount").value="";
+  if($("balItemNote")) $("balItemNote").value="";
   openModal("balItemModal");
 }
 window.openBalItemModal = openBalItemModal;
 
-// ----------------------- Rates (Plan) -----------------------
-function renderRatesCard(data){
+function addCategory(){
+  const data = loadData();
   ensureSelectedYM(data);
-  const r = data.planRates[selectedYM] || {TRY:null,RUB:null};
-  const t = (r.TRY==null) ? "—" : String(r.TRY);
-  const ru = (r.RUB==null) ? "—" : String(r.RUB);
 
-  $("ratesCard").innerHTML =
-    `<div><b>Seçili Ay:</b> ${selectedYM}</div>
-     <div style="margin-top:6px;">
-       <div><b>1 USD =</b> <span>${t}</span> <b>TRY</b></div>
-       <div><b>1 USD =</b> <span>${ru}</span> <b>RUB</b></div>
-     </div>
-     <div class="muted small" style="margin-top:8px;">
-       Plan hesapları bu aylık tahmin kurlarla USD’ye çevrilir.
-     </div>`;
+  const type = window._catType || "income";
+  const name = ($("catName")?.value || "").trim();
+  const currency = $("catCurrency")?.value || "USD";
+  const yearly = Number($("catYearly")?.value || 0);
+
+  if(!name) return alert("Kategori adı gir.");
+
+  const id = data.categories.nextId++;
+  const cat = { id, name, currency, yearly, months:{} };
+  if(yearly>0) cat.months[selectedYM] = yearly/12;
+  data.categories[type].push(cat);
+
+  saveData(data);
+  closeModal("categoryModal");
+  render();
+}
+
+function planToUSD(data, amt, currency, ym){
+  if(!amt) return 0;
+  if(currency==="USD") return Number(amt);
+  const r = data.planRates[ym] || {};
+  const perUSD = r[currency];
+  if(!perUSD || !isFinite(perUSD) || perUSD<=0) return 0;
+  return Number(amt) / perUSD;
+}
+
+function renderRatesCard(data){
+  const r = data.planRates[selectedYM] || {TRY:null,RUB:null};
+  const t = r.TRY==null ? "—" : r.TRY;
+  const ru = r.RUB==null ? "—" : r.RUB;
+  const box = $("ratesCard");
+  if(!box) return;
+  box.innerHTML = `<div><b>${selectedYM}</b></div>
+  <div style="margin-top:6px;"><b>1 USD =</b> ${t} TRY</div>
+  <div><b>1 USD =</b> ${ru} RUB</div>`;
 }
 
 function promptEditRates(){
   const data = loadData();
   ensureSelectedYM(data);
   const r = data.planRates[selectedYM] || {TRY:null,RUB:null};
-
-  const tryVal = prompt(`${selectedYM} için 1 USD = ? TRY (plan tahmini)`, r.TRY ?? "");
-  if (tryVal === null) return;
-  const rubVal = prompt(`${selectedYM} için 1 USD = ? RUB (plan tahmini)`, r.RUB ?? "");
-  if (rubVal === null) return;
+  const tryVal = prompt(`${selectedYM} için 1 USD = ? TRY`, r.TRY ?? "");
+  if(tryVal===null) return;
+  const rubVal = prompt(`${selectedYM} için 1 USD = ? RUB`, r.RUB ?? "");
+  if(rubVal===null) return;
 
   const nTRY = tryVal.trim()==="" ? null : Number(tryVal);
   const nRUB = rubVal.trim()==="" ? null : Number(rubVal);
 
   data.planRates[selectedYM] = {
-    TRY: (nTRY==null || !isFinite(nTRY) || nTRY<=0) ? null : nTRY,
-    RUB: (nRUB==null || !isFinite(nRUB) || nRUB<=0) ? null : nRUB
+    TRY: (!nTRY || !isFinite(nTRY) || nTRY<=0) ? null : nTRY,
+    RUB: (!nRUB || !isFinite(nRUB) || nRUB<=0) ? null : nRUB
   };
   saveData(data);
   render();
 }
 
-// ----------------------- Fetch FX (Actual) -----------------------
-async function fetchUsdPerUnit(currency, dateISO){
-  // returns USD per 1 unit of currency (USD=1, TRY->USD, RUB->USD)
-  if (!currency || currency==="USD") return 1;
-
-  // frankfurter doesn't support RUB sometimes. We'll use ER API first for reliability.
-  // ER API gives USD->CURRENCY.
-  const url = "https://open.er-api.com/v6/latest/USD";
-  const r = await fetch(url, { cache:"no-store" });
-  if (!r.ok) throw new Error("Kur çekilemedi (ER API).");
-  const j = await r.json();
-  const perUSD = Number(j?.rates?.[currency]); // 1 USD = perUSD currency
-  if (!perUSD || !isFinite(perUSD)) throw new Error(`Kur yok: ${currency}`);
-  return 1 / perUSD; // 1 currency = ? USD
-}
-
-async function toUsdLocked(amount, currency){
-  const usdPerUnit = await fetchUsdPerUnit(currency);
-  const usd = Number(amount) * usdPerUnit;
-  return { usdLocked: usd, rateUsed: usdPerUnit };
-}
-
-// ----------------------- Categories (Plan) -----------------------
-function addCategory(type, name, currency, yearly){
-  const data = loadData();
-  ensureSelectedYM(data);
-
-  const id = data.categories.nextId++;
-  const cat = {
-    id,
-    type,
-    name: name.trim(),
-    currency,
-    yearly: Number(yearly || 0),
-    months: {} // 'YYYY-MM' -> amount in original currency
-  };
-
-  // default: yearly/12 into selected month? (and other months blank)
-  // We keep month blank; user can plan later, but we’ll seed selected month as yearly/12.
-  if (cat.yearly > 0) {
-    cat.months[selectedYM] = cat.yearly / 12;
-  }
-
-  data.categories[type].push(cat);
-  saveData(data);
-}
-
-function deleteCategory(type, id){
-  const data = loadData();
-  data.categories[type] = data.categories[type].filter(c=>c.id!==id);
-  saveData(data);
-}
-
 function renderBudgetLists(data){
   const inBox = $("incomeBudgets");
   const exBox = $("expenseBudgets");
-  inBox.innerHTML = "";
-  exBox.innerHTML = "";
+  if(inBox) inBox.innerHTML="";
+  if(exBox) exBox.innerHTML="";
 
   const renderOne = (cat, type) => {
     const monthAmt = Number(cat.months?.[selectedYM] || 0);
@@ -309,233 +195,182 @@ function renderBudgetLists(data){
     div.innerHTML = `
       <div class="row">
         <div>
-          <div style="font-weight:900">${escapeHtml(cat.name)}</div>
+          <div style="font-weight:900">${esc(cat.name)}</div>
           <div class="muted small">Plan: ${monthAmt.toFixed(2)} ${cat.currency} → ${fmtUSD2(planUSD)}</div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button class="pill" style="cursor:pointer" data-edit="${cat.id}" data-type="${type}">Düzenle</button>
-          <button class="pill" style="cursor:pointer;color:var(--expense)" data-del="${cat.id}" data-type="${type}">Sil</button>
-        </div>
-      </div>
-    `;
-    div.querySelector("[data-edit]")?.addEventListener("click", ()=>{
-      const val = prompt(`${cat.name} (${selectedYM}) plan (${cat.currency})`, String(monthAmt));
-      if (val===null) return;
-      const n = Number(val);
-      if (!isFinite(n) || n<0) return alert("Geçersiz sayı");
-      const d2 = loadData();
-      const arr = d2.categories[type];
-      const ref = arr.find(x=>x.id===cat.id);
-      if (!ref) return;
-      ref.months[selectedYM] = n;
-      saveData(d2);
-      render();
-    });
-    div.querySelector("[data-del]")?.addEventListener("click", ()=>{
-      if (!confirm("Silinsin mi?")) return;
-      deleteCategory(type, cat.id);
-      render();
-    });
+      </div>`;
     return div;
   };
 
-  data.categories.income.forEach(cat=> inBox.appendChild(renderOne(cat,"income")));
-  data.categories.expense.forEach(cat=> exBox.appendChild(renderOne(cat,"expense")));
-}
-
-function planToUSD(data, amt, currency, ym){
-  if (!amt) return 0;
-  if (currency==="USD") return Number(amt);
-
-  const r = data.planRates[ym] || {};
-  const perUSD = r[currency]; // 1 USD = ? currency (plan)
-  if (!perUSD || !isFinite(perUSD) || perUSD<=0) return 0;
-  // amt currency -> USD
-  return Number(amt) / perUSD;
+  data.categories.income.forEach(c=> inBox?.appendChild(renderOne(c,"income")));
+  data.categories.expense.forEach(c=> exBox?.appendChild(renderOne(c,"expense")));
 }
 
 function fillTxCategorySelect(type){
   const data = loadData();
   const sel = $("txCategory");
-  if (!sel) return;
+  if(!sel) return;
+  sel.innerHTML="";
   const list = data.categories[type] || [];
-  sel.innerHTML = "";
+  if(!list.length){
+    const o = document.createElement("option");
+    o.value=""; o.textContent="(Önce bütçeden kategori ekle)";
+    sel.appendChild(o);
+    return;
+  }
   list.forEach(c=>{
-    const opt = document.createElement("option");
-    opt.value = c.name;
-    opt.textContent = c.name;
-    sel.appendChild(opt);
+    const o=document.createElement("option");
+    o.value=c.name; o.textContent=c.name;
+    sel.appendChild(o);
   });
-  if (!list.length){
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "(Önce bütçeden kategori ekle)";
-    sel.appendChild(opt);
+}
+
+async function fetchUsdPerUnit(currency){
+  if(!currency || currency==="USD") return 1;
+  const r = await fetch("https://open.er-api.com/v6/latest/USD", {cache:"no-store"});
+  if(!r.ok) throw new Error("Kur çekilemedi.");
+  const j = await r.json();
+  const perUSD = Number(j?.rates?.[currency]); // 1 USD = perUSD currency
+  if(!perUSD || !isFinite(perUSD)) throw new Error("Kur yok: "+currency);
+  return 1/perUSD; // 1 currency = ? USD
+}
+
+async function toUsdLocked(amount, currency){
+  const usdPerUnit = await fetchUsdPerUnit(currency);
+  return { usdLocked: Number(amount)*usdPerUnit, rateUsed: usdPerUnit };
+}
+
+function ensureBalanceMonth(data, ym){
+  if(!data.balance[ym]){
+    data.balance[ym] = {
+      assets:{cash:[],invest:[],recv:[]},
+      liab:{loan:[],card:[],other:[]}
+    };
   }
 }
 
-// ----------------------- Transactions (Actual) -----------------------
-async function addTransaction(){
-  const date = $("txDate").value || todayISO();
-  const ym = ymFromDate(date);
-  const currency = $("txCurrency").value;
-  const amount = Number($("txAmount").value);
-  const note = $("txNote").value || "";
-  const categoryName = $("txCategory").value || "";
-
-  if (!amount || amount<=0 || !isFinite(amount)) {
-    alert("Tutar gir (0'dan büyük).");
-    return;
+function findBalanceItemByName(groupsObj, name){
+  const key = norm(name);
+  for(const arr of Object.values(groupsObj)){
+    const it = arr.find(x=>norm(x.name)===key);
+    if(it) return it;
   }
-  if (!categoryName) {
-    alert("Kategori seç (bütçeden kategori ekle).");
-    return;
-  }
-
-  $("btnAddTx").disabled = true;
-  $("txInfo").textContent = "Kur çekiliyor...";
-
-  try {
-    const { usdLocked, rateUsed } = await toUsdLocked(amount, currency);
-
-    const data = loadData();
-    // planRates ensure
-    if (!data.planRates[ym]) data.planRates[ym] = { TRY:null, RUB:null };
-
-    const tx = {
-      id: crypto.randomUUID(),
-      date,
-      ym,
-      type: currentTxType, // income/expense
-      currency,
-      amountOriginal: amount,
-      usdLocked,
-      rateUsed, // USD per 1 unit currency
-      note,
-      categoryName
-    };
-
-    data.transactions.push(tx);
-
-    // otomasyon: bu işlem bilanço ile eşleşiyor mu?
-    applyAutomationFromTx(data, tx);
-
-    saveData(data);
-    closeModal("transactionModal");
-    render();
-  } catch (e) {
-    console.error(e);
-    alert("Kur çekilemedi. İnternet/servis kontrol et.\n" + (e?.message||e));
-  } finally {
-    $("btnAddTx").disabled = false;
-    $("txInfo").textContent = "İşlem girildiği an kur çekilir ve USD değeri kilitlenir.";
-  }
+  return null;
 }
 
 function applyAutomationFromTx(data, tx){
   const ym = tx.ym;
   ensureBalanceMonth(data, ym);
 
-  // borçlarda aynı isimli kalem var mı?
   const liabItem = findBalanceItemByName(data.balance[ym].liab, tx.categoryName);
-  if (liabItem) {
-    // gider ise borç düşür (income olursa borç artması gibi bir mantık yok, dokunma)
-    if (tx.type === "expense") {
-      // borç düşer => usdLocked azalt
-      liabItem.usdLocked = Math.max(0, Number(liabItem.usdLocked||0) - Number(tx.usdLocked||0));
-      // originalAmount'ı da aynı para biriminde düşürmek karmaşık; biz USD kilit üzerinden gidiyoruz.
-      // not: kullanıcı zaten "USD baz" demişti.
-    }
+  if(liabItem && tx.type==="expense"){
+    liabItem.usdLocked = Math.max(0, Number(liabItem.usdLocked||0) - Number(tx.usdLocked||0));
   }
 
-  // varlıklarda aynı isimli kalem var mı?
   const assetItem = findBalanceItemByName(data.balance[ym].assets, tx.categoryName);
-  if (assetItem) {
-    // borç ödemesi ile varlık artışı isteniyor (senin kuralın)
-    if (tx.type === "expense") {
-      assetItem.usdLocked = Number(assetItem.usdLocked||0) + Number(tx.usdLocked||0);
-    }
+  if(assetItem && tx.type==="expense"){
+    assetItem.usdLocked = Number(assetItem.usdLocked||0) + Number(tx.usdLocked||0);
   }
-  // asset yoksa → hiçbir yere yazma (senin seçimin)
 }
 
-function findBalanceItemByName(groupsObj, name){
-  const key = norm(name);
-  const groups = Object.values(groupsObj);
-  for (const arr of groups) {
-    const it = arr.find(x => norm(x.name) === key);
-    if (it) return it;
-  }
-  return null;
-}
+async function addTransaction(){
+  const date = $("txDate")?.value || todayISO();
+  const ym = ymFromDate(date);
+  const currency = $("txCurrency")?.value || "USD";
+  const amount = Number($("txAmount")?.value || 0);
+  const note = $("txNote")?.value || "";
+  const categoryName = $("txCategory")?.value || "";
 
-// ----------------------- Balance -----------------------
-function ensureBalanceMonth(data, ym){
-  if (!data.balance[ym]) {
-    data.balance[ym] = {
-      assets: { cash:[], invest:[], recv:[] },
-      liab: { loan:[], card:[], other:[] }
-    };
+  if(!amount || amount<=0) return alert("Tutar gir.");
+  if(!categoryName) return alert("Kategori seç (bütçeden ekle).");
+
+  const btn = $("btnAddTx");
+  if(btn) btn.disabled = true;
+  if($("txInfo")) $("txInfo").textContent="Kur çekiliyor...";
+
+  try{
+    const {usdLocked, rateUsed} = await toUsdLocked(amount, currency);
+    const data = loadData();
+    if(!data.planRates[ym]) data.planRates[ym] = {TRY:null,RUB:null};
+
+    const tx = { id: crypto.randomUUID(), date, ym, type: currentTxType, currency,
+      amountOriginal: amount, usdLocked, rateUsed, note, categoryName };
+
+    data.transactions.push(tx);
+    applyAutomationFromTx(data, tx);
+    saveData(data);
+    closeModal("transactionModal");
+    render();
+  }catch(e){
+    console.error(e);
+    alert("Kur çekilemedi: "+(e?.message||e));
+  }finally{
+    if(btn) btn.disabled=false;
+    if($("txInfo")) $("txInfo").textContent="İşlem girildiği an kur çekilir ve USD değeri kilitlenir.";
   }
 }
 
 function addBalanceItem(){
   const data = loadData();
   ensureSelectedYM(data);
-  const ym = selectedYM;
-  ensureBalanceMonth(data, ym);
+  ensureBalanceMonth(data, selectedYM);
 
-  const name = $("balItemName").value.trim();
-  const currency = $("balItemCurrency").value;
-  const amount = Number($("balItemAmount").value);
-  const note = $("balItemNote").value || "";
+  const name = ($("balItemName")?.value || "").trim();
+  const currency = $("balItemCurrency")?.value || "USD";
+  const amount = Number($("balItemAmount")?.value || 0);
+  const note = $("balItemNote")?.value || "";
 
-  if (!name) return alert("Kategori adı gir.");
-  if (!amount || amount<=0 || !isFinite(amount)) return alert("Tutar gir (0'dan büyük).");
+  if(!name) return alert("Kategori adı gir.");
+  if(!amount || amount<=0) return alert("Tutar gir.");
 
-  // USD kilit: bilanço kalemi de giriş anı kur ile kilitlenir
-  $("btnSaveBalItem").disabled = true;
+  const btn = $("btnSaveBalItem");
+  if(btn) btn.disabled=true;
 
-  toUsdLocked(amount, currency).then(({usdLocked, rateUsed})=>{
-    const item = {
-      id: data.balanceNextId++,
-      name,
-      currency,
-      amountOriginal: amount,
-      usdLocked,
-      rateUsed,
-      note
-    };
-
-    if (balModalSide==="asset") {
-      data.balance[ym].assets[balModalGroup].push(item);
-    } else {
-      data.balance[ym].liab[balModalGroup].push(item);
-    }
+  toUsdLocked(amount,currency).then(({usdLocked,rateUsed})=>{
+    const item = { id: data.balanceNextId++, name, currency, amountOriginal:amount, usdLocked, rateUsed, note };
+    if(balModalSide==="asset") data.balance[selectedYM].assets[balModalGroup].push(item);
+    else data.balance[selectedYM].liab[balModalGroup].push(item);
 
     saveData(data);
     closeModal("balItemModal");
     render();
   }).catch(e=>{
     console.error(e);
-    alert("Kur çekilemedi. İnternet/servis kontrol et.");
+    alert("Kur çekilemedi.");
   }).finally(()=>{
-    $("btnSaveBalItem").disabled = false;
+    if(btn) btn.disabled=false;
   });
 }
 
-function deleteBalanceItem(side, group, id){
-  const data = loadData();
-  ensureSelectedYM(data);
-  const ym = selectedYM;
-  ensureBalanceMonth(data, ym);
-
-  if (side==="asset") {
-    data.balance[ym].assets[group] = data.balance[ym].assets[group].filter(x=>x.id!==id);
-  } else {
-    data.balance[ym].liab[group] = data.balance[ym].liab[group].filter(x=>x.id!==id);
+function renderTransactions(data){
+  const list = $("transactionsList");
+  if(!list) return;
+  list.innerHTML = "";
+  const tx = data.transactions.filter(t=>t.ym===selectedYM).sort((a,b)=>a.date>b.date?-1:1);
+  if(!tx.length){
+    const d=document.createElement("div");
+    d.className="card muted";
+    d.textContent="Bu ay işlem yok.";
+    list.appendChild(d);
+    return;
   }
-  saveData(data);
+  tx.forEach(t=>{
+    const div=document.createElement("div");
+    div.className="card";
+    const sign = t.type==="expense" ? "-" : "+";
+    div.innerHTML = `
+      <div class="row">
+        <div>
+          <div style="font-weight:900">${esc(t.categoryName)}</div>
+          <div class="muted small">${t.date} • ${esc(t.note||"")}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:900">${sign}${Number(t.amountOriginal).toFixed(2)} ${t.currency}</div>
+          <div class="muted small">${fmtUSD2(t.usdLocked)} (kilit)</div>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
 }
 
 function sumBalanceMonth(data, ym){
@@ -543,316 +378,154 @@ function sumBalanceMonth(data, ym){
   const b = data.balance[ym];
   const assets = Object.values(b.assets).flat().reduce((a,x)=>a+Number(x.usdLocked||0),0);
   const liab = Object.values(b.liab).flat().reduce((a,x)=>a+Number(x.usdLocked||0),0);
-  const eq = assets - liab;
-  return { assets, liab, eq };
+  return {assets, liab, eq: assets-liab};
 }
 
 function renderBalanceLists(data){
-  ensureSelectedYM(data);
-  const ym = selectedYM;
-  ensureBalanceMonth(data, ym);
+  ensureBalanceMonth(data, selectedYM);
+  const b = data.balance[selectedYM];
 
-  const bindGroup = (side, group, elId, arr) => {
+  function bind(elId, side, group, arr){
     const box = $(elId);
-    box.innerHTML = "";
+    if(!box) return;
+    box.innerHTML="";
     arr.forEach(item=>{
-      const div = document.createElement("div");
-      div.className = "item";
+      const div=document.createElement("div");
+      div.className="item";
       div.innerHTML = `
         <div>
-          <div class="item-name">${escapeHtml(item.name)}</div>
-          <div class="item-note">${escapeHtml(item.note||"")}</div>
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-note">${esc(item.note||"")}</div>
         </div>
         <div class="item-right">
-          <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
-            <div>
-              <div class="item-amt">${Number(item.amountOriginal||0).toFixed(2)} ${item.currency}</div>
-              <div class="item-usd">${fmtUSD2(item.usdLocked)} (kilit)</div>
-            </div>
-            <button class="item-del" title="Sil"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-      `;
-      div.querySelector(".item-del")?.addEventListener("click", ()=>{
-        if (!confirm("Silinsin mi?")) return;
-        deleteBalanceItem(side, group, item.id);
-        render();
-      });
+          <div class="item-amt">${Number(item.amountOriginal||0).toFixed(2)} ${item.currency}</div>
+          <div class="item-usd">${fmtUSD2(item.usdLocked)} (kilit)</div>
+        </div>`;
       box.appendChild(div);
     });
-  };
-
-  const b = data.balance[ym];
-  bindGroup("asset","cash","asset-cash", b.assets.cash);
-  bindGroup("asset","invest","asset-invest", b.assets.invest);
-  bindGroup("asset","recv","asset-recv", b.assets.recv);
-
-  bindGroup("liab","loan","liab-loan", b.liab.loan);
-  bindGroup("liab","card","liab-card", b.liab.card);
-  bindGroup("liab","other","liab-other", b.liab.other);
-}
-
-// ----------------------- Month filters -----------------------
-function buildMonthList(data){
-  // months from transactions, planRates, balance + include last 12
-  const set = new Set();
-
-  Object.keys(data.planRates||{}).forEach(k=>set.add(k));
-  (data.transactions||[]).forEach(t=>set.add(t.ym));
-  Object.keys(data.balance||{}).forEach(k=>set.add(k));
-
-  // add last 12 months
-  const now = new Date();
-  for (let i=0;i<12;i++){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    set.add(ym);
   }
 
-  return Array.from(set).sort();
+  bind("asset-cash","asset","cash",b.assets.cash);
+  bind("asset-invest","asset","invest",b.assets.invest);
+  bind("asset-recv","asset","recv",b.assets.recv);
+
+  bind("liab-loan","liab","loan",b.liab.loan);
+  bind("liab-card","liab","card",b.liab.card);
+  bind("liab-other","liab","other",b.liab.other);
+
+  const s = sumBalanceMonth(data, selectedYM);
+  if($("balAssets")) $("balAssets").textContent = fmtUSD(s.assets);
+  if($("balLiab")) $("balLiab").textContent = fmtUSD(s.liab);
+  if($("balEquity")) $("balEquity").textContent = fmtUSD(s.eq);
+
+  // chart (optional)
+  const canvas = $("balanceChart");
+  if(canvas && window.Chart){
+    const months = Object.keys(data.planRates||{}).concat(Object.keys(data.balance||{})).concat(data.transactions.map(t=>t.ym));
+    const uniq = Array.from(new Set(months)).filter(Boolean).sort();
+    if(!uniq.length) return;
+
+    const labels = uniq;
+    const assets = labels.map(ym=>sumBalanceMonth(data, ym).assets);
+    const liab = labels.map(ym=>sumBalanceMonth(data, ym).liab);
+    const eq = labels.map(ym=>sumBalanceMonth(data, ym).eq);
+
+    if(_balanceChart){
+      _balanceChart.data.labels = labels;
+      _balanceChart.data.datasets[0].data = assets;
+      _balanceChart.data.datasets[1].data = liab;
+      _balanceChart.data.datasets[2].data = eq;
+      _balanceChart.update();
+    }else{
+      _balanceChart = new Chart(canvas, {
+        type:"line",
+        data:{ labels, datasets:[
+          {label:"Varlıklar", data:assets, tension:.25},
+          {label:"Borçlar", data:liab, tension:.25},
+          {label:"Öz Sermaye", data:eq, tension:.25}
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false }
+      });
+      canvas.parentElement && (canvas.parentElement.style.height="260px");
+    }
+  }
 }
 
 function renderMonthFilters(data){
-  const months = buildMonthList(data);
-  if (!selectedYM) selectedYM = months[months.length-1] || ymFromDate(todayISO());
+  const months = Array.from(new Set(
+    Object.keys(data.planRates||{})
+    .concat(Object.keys(data.balance||{}))
+    .concat(data.transactions.map(t=>t.ym))
+  )).filter(Boolean).sort();
 
-  const mk = (containerId) => {
-    const box = $(containerId);
-    box.innerHTML = "";
+  if(!months.length){
+    const ym = ymFromDate(todayISO());
+    months.push(ym);
+  }
+  if(!selectedYM) selectedYM = months[months.length-1];
+
+  const mk = (id) => {
+    const box = $(id);
+    if(!box) return;
+    box.innerHTML="";
     months.forEach(ym=>{
-      const b = document.createElement("button");
-      b.className = "pill" + (ym===selectedYM ? " active": "");
-      b.textContent = ym;
+      const b=document.createElement("button");
+      b.className="pill" + (ym===selectedYM ? " active": "");
+      b.textContent=ym;
       b.addEventListener("click", ()=>{
         selectedYM = ym;
-        // ensure planRates exist
-        if (!data.planRates[selectedYM]) {
-          const d2 = loadData();
-          d2.planRates[selectedYM] = { TRY:null, RUB:null };
-          saveData(d2);
-        }
+        const d2 = loadData();
+        if(!d2.planRates[selectedYM]) { d2.planRates[selectedYM] = {TRY:null,RUB:null}; saveData(d2); }
         render();
       });
       box.appendChild(b);
     });
   };
-
   mk("monthFilter");
   mk("balMonthFilter");
 }
 
-// ----------------------- Render Transactions list -----------------------
-function renderTransactions(data){
-  const list = $("transactionsList");
-  list.innerHTML = "";
-
-  const tx = data.transactions
-    .filter(t=>t.ym===selectedYM)
-    .sort((a,b)=> (a.date>b.date? -1: 1));
-
-  if (!tx.length) {
-    const empty = document.createElement("div");
-    empty.className = "card muted";
-    empty.textContent = "Bu ay işlem yok.";
-    list.appendChild(empty);
-    return;
-  }
-
-  tx.forEach(t=>{
-    const div = document.createElement("div");
-    div.className = "card";
-    const sign = (t.type==="expense") ? "-" : "+";
-    const color = (t.type==="expense") ? "var(--expense)" : "var(--income)";
-    div.innerHTML = `
-      <div class="row">
-        <div>
-          <div style="font-weight:900">${escapeHtml(t.categoryName)}</div>
-          <div class="muted small">${t.date} • ${escapeHtml(t.note||"")}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-weight:900;color:${color}">${sign}${Number(t.amountOriginal).toFixed(2)} ${t.currency}</div>
-          <div class="muted small">${fmtUSD2(t.usdLocked)} (kilit)</div>
-        </div>
-      </div>
-    `;
-    list.appendChild(div);
-  });
-}
-
-// ----------------------- Summary (Plan vs Actual for selected month) -----------------------
 function calcMonthlySummary(data, ym){
-  // Plan: categories months -> USD using planRates
-  const planIncome = data.categories.income.reduce((a,c)=>a + planToUSD(data, Number(c.months?.[ym]||0), c.currency, ym), 0);
-  const planExpense = data.categories.expense.reduce((a,c)=>a + planToUSD(data, Number(c.months?.[ym]||0), c.currency, ym), 0);
-
-  // Actual: transactions usdLocked
+  const planIncome = data.categories.income.reduce((a,c)=>a+planToUSD(data, Number(c.months?.[ym]||0), c.currency, ym), 0);
+  const planExpense = data.categories.expense.reduce((a,c)=>a+planToUSD(data, Number(c.months?.[ym]||0), c.currency, ym), 0);
   const actualIncome = data.transactions.filter(t=>t.ym===ym && t.type==="income").reduce((a,t)=>a+Number(t.usdLocked||0),0);
   const actualExpense = data.transactions.filter(t=>t.ym===ym && t.type==="expense").reduce((a,t)=>a+Number(t.usdLocked||0),0);
-
-  return {
-    planIncome, planExpense,
-    actualIncome, actualExpense,
-    planNet: planIncome - planExpense,
-    actualNet: actualIncome - actualExpense
-  };
+  return { planIncome, planExpense, actualIncome, actualExpense, planNet: planIncome-planExpense, actualNet: actualIncome-actualExpense };
 }
 
 function renderTopSummary(data){
   const s = calcMonthlySummary(data, selectedYM);
-
-  $("sumIncome").textContent = fmtUSD(s.actualIncome);
-  $("sumIncomeSub").textContent = `Plan ${fmtUSD(s.planIncome)} / Gerçek ${fmtUSD(s.actualIncome)}`;
-
-  $("sumExpense").textContent = fmtUSD(s.actualExpense);
-  $("sumExpenseSub").textContent = `Plan ${fmtUSD(s.planExpense)} / Gerçek ${fmtUSD(s.actualExpense)}`;
-
-  $("sumNet").textContent = fmtUSD(s.actualNet);
-  $("sumNetSub").textContent = `Plan ${fmtUSD(s.planNet)} / Gerçek ${fmtUSD(s.actualNet)}`;
-
-  $("headerSubtitle").textContent = `${selectedYM} • USD baz`;
+  if($("sumIncome")) $("sumIncome").textContent = fmtUSD(s.actualIncome);
+  if($("sumIncomeSub")) $("sumIncomeSub").textContent = `Plan ${fmtUSD(s.planIncome)} / Gerçek ${fmtUSD(s.actualIncome)}`;
+  if($("sumExpense")) $("sumExpense").textContent = fmtUSD(s.actualExpense);
+  if($("sumExpenseSub")) $("sumExpenseSub").textContent = `Plan ${fmtUSD(s.planExpense)} / Gerçek ${fmtUSD(s.actualExpense)}`;
+  if($("sumNet")) $("sumNet").textContent = fmtUSD(s.actualNet);
+  if($("sumNetSub")) $("sumNetSub").textContent = `Plan ${fmtUSD(s.planNet)} / Gerçek ${fmtUSD(s.actualNet)}`;
+  if($("headerSubtitle")) $("headerSubtitle").textContent = `${selectedYM} • USD baz`;
 }
 
-// ----------------------- Balance KPI + Chart -----------------------
-function renderBalanceKPIAndChart(data){
-  ensureSelectedYM(data);
-
-  // KPI (selectedYM)
-  const s = sumBalanceMonth(data, selectedYM);
-  $("balAssets").textContent = fmtUSD(s.assets);
-  $("balLiab").textContent = fmtUSD(s.liab);
-  $("balEquity").textContent = fmtUSD(s.eq);
-
-  // chart (monthly trend)
-  const months = buildMonthList(data);
-  const labels = months;
-  const assets = months.map(ym=> sumBalanceMonth(data, ym).assets);
-  const liab = months.map(ym=> sumBalanceMonth(data, ym).liab);
-  const eq = months.map(ym=> sumBalanceMonth(data, ym).eq);
-
-  const ctx = $("balanceChart");
-  if (!ctx) return;
-
-  if (_balanceChart) {
-    _balanceChart.data.labels = labels;
-    _balanceChart.data.datasets[0].data = assets;
-    _balanceChart.data.datasets[1].data = liab;
-    _balanceChart.data.datasets[2].data = eq;
-    _balanceChart.update();
-    return;
-  }
-
-  _balanceChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        { label: "Varlıklar", data: assets, tension: 0.25 },
-        { label: "Borçlar", data: liab, tension: 0.25 },
-        { label: "Öz Sermaye", data: eq, tension: 0.25 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: true } },
-      scales: {
-        y: { ticks: { callback: (v)=> `$${v}` } }
-      }
-    }
-  });
-
-  // chart canvas height fix
-  ctx.parentElement.style.height = "260px";
-}
-
-// ----------------------- Install banner -----------------------
-function hideInstallBanner(){
-  $("installBanner").style.display = "none";
-  localStorage.setItem("installBannerHidden","1");
-}
-window.hideInstallBanner = hideInstallBanner;
-
-function maybeShowInstallBanner(){
-  // only iOS Safari and not dismissed
-  if (localStorage.getItem("installBannerHidden")==="1") return;
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (!isIOS) return;
-  // show once
-  $("installBanner").style.display = "block";
-}
-
-// ----------------------- Escape / normalize -----------------------
-function escapeHtml(s){
-  return String(s||"").replace(/[&<>"']/g, m=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[m]));
-}
-function norm(s){
-  return String(s||"").trim().toLowerCase();
-}
-
-// ----------------------- Events -----------------------
-function wireEvents(){
-  wireTabs();
-
-  $("btnSaveCategory").addEventListener("click", ()=>{
-    const type = window._catType || "income";
-    const name = $("catName").value.trim();
-    const currency = $("catCurrency").value;
-    const yearly = $("catYearly").value;
-
-    if (!name) return alert("Kategori adı gir.");
-    addCategory(type, name, currency, yearly);
-    closeModal("categoryModal");
-    render();
-  });
-
-  $("btnAddTx").addEventListener("click", addTransaction);
-
-  $("btnSaveBalItem").addEventListener("click", addBalanceItem);
-
-  $("btnRatesEdit").addEventListener("click", promptEditRates);
-}
-
-// ----------------------- Main render -----------------------
 function render(){
   const data = loadData();
   ensureSelectedYM(data);
+  if(!data.planRates[selectedYM]){ data.planRates[selectedYM] = {TRY:null,RUB:null}; saveData(data); }
 
-  // ensure planRates exists for selected
-  if (!data.planRates[selectedYM]) {
-    data.planRates[selectedYM] = { TRY:null, RUB:null };
-    saveData(data);
-  }
-
-  // month filters
   renderMonthFilters(data);
-
-  // budget
   renderRatesCard(data);
   renderBudgetLists(data);
-
-  // transactions
   renderTransactions(data);
-
-  // summary
   renderTopSummary(data);
-
-  // balance
-  ensureBalanceMonth(data, selectedYM);
   renderBalanceLists(data);
-  renderBalanceKPIAndChart(data);
-
-  // install banner
-  maybeShowInstallBanner();
 }
 
-window.render = render;
-
-// init
+// wire events (NULL SAFE)
 document.addEventListener("DOMContentLoaded", ()=>{
-  // default date in tx modal
-  if ($("txDate")) $("txDate").value = todayISO();
-  wireEvents();
+  wireTabs();
+
+  $("btnSaveCategory")?.addEventListener("click", addCategory);
+  $("btnAddTx")?.addEventListener("click", addTransaction);
+  $("btnSaveBalItem")?.addEventListener("click", addBalanceItem);
+  $("btnRatesEdit")?.addEventListener("click", promptEditRates);
+
+  if($("txDate")) $("txDate").value = todayISO();
   render();
 });
