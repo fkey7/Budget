@@ -12,62 +12,75 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-app-compat.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-database-compat.min.js"></script>
 
     <style>
+        /* Orijinal Akif Teması ve Root Değişkenleri */
         :root {
             --bg-primary: #f8f5f1; --bg-secondary: #ffffff; --bg-card: #ffffff;
             --text-primary: #2d3436; --text-secondary: #636e72;
             --accent-income: #00b894; --accent-expense: #e17055;
-            --accent-main: #6c5ce7; --border-color: #e0dcd7; --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --accent-main: #6c5ce7; --border-color: #e0dcd7;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --safe-top: env(safe-area-inset-top);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-primary); color: var(--text-primary); padding-bottom: 100px; line-height: 1.5; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+        body { background: var(--bg-primary); color: var(--text-primary); padding-bottom: 100px; }
 
-        /* UI Bileşenleri */
-        .header { background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%); padding: 60px 20px 30px; color: white; border-radius: 0 0 30px 30px; }
-        .currency-badge { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; display: inline-block; margin-top: 10px; }
-        
-        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-top: -25px; }
-        .summary-card { background: var(--bg-card); padding: 20px; border-radius: 24px; box-shadow: var(--shadow); }
-        .summary-card.full { grid-column: 1 / -1; background: var(--accent-main); color: white; }
-        .amount { font-size: 1.4rem; font-weight: 800; margin-top: 5px; }
+        .header {
+            background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%);
+            padding: calc(16px + var(--safe-top)) 20px 24px; color: white;
+            display: flex; justify-content: space-between; align-items: center;
+        }
 
-        .tabs { display: flex; margin: 20px; background: #eeebe6; border-radius: 15px; padding: 5px; }
-        .tab { flex: 1; padding: 12px; text-align: center; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; color: var(--text-secondary); }
-        .tab.active { background: white; color: var(--accent-main); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        /* Diğer dosyadaki kur badge'i */
+        .currency-badge {
+            background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 700;
+        }
 
-        .section { display: none; padding: 0 20px; }
+        /* Akif dosyasındaki özet kartları ve sekmeler */
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 16px; margin-top: -20px; }
+        .summary-card { background: var(--bg-card); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+        .summary-card.full { grid-column: 1 / -1; }
+        .amount { font-size: 1.3rem; font-weight: 800; }
+
+        .tabs { display: flex; margin: 0 16px 16px; background: var(--bg-card); border-radius: 14px; padding: 4px; box-shadow: var(--shadow); }
+        .tab { flex: 1; padding: 14px 8px; text-align: center; border-radius: 12px; font-weight: 700; cursor: pointer; color: var(--text-secondary); }
+        .tab.active { background: var(--accent-main); color: white; }
+
+        .section { padding: 0 16px; display: none; }
         .section.active { display: block; }
-
-        /* Bilanço Kartları */
-        .bs-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); }
-        .bs-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .bs-row:last-child { border-bottom: none; }
-
-        .floating-btn { position: fixed; bottom: 30px; right: 20px; width: 65px; height: 65px; background: var(--accent-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4); z-index: 100; }
+        
+        /* Bilanço satırları */
+        .bs-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .bs-val { font-weight: 700; }
+        
+        .floating-btn { position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; background: var(--accent-main); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 style="font-weight: 800; font-size: 1.8rem;">Selam Akif 👋</h2>
-    <div id="usdRateDisplay" class="currency-badge"><i class="fas fa-chart-line"></i> USD: Yükleniyor...</div>
+    <h1><i class="fas fa-wallet"></i> Akif'in Bütçesi</h1>
+    <div id="usdRateDisplay" class="currency-badge">USD: --</div>
 </div>
 
 <div class="summary-grid">
-    <div class="summary-card full" id="eqResult">
-        <div style="opacity: 0.9; font-weight: 600;">Net Varlık (Bilanço)</div>
+    <div class="summary-card full" id="eqResult" style="background: var(--accent-main); color: white;">
+        <div class="label" style="color: rgba(255,255,255,0.8)">Net Varlık (Bilanço)</div>
         <div id="bsTotalEquity" class="amount">₺0,00</div>
     </div>
     <div class="summary-card">
-        <div style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 700;">GELİR</div>
+        <div class="label">AYLIK GELİR</div>
         <div id="totalIncome" class="amount" style="color: var(--accent-income)">₺0,00</div>
     </div>
     <div class="summary-card">
-        <div style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 700;">GİDER</div>
+        <div class="label">AYLIK GİDER</div>
         <div id="totalExpense" class="amount" style="color: var(--accent-expense)">₺0,00</div>
     </div>
 </div>
@@ -78,55 +91,75 @@
 </div>
 
 <div id="budgetSection" class="section active">
-    <canvas id="budgetChart" style="max-height: 200px; margin-bottom: 20px;"></canvas>
     <div id="transactionList"></div>
 </div>
 
 <div id="balanceSection" class="section">
-    <div class="bs-card">
-        <h4 style="color: var(--accent-income); margin-bottom: 10px;">Varlıklar</h4>
-        <div class="bs-row"><span>Nakit</span> <b id="bsCash">₺0</b></div>
-        <div class="bs-row"><span>Banka</span> <b id="bsBank">₺0</b></div>
-        <div class="bs-row"><span>Dolar Hesabı</span> <b id="bsUsdAcc">₺0</b></div>
-    </div>
-    <div class="bs-card">
-        <h4 style="color: var(--accent-expense); margin-bottom: 10px;">Borçlar</h4>
-        <div class="bs-row"><span>Kredi Kartları</span> <b id="bsCredits">₺0</b></div>
-        <div class="bs-row"><span>Borçlar</span> <b id="bsDebts">₺0</b></div>
+    <div class="summary-card full">
+        <h3 style="margin-bottom: 10px; color: var(--accent-main)">Varlıklar</h3>
+        <div class="bs-row"><span>Nakit</span> <span id="bsCash" class="bs-val">₺0</span></div>
+        <div class="bs-row"><span>Banka</span> <span id="bsBank" class="bs-val">₺0</span></div>
+        <div class="bs-row"><span>Dolar Hesabı</span> <span id="bsUsdAcc" class="bs-val">₺0</span></div>
+        <h3 style="margin: 20px 0 10px; color: var(--accent-expense)">Borçlar</h3>
+        <div class="bs-row"><span>Kredi Kartları</span> <span id="bsCredits" class="bs-val">₺0</span></div>
+        <div class="bs-row"><span>Borçlar</span> <span id="bsDebts" class="bs-val">₺0</span></div>
     </div>
 </div>
 
-<div class="floating-btn" onclick="alert('Ekleme modali buraya gelecek')"><i class="fas fa-plus"></i></div>
-
 <script>
-// ==================== CONFIG & DATA ====================
-let USD_RATE = 31.00; // API çalışmazsa yedek kur
+// ==================== KRİTİK: DİĞER DOSYADAKİ KUR SİSTEMİ ====================
+let USD_RATE = 31.00; // API gelene kadar varsayılan
 
-// Firebase Bilgilerin (Akif Dosyasından Alınmalı)
-const firebaseConfig = {
-    apiKey: "AIzaSy...",
-    databaseURL: "https://...",
-    projectId: "...",
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ==================== CANLI KUR ÇEKME (DİĞER DOSYADAN) ====================
-async function updateUSDExchangeRate() {
+async function fetchUSDExchangeRate() {
     try {
         const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await response.json();
         USD_RATE = data.rates.TRY;
-        document.getElementById('usdRateDisplay').innerHTML = `<i class="fas fa-chart-line"></i> USD: ₺${USD_RATE.toFixed(2)}`;
-        updateAll();
-    } catch (e) {
-        console.log("Kur çekilemedi, sabit kur kullanılıyor.");
-        document.getElementById('usdRateDisplay').innerHTML = `<i class="fas fa-chart-line"></i> USD: ₺${USD_RATE.toFixed(2)} (Sabit)`;
+        document.getElementById('usdRateDisplay').textContent = `USD: ₺${USD_RATE.toFixed(2)}`;
+        [span_0](start_span)updateAll(); // Kur güncellenince tüm hesaplamaları yenile[span_0](end_span)
+    } catch (error) {
+        console.error("Kur çekilemedi:", error);
+        document.getElementById('usdRateDisplay').textContent = "USD: ₺" + USD_RATE.toFixed(2) + " (Sabit)";
     }
 }
 
-// ==================== HESAPLAMA VE UI ====================
+// ==================== FIREBASE & DATA (AKİF DOSYASINDAN) ====================
+[span_1](start_span)// Buraya kendi orijinal firebaseConfig nesneni yapıştır[span_1](end_span)
+const firebaseConfig = {
+    apiKey: "AIza...", 
+    databaseURL: "https://...",
+    projectId: "..."
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function updateAll() {
+    db.ref('data').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const balance = data.balanceSheet || { assets: {}, liabilities: {} };
+        
+        [span_2](start_span)// DİĞER DOSYADAKİ BİLANÇO HESAPLAMA MANTIĞI[span_2](end_span)
+        let cash = parseFloat(balance.assets.cash || 0);
+        let bank = parseFloat(balance.assets.bank || 0);
+        let usdAmount = parseFloat(balance.assets.usdAmount || 0);
+        let totalAssets = cash + bank + (usdAmount * USD_RATE); // Dolar çarpımı burada yapılıyor
+
+        let credits = parseFloat(balance.liabilities.credits || 0);
+        let debts = parseFloat(balance.liabilities.debts || 0);
+        let totalLiabilities = credits + debts;
+
+        let totalEquity = totalAssets - totalLiabilities;
+
+        // UI Güncelleme
+        document.getElementById('bsCash').textContent = formatCurrency(cash);
+        document.getElementById('bsUsdAcc').textContent = formatCurrency(usdAmount * USD_RATE) + ` ($${usdAmount})`;
+        document.getElementById('bsTotalEquity').textContent = formatCurrency(totalEquity);
+        
+        // Bütçe özeti (Gelir/Gider) hesaplamaları...
+        // (Orijinal Akif dosyasındaki renderTransactions ve renderBudgets fonksiyonlarını buraya ekle)
+    });
+}
+
 function formatCurrency(val) {
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 }
@@ -135,47 +168,16 @@ function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     if(tab === 'budget') {
-        document.querySelector('.tab:nth-child(1)').classList.add('active');
+        document.querySelector('.tab:first-child').classList.add('active');
         document.getElementById('budgetSection').classList.add('active');
     } else {
-        document.querySelector('.tab:nth-child(2)').classList.add('active');
+        document.querySelector('.tab:last-child').classList.add('active');
         document.getElementById('balanceSection').classList.add('active');
     }
 }
 
-function updateAll() {
-    db.ref('data').on('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        const balance = data.balanceSheet || { assets: {}, liabilities: {} };
-        
-        // Bilanço Hesaplama (Diğer dosyadaki mantık)
-        let cash = parseFloat(balance.assets.cash || 0);
-        let bank = parseFloat(balance.assets.bank || 0);
-        let usdVal = parseFloat(balance.assets.usdAmount || 0) * USD_RATE; // Doları çevir
-        
-        let totalAssets = cash + bank + usdVal;
-        
-        let credits = parseFloat(balance.liabilities.credits || 0);
-        let debts = parseFloat(balance.liabilities.debts || 0);
-        let totalLiabilities = credits + debts;
-        
-        let netEquity = totalAssets - totalLiabilities;
-
-        // UI Güncelleme
-        document.getElementById('bsCash').textContent = formatCurrency(cash);
-        document.getElementById('bsBank').textContent = formatCurrency(bank);
-        document.getElementById('bsUsdAcc').textContent = formatCurrency(usdVal);
-        document.getElementById('bsCredits').textContent = formatCurrency(credits);
-        document.getElementById('bsDebts').textContent = formatCurrency(debts);
-        document.getElementById('bsTotalEquity').textContent = formatCurrency(netEquity);
-        
-        // Renk değişimi
-        document.getElementById('eqResult').style.background = netEquity >= 0 ? 'var(--accent-main)' : '#d63031';
-    });
-}
-
-// Başlangıç
-updateUSDExchangeRate();
+// Başlat
+fetchUSDExchangeRate();
 </script>
 </body>
 </html>
