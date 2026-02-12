@@ -4885,38 +4885,70 @@ function getRateForMonth(currency, month) {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // Arkadaşın localStorage key'i
   const STORAGE_KEY = "budgetAppData";
-  const PATH = "users/defaultUser/appData";
 
-  function loadLocal() {
+  // ✅ Tek kullanıcı, tek path (en basit/sağlam)
+  // (Rules açıkken sorun yok. Sonra login ekleyince users/{uid} yaparız.)
+  const PATH = "appData/main";
+
+  function safeJSONParse(s) { try { return JSON.parse(s); } catch { return null; } }
+  function loadLocalRaw() { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } }
+  function loadLocal() { return safeJSONParse(loadLocalRaw()); }
+  function saveLocal(obj) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {} }
+
+  // ✅ local backup (yanlış overwrite'e karşı)
+  function backupLocal(reason) {
     try {
-      const s = localStorage.getItem(STORAGE_KEY);
-      return s ? JSON.parse(s) : null;
-    } catch { return null; }
+      const raw = loadLocalRaw();
+      if (!raw) return;
+      const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      localStorage.setItem(`${STORAGE_KEY}__backup__${reason}__${ts}`, raw);
+    } catch {}
   }
 
-  function saveLocal(obj) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {}
+  function isMeaningfulData(d) {
+    // Boş/yanlış cloud geldiğinde local'i ezmesin diye minimum kontrol
+    if (!d || typeof d !== "object") return false;
+    const hasCats = !!(d.categories && (d.categories.income?.length || d.categories.expense?.length));
+    const hasTx = Array.isArray(d.transactions) && d.transactions.length > 0;
+    const hasRates = !!(d.monthlyRates || d.exchangeRates);
+    return hasCats || hasTx || hasRates;
   }
 
   const originalSaveData = window.saveData;
   const originalLoadData = window.loadData;
 
-  async function pullFromCloud() {
+  async function cloudGet() {
     const snap = await get(ref(db, PATH));
-    if (!snap.exists()) return;
-    saveLocal(snap.val());
-    originalLoadData && originalLoadData();
+    return snap.exists() ? snap.val() : null;
+  }
+  async function cloudSet(data) {
+    await set(ref(db, PATH), data);
+  }
+
+  async function pullFromCloud() {
+    const cloud = await cloudGet();
+    if (!isMeaningfulData(cloud)) {
+      console.warn("Cloud boş/meaningless, local overwrite yapılmadı.");
+      return;
+    }
+    backupLocal("before_cloud_pull");
+    saveLocal(cloud);
+    if (typeof originalLoadData === "function") originalLoadData();
     window.updateAll && window.updateAll();
   }
 
   async function pushToCloud() {
     const local = loadLocal();
-    if (!local) return;
-    await set(ref(db, PATH), local);
+    if (!isMeaningfulData(local)) {
+      console.warn("Local boş/meaningless, cloud'a yazılmadı.");
+      return;
+    }
+    await cloudSet(local);
   }
 
-  // ✅ saveData override: önce local (app çalışsın), sonra cloud
+  // ✅ saveData override: önce orijinal local save, sonra cloud
   window.saveData = function () {
     if (typeof originalSaveData === "function") originalSaveData();
 
@@ -4928,17 +4960,33 @@ function getRateForMonth(currency, month) {
 
   window.addEventListener("DOMContentLoaded", async () => {
     try {
-      const snap = await get(ref(db, PATH));
-      if (snap.exists()) {
+      // Açılış stratejisi:
+      // 1) Local doluysa -> cloud boşsa local'i cloud'a bas
+      // 2) Cloud doluysa -> local boşsa cloud'u local'e çek
+      const local = loadLocal();
+      const cloud = await cloudGet();
+
+      const localOK = isMeaningfulData(local);
+      const cloudOK = isMeaningfulData(cloud);
+
+      if (cloudOK && !localOK) {
+        await pullFromCloud();
+      } else if (!cloudOK && localOK) {
+        await pushToCloud();
+      } else if (cloudOK && localOK) {
+        // İkisi de doluysa: cloud'u referans al (istersen sonra merge yaparız)
         await pullFromCloud();
       } else {
-        await pushToCloud();
+        console.warn("Hem cloud hem local boş görünüyor.");
       }
 
+      // Live sync
       onValue(ref(db, PATH), (s) => {
-        if (!s.exists()) return;
-        saveLocal(s.val());
-        originalLoadData && originalLoadData();
+        const v = s.exists() ? s.val() : null;
+        if (!isMeaningfulData(v)) return;
+        backupLocal("before_cloud_live");
+        saveLocal(v);
+        if (typeof originalLoadData === "function") originalLoadData();
         window.updateAll && window.updateAll();
       });
     } catch (e) {
