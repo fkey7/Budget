@@ -1783,6 +1783,68 @@
             document.documentElement.classList.toggle('dark', e.matches);
         });
 
+        // ==================== DATA STORAGE ====================
+const STORAGE_KEY = 'budgetAppData';
+
+function getStorage() {
+  try {
+    const testKey = '__test__';
+    window.localStorage.setItem(testKey, testKey);
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    return null;
+  }
+}
+
+let storage = null;
+try {
+  storage = getStorage();
+} catch (e) {
+  storage = null;
+}
+
+function saveData() {
+  if (!storage) return;
+  try {
+    const data = { categories, transactions, exchangeRates, monthlyRates, nextCategoryId };
+    storage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    // Storage not available
+  }
+}
+
+function loadData() {
+  if (!storage) return;
+  try {
+    const saved = storage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      categories = data.categories || { income: [], expense: [] };
+      transactions = data.transactions || [];
+      exchangeRates = data.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
+
+      // Aylık kurları yükle, yoksa varsayılan değerleri kullan
+      if (data.monthlyRates) {
+        monthlyRates = data.monthlyRates;
+      } else if (data.exchangeRates) {
+        // Eski formatı aylık formata çevir
+        monthlyRates = {
+          TRY: Array(12).fill(data.exchangeRates.TRY || 38.50),
+          RUB: Array(12).fill(data.exchangeRates.RUB || 96.00)
+        };
+      }
+      nextCategoryId = data.nextCategoryId || 1;
+    }
+  } catch (e) {
+    // Could not load data
+  }
+}
+
+function getRateForMonth(currency, month) {
+  if (currency === 'USD') return 1;
+  return monthlyRates[currency]?.[month] || exchangeRates[currency] || 1;
+}
 
         // ==================== APP STATE ====================
         let categories = { income: [], expense: [] };
@@ -4806,7 +4868,7 @@
             setTimeout(showInstallBanner, 2000);
         }
     </script>
-    <script type="module">
+   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
@@ -4832,6 +4894,7 @@
       return s ? JSON.parse(s) : null;
     } catch { return null; }
   }
+
   function saveLocal(obj) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {}
   }
@@ -4853,13 +4916,14 @@
     await set(ref(db, PATH), local);
   }
 
-  // saveData override: önce local, sonra cloud
-  window.saveData = function() {
+  // ✅ saveData override: önce local (app çalışsın), sonra cloud
+  window.saveData = function () {
     if (typeof originalSaveData === "function") originalSaveData();
+
     clearTimeout(window.__fbSaveTimer);
     window.__fbSaveTimer = setTimeout(() => {
       pushToCloud().catch(err => console.error("Firebase push error:", err));
-    }, 400);
+    }, 300);
   };
 
   window.addEventListener("DOMContentLoaded", async () => {
