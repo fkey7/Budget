@@ -1848,6 +1848,23 @@ if (currency === 'USD') return 1;
 return monthlyRates[currency]?.[month] || exchangeRates[currency] || 1;
 }
 
+async function getUsdPerUnit(currency) {
+  if (currency === 'USD') return 1;
+
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+
+    const perUSD = data?.rates?.[currency];
+    if (!perUSD) throw new Error('Kur yok');
+
+    return 1 / perUSD;
+  } catch (e) {
+    console.warn('Canlı kur alınamadı, aylık kura düşüldü');
+    return getRateForMonth(currency, new Date().getMonth());
+  }
+}
+  
 // ==================== APP STATE ====================
 let categories = { income: [], expense: [] };
 let transactions = [];
@@ -3001,14 +3018,39 @@ showToast('Kaydedildi ✓');
 }
 
 // Belirli bir para birimi için canlı kur çek
+// Belirli bir para birimi için canlı kur çek (SADECE ER-API)
 async function fetchLiveRateForCurrency(currency) {
-try {
-// Önce cache'e bak (son 5 dakika içinde alınmışsa)
-if (cachedLiveRates[currency] && cachedLiveRates.timestamp) {
-const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo) {
-return cachedLiveRates[currency];
-}
+  try {
+    // Cache: son 5 dakika
+    const ts = cachedLiveRates.timestamp;
+    const tsMs =
+      ts instanceof Date ? ts.getTime() :
+      typeof ts === "number" ? ts :
+      0;
+
+    if (cachedLiveRates[currency] && tsMs) {
+      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      if (tsMs > fiveMinutesAgo) {
+        return cachedLiveRates[currency];
+      }
+    }
+
+    // ER-API: 1 USD = X TRY/RUB
+    const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache: "no-store" });
+    if (!r.ok) return null;
+
+    const j = await r.json();
+    const rate = Number(j?.rates?.[currency]);
+
+    if (!rate || !isFinite(rate)) return null;
+
+    cachedLiveRates[currency] = rate;       // 1 USD = rate currency
+    cachedLiveRates.timestamp = Date.now(); // number olarak sakla
+    return rate;
+  } catch (e) {
+    console.error('Canlı kur alınamadı:', e);
+    return null;
+  }
 }
 
 // Frankfurter API
