@@ -18,6 +18,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Firebase (compat) for Google Login + Realtime DB Sync -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
 
     <style>
         :root {
@@ -1383,7 +1388,89 @@
             background: var(--bg-secondary);
             color: var(--text-primary);
         }
-    </style>
+    
+        /* ===== Auth Bar + Lock ===== */
+        .auth-bar{
+            margin-top:12px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            padding:10px 12px;
+            border-radius:14px;
+            background:rgba(255,255,255,0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border:1px solid rgba(255,255,255,0.25);
+        }
+        .dark .auth-bar{ background:rgba(18,18,18,0.55); border-color:rgba(255,255,255,0.10); }
+        .auth-status{ font-weight:700; }
+        .auth-btn{
+            border: none;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-weight: 800;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.25);
+        }
+        .auth-btn + .auth-btn{ margin-left:8px; }
+        .app-lock{
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding: 18px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .app-lock.hidden{ display:none; }
+        .app-lock-card{
+            width: min(520px, 100%);
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+            text-align:center;
+        }
+        .dark .app-lock-card{ background:#111; color:#fff; }
+        .app-lock-card h2{ margin: 0 0 8px 0; }
+
+        /* ===== Balance Sheet ===== */
+        .balance-top{ display:grid; grid-template-columns: 1fr; gap:12px; }
+        @media(min-width: 980px){ .balance-top{ grid-template-columns: 1fr 1fr 1fr; } }
+        .balance-card{
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.08);
+        }
+        .dark .balance-card{ background: rgba(18,18,18,0.55); border-color: rgba(255,255,255,0.10); }
+        .balance-card-title{ font-weight: 900; margin-bottom: 6px; }
+        .balance-total{ font-size: 26px; font-weight: 900; }
+        .balance-groups{ margin-top: 10px; display:grid; gap: 10px; }
+        .balance-group{
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255,255,255,0.55);
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        .dark .balance-group{ background: rgba(18,18,18,0.35); border-color: rgba(255,255,255,0.08); }
+        .balance-group-title{ font-weight: 900; margin-bottom: 6px; display:flex; justify-content:space-between; align-items:center; }
+        .balance-item{ display:flex; justify-content:space-between; align-items:center; padding: 6px 0; border-bottom:1px dashed rgba(0,0,0,0.12); }
+        .dark .balance-item{ border-bottom-color: rgba(255,255,255,0.10); }
+        .balance-item:last-child{ border-bottom:none; }
+        .balance-item-name{ font-weight: 700; }
+        .balance-item-actions button{
+            border:none; background: transparent; cursor:pointer; opacity:0.8;
+        }
+        .balance-item-actions button:hover{ opacity:1; }
+</style>
 </head>
 <body>
     <header class="header">
@@ -1410,7 +1497,26 @@
                 </button>
             </div>
         </div>
-    </header>
+    
+        <div class="auth-bar">
+            <div class="auth-left">
+                <span class="auth-status" id="authStatus">Giriş yapılmadı</span>
+            </div>
+            <div class="auth-right">
+                <button class="auth-btn" id="btnLogin" type="button"><i class="fab fa-google"></i> Google ile Giriş</button>
+                <button class="auth-btn" id="btnLogout" type="button" style="display:none;"><i class="fas fa-sign-out-alt"></i> Çıkış</button>
+            </div>
+        </div>
+</header>
+    <!-- App Lock Overlay (requires Google login for sync) -->
+    <div class="app-lock hidden" id="appLock">
+        <div class="app-lock-card">
+            <h2>Giriş gerekiyor</h2>
+            <p>Devam etmek için Google ile giriş yap.</p>
+            <button class="btn primary" id="btnLoginLock" type="button"><i class="fab fa-google"></i> Google ile Giriş</button>
+        </div>
+    </div>
+
 
     <div class="year-selector">
         <button class="year-btn" onclick="changeYear(-1)"><i class="fas fa-chevron-left"></i></button>
@@ -1504,6 +1610,7 @@
     <div class="tabs">
         <div class="tab active" data-tab="budget">Bütçe</div>
         <div class="tab" data-tab="transactions">İşlemler</div>
+        <div class="tab" data-tab="balance">Bilanço</div>
     </div>
 
     <section class="section active" id="budget-section">
@@ -1528,6 +1635,47 @@
         <div class="month-filter" id="monthFilter"></div>
         <div id="transactionsList"></div>
     </section>
+
+
+    <section class="section" id="balance-section">
+        <div class="section-title">
+            <span>Bilanço (Varlıklar / Borçlar / Öz Sermaye)</span>
+            <button class="add-btn" onclick="openBalanceItemModal()">
+                <i class="fas fa-plus"></i> Kalem Ekle
+            </button>
+        </div>
+
+        <div class="balance-top">
+            <div class="balance-card">
+                <div class="balance-card-title">Varlıklar (Assets)</div>
+                <div class="balance-total" id="assetsTotal">$0</div>
+                <div class="balance-groups" id="assetsGroups"></div>
+            </div>
+
+            <div class="balance-card">
+                <div class="balance-card-title">Borçlar (Liabilities)</div>
+                <div class="balance-total" id="liabilitiesTotal">$0</div>
+                <div class="balance-groups" id="liabilitiesGroups"></div>
+            </div>
+
+            <div class="balance-card">
+                <div class="balance-card-title">Öz Sermaye (Equity)</div>
+                <div class="balance-total" id="equityTotal">$0</div>
+                <div class="muted" id="equityNote">Equity = Assets - Liabilities</div>
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-top:16px;">
+            <div class="chart-title">Bilanço Trend (Aylık)</div>
+            <canvas id="balanceChart"></canvas>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+            Not: Bilanço kalemleri USD girilir. İşlem eklerken kategori adı bilanço alt kalemiyle <b>aynıysa</b>,
+            gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.
+        </div>
+    </section>
+
 
     <button class="fab" onclick="openTransactionModal()">
         <i class="fas fa-plus"></i>
@@ -1783,7 +1931,7 @@
             document.documentElement.classList.toggle('dark', e.matches);
         });
 
-        // ==================== DATA STORAGE ====================
+                // ==================== DATA STORAGE (Local + Firebase Sync) ====================
         const STORAGE_KEY = 'budgetAppData';
 
         function getStorage() {
@@ -1798,45 +1946,98 @@
         }
 
         let storage = null;
-        try {
-            storage = getStorage();
-        } catch (e) {
-            storage = null;
+        try { storage = getStorage(); } catch (e) { storage = null; }
+
+        // ---- App Data (extended) ----
+        // categories, transactions, exchangeRates, monthlyRates, nextCategoryId
+        // balanceSheets: { [ym: "YYYY-MM"]: { assets:{cash:[],receivables:[],investments:[]}, liabilities:{loans:[],cards:[],payables:[]} } }
+
+        function defaultBalanceMonth() {
+            return {
+                assets: { cash: [], receivables: [], investments: [] },
+                liabilities: { loans: [], cards: [], payables: [] }
+            };
+        }
+
+        function normalizeData(data) {
+            const d = data || {};
+            d.categories = d.categories || { income: [], expense: [] };
+            if (!Array.isArray(d.categories.income)) d.categories.income = [];
+            if (!Array.isArray(d.categories.expense)) d.categories.expense = [];
+
+            d.transactions = Array.isArray(d.transactions) ? d.transactions : [];
+
+            d.monthlyRates = d.monthlyRates || {
+                TRY: Array(12).fill(38.50),
+                RUB: Array(12).fill(96.00)
+            };
+            if (!Array.isArray(d.monthlyRates.TRY) || d.monthlyRates.TRY.length !== 12) d.monthlyRates.TRY = Array(12).fill(38.50);
+            if (!Array.isArray(d.monthlyRates.RUB) || d.monthlyRates.RUB.length !== 12) d.monthlyRates.RUB = Array(12).fill(96.00);
+
+            d.exchangeRates = d.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
+            d.nextCategoryId = Number.isFinite(d.nextCategoryId) ? d.nextCategoryId : 1;
+
+            d.balanceSheets = d.balanceSheets || {};
+            // normalize each month
+            try {
+                Object.keys(d.balanceSheets).forEach(ym => {
+                    const bm = d.balanceSheets[ym] || {};
+                    bm.assets = bm.assets || {};
+                    bm.liabilities = bm.liabilities || {};
+                    bm.assets.cash = Array.isArray(bm.assets.cash) ? bm.assets.cash : [];
+                    bm.assets.receivables = Array.isArray(bm.assets.receivables) ? bm.assets.receivables : [];
+                    bm.assets.investments = Array.isArray(bm.assets.investments) ? bm.assets.investments : [];
+                    bm.liabilities.loans = Array.isArray(bm.liabilities.loans) ? bm.liabilities.loans : [];
+                    bm.liabilities.cards = Array.isArray(bm.liabilities.cards) ? bm.liabilities.cards : [];
+                    bm.liabilities.payables = Array.isArray(bm.liabilities.payables) ? bm.liabilities.payables : [];
+                    d.balanceSheets[ym] = bm;
+                });
+            } catch(e) {}
+
+            return d;
+        }
+
+        function packData() {
+            return normalizeData({ categories, transactions, exchangeRates, monthlyRates, nextCategoryId, balanceSheets });
+        }
+
+        function unpackData(data) {
+            const d = normalizeData(data);
+            categories = d.categories;
+            transactions = d.transactions;
+            monthlyRates = d.monthlyRates;
+            exchangeRates = d.exchangeRates;
+            nextCategoryId = d.nextCategoryId;
+            balanceSheets = d.balanceSheets;
+        }
+
+        function saveLocal(dataObj) {
+            if (!storage) return;
+            try { storage.setItem(STORAGE_KEY, JSON.stringify(dataObj)); } catch (e) {}
+        }
+
+        function loadLocal() {
+            if (!storage) return null;
+            try {
+                const saved = storage.getItem(STORAGE_KEY);
+                if (!saved) return null;
+                return JSON.parse(saved);
+            } catch (e) { return null; }
         }
 
         function saveData() {
-            if (!storage) return;
-            try {
-                const data = { categories, transactions, exchangeRates, monthlyRates, nextCategoryId };
-                storage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch (e) {
-                // Storage not available
+            const dataObj = packData();
+            saveLocal(dataObj);
+            // push to firebase if logged-in
+            if (window.__fb && window.__fb.user && window.__fb.db) {
+                window.__fb.queueSave(dataObj);
             }
         }
 
         function loadData() {
-            if (!storage) return;
-            try {
-                const saved = storage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    categories = data.categories || { income: [], expense: [] };
-                    transactions = data.transactions || [];
-                    exchangeRates = data.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
-                    // Aylık kurları yükle, yoksa varsayılan değerleri kullan
-                    if (data.monthlyRates) {
-                        monthlyRates = data.monthlyRates;
-                    } else if (data.exchangeRates) {
-                        // Eski formatı aylık formata çevir
-                        monthlyRates = {
-                            TRY: Array(12).fill(data.exchangeRates.TRY || 38.50),
-                            RUB: Array(12).fill(data.exchangeRates.RUB || 96.00)
-                        };
-                    }
-                    nextCategoryId = data.nextCategoryId || 1;
-                }
-            } catch (e) {
-                // Could not load data
+            const local = loadLocal();
+            if (local) {
+                unpackData(local);
             }
         }
 
@@ -1845,9 +2046,133 @@
             return monthlyRates[currency]?.[month] || exchangeRates[currency] || 1;
         }
 
-        // ==================== APP STATE ====================
+        // ==================== FIREBASE SYNC (single user via Google Login) ====================
+        // Uses compat SDK (firebase global). Data path: users/<uid>/budgetAppData
+        (function firebaseSyncInit(){
+            if (!window.firebase || !window.firebase.auth || !window.firebase.database) return;
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyBrAhqoWVQDjAsMztU8ecxngW0ywdFzafQ",
+                authDomain: "budget-pro-1cfcc.firebaseapp.com",
+                databaseURL: "https://budget-pro-1cfcc-default-rtdb.firebaseio.com",
+                projectId: "budget-pro-1cfcc",
+                storageBucket: "budget-pro-1cfcc.firebasestorage.app",
+                messagingSenderId: "756796109010",
+                appId: "1:756796109010:web:fdc3771eb878813fa97d0b"
+            };
+
+            try { firebase.initializeApp(firebaseConfig); } catch(e) { /* already */ }
+
+            const auth = firebase.auth();
+            const db = firebase.database();
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+
+            const authStatus = document.getElementById('authStatus');
+            const btnLogin = document.getElementById('btnLogin');
+            const btnLogout = document.getElementById('btnLogout');
+            const btnLoginLock = document.getElementById('btnLoginLock');
+            const appLock = document.getElementById('appLock');
+
+            function lock(yes){
+                if (!appLock) return;
+                appLock.classList.toggle('hidden', !yes);
+            }
+
+            function setAuthUI(user){
+                if (authStatus) authStatus.textContent = user ? (user.email || user.uid) : 'Giriş yapılmadı';
+                if (btnLogin) btnLogin.style.display = user ? 'none' : '';
+                if (btnLogout) btnLogout.style.display = user ? '' : 'none';
+            }
+
+            const fbState = {
+                auth, db, user: null,
+                saving: false,
+                pending: null,
+                queueSave(dataObj){
+                    // debounce (write last)
+                    fbState.pending = dataObj;
+                    if (fbState.saving) return;
+                    fbState.saving = true;
+                    setTimeout(async ()=>{
+                        try{
+                            if (!fbState.user) return;
+                            const path = `users/${fbState.user.uid}/budgetAppData`;
+                            const toSave = fbState.pending;
+                            fbState.pending = null;
+                            await db.ref(path).set(toSave);
+                        }catch(e){
+                            console.warn('Firebase push error:', e);
+                        }finally{
+                            fbState.saving = false;
+                            if (fbState.pending) fbState.queueSave(fbState.pending);
+                        }
+                    }, 400);
+                }
+            };
+            window.__fb = fbState;
+
+            async function doLogin(){
+                try{
+                    await auth.signInWithPopup(provider);
+                }catch(e){
+                    console.warn('Login error:', e);
+                    alert('Giriş başarısız: ' + (e && e.message ? e.message : e));
+                }
+            }
+
+            if (btnLogin) btnLogin.addEventListener('click', doLogin);
+            if (btnLoginLock) btnLoginLock.addEventListener('click', doLogin);
+            if (btnLogout) btnLogout.addEventListener('click', async ()=>{
+                try{ await auth.signOut(); }catch(e){}
+            });
+
+            auth.onAuthStateChanged(async (user)=>{
+                fbState.user = user || null;
+                setAuthUI(user);
+                lock(!user);
+
+                if (!user) return;
+
+                // pull cloud once, then subscribe
+                const path = `users/${user.uid}/budgetAppData`;
+
+                try{
+                    const snap = await db.ref(path).get();
+                    if (snap && snap.exists()) {
+                        const cloud = normalizeData(snap.val());
+                        // overwrite local with cloud
+                        unpackData(cloud);
+                        saveLocal(cloud);
+                        if (typeof updateAll === 'function') updateAll();
+                    } else {
+                        // first time: push local up
+                        const localObj = packData();
+                        await db.ref(path).set(localObj);
+                    }
+                }catch(e){
+                    console.warn('Firebase sync error:', e);
+                }
+
+                // live sync
+                db.ref(path).on('value', (snap2)=>{
+                    try{
+                        if (!snap2 || !snap2.exists()) return;
+                        const cloud2 = normalizeData(snap2.val());
+                        unpackData(cloud2);
+                        saveLocal(cloud2);
+                        if (typeof updateAll === 'function') updateAll();
+                    }catch(e){}
+                });
+            });
+        })();
+
+// ==================== APP STATE ====================
         let categories = { income: [], expense: [] };
         let transactions = [];
+        let balanceSheets = {};
+        let currentBalanceType = 'asset';
+
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
         let selectedMonth = 'all';
@@ -1911,12 +2236,22 @@
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
                 tab.classList.add('active');
                 document.getElementById(`${tab.dataset.tab}-section`).classList.add('active');
+
+                // FAB sadece İşlemler sekmesinde görünsün
+                const fab = document.querySelector('.fab');
+                if (fab) fab.style.display = (tab.dataset.tab === 'transactions') ? '' : 'none';
+
+                // Bilanço sekmesine geçince render
+                if (tab.dataset.tab === 'balance') {
+                    try { renderBalance(); } catch(e) {}
+                }
             });
         });
 
-        // ==================== HELPERS ====================
+// ==================== HELPERS ====================
         function formatCurrency(amount, currency = 'USD') {
             const symbol = currencySymbols[currency] || '$';
             return symbol + Math.abs(amount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2830,9 +3165,9 @@
                                         ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount, t.currency)}
                                     </div>
                                     ${t.currency !== 'USD' ? `
-  <div class="transaction-usd">${formatCurrency(t.amountUSD)}</div>
-  <div class="transaction-rate">${t.rateSource === 'historical' ? '📡' : t.rateSource === 'usd' ? '💵' : '📅'} @${t.rateAtTime.toFixed(2)}</div>
-` : ''}
+                                        <div class="transaction-usd">${formatCurrency(t.amountUSD)}</div>
+                                        <div class="transaction-rate">${t.rateSource === 'live' ? '📡' : '📅'} @${t.rateAtTime.toFixed(2)}</div>
+                                    ` : ''}
                                 </div>
                                 <button class="action-btn delete" onclick="confirmDelete('transaction', ${t.id})">
                                     <i class="fas fa-trash"></i>
@@ -2926,122 +3261,117 @@
         }
 
         async function saveTransaction() {
-    const amount = parseFloat(document.getElementById('transactionAmount').value);
-    const note = document.getElementById('transactionNote').value.trim();
-    const date = document.getElementById('transactionDate').value;
+            const amount = parseFloat(document.getElementById('transactionAmount').value);
+            const note = document.getElementById('transactionNote').value.trim();
+            const date = document.getElementById('transactionDate').value;
 
-    if (!selectedCategoryId) { showToast('Kategori seçin'); return; }
-    if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
-    if (!date) { showToast('Tarih seçin'); return; }
+            if (!selectedCategoryId) { showToast('Kategori seçin'); return; }
+            if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
+            if (!date) { showToast('Tarih seçin'); return; }
 
-    let rateAtTime;
-    let amountUSD;
-    let rateSource;
+            let rateAtTime;
+            let amountUSD;
+            let rateSource = 'live'; // 'live' veya 'monthly'
 
-    // USD ise kur 1
-    if (selectedCurrency === 'USD') {
-        rateAtTime = 1;
-        amountUSD = amount;
-        rateSource = 'usd';
-    } else {
-        // ✅ BURADA KULLANIYORUZ!
-        const rateData = await fetchHistoricalRate(selectedCurrency, date);
-        rateAtTime = rateData.rate;
-        amountUSD = amount / rateAtTime;
-        rateSource = rateData.source;
-    }
+            // USD ise kur 1
+            if (selectedCurrency === 'USD') {
+                rateAtTime = 1;
+                amountUSD = amount;
+            } else {
+                // Önce cache'e bak (modal açıkken zaten çekilmiş olmalı)
+                if (cachedLiveRates[selectedCurrency] && cachedLiveRates.timestamp) {
+                    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                    if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo) {
+                        rateAtTime = cachedLiveRates[selectedCurrency];
+                        amountUSD = amount / rateAtTime;
+                        rateSource = 'live';
+                    }
+                }
 
-    const symbol = selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'RUB' ? '₽' : '$';
-
-    transactions.push({
-        id: Date.now(),
-        type: currentTransactionType,
-        categoryId: selectedCategoryId,
-        amount: amount,
-        currency: selectedCurrency,
-        amountUSD: amountUSD,
-        rateAtTime: rateAtTime,
-        rateSource: rateSource,
-        note: note,
-        date: date
-    });
-
-    closeModal('transactionModal');
-    saveData();
-    updateAll();
-    
-    if (selectedCurrency !== 'USD') {
-        const rateInfo = rateSource === 'historical' ? '📡 Canlı' : '📅 Aylık';
-        showToast('Kaydedildi ✓ | ' + rateInfo + ' kur: 1$ = ' + symbol + rateAtTime.toFixed(2));
-    } else {
-        showToast('Kaydedildi ✓');
-    }
-}
-
-        // Belirli bir para birimi için canlı kur çek
-        async function saveTransaction() {
-  const amount = parseFloat(document.getElementById('transactionAmount').value);
-  const note = document.getElementById('transactionNote').value.trim();
-  const date = document.getElementById('transactionDate').value;
-
-  if (!selectedCategoryId) { showToast('Kategori seçin'); return; }
-  if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
-  if (!date) { showToast('Tarih seçin'); return; }
-
-  let rateAtTime;
-  let amountUSD;
-  let rateSource;
-
-  // ✅ YENİ: USD ise kur 1 ve sabit kal
-  if (selectedCurrency === 'USD') {
-    rateAtTime = 1;
-    amountUSD = amount;
-    rateSource = 'usd';
-  } else {
-    // ✅ YENİ: İşlem tarihindeki kur çek ve SABİTLE
-    const rateData = await fetchHistoricalRate(selectedCurrency, date);
-    rateAtTime = rateData.rate;
-    amountUSD = amount / rateAtTime;
-    rateSource = rateData.source;
-  }
+                // Cache'de yoksa veya eskiyse API'den çek
+                if (!rateAtTime) {
+                    const liveRate = await fetchLiveRateForCurrency(selectedCurrency);
+                    if (liveRate) {
+                        rateAtTime = liveRate;
+                        amountUSD = amount / rateAtTime;
+                        rateSource = 'live';
+                    } else {
+                        // Canlı kur alınamazsa aylık kuru kullan
+                        const txMonth = new Date(date).getMonth();
+                        rateAtTime = getRateForMonth(selectedCurrency, txMonth);
+                        amountUSD = amount / rateAtTime;
+                        rateSource = 'monthly';
+                    }
+                }
             }
 
-  const symbol = selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'RUB' ? '₽' : '$';
+            const symbol = selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'RUB' ? '₽' : '$';
 
-  // ✅ YENİ: İşlem objesine kur bilgisi kaydediliyor (bir daha değişmeyecek!)
-  transactions.push({
-    id: Date.now(),
-    type: currentTransactionType,
-    categoryId: selectedCategoryId,
-    amount,
-    currency: selectedCurrency,
-    amountUSD,        // ← Bu değer SABİT kalacak
-    rateAtTime,       // ← İşlem anındaki kur
-    rateSource,       // ← 'historical', 'monthly', veya 'usd'
-    note,
-    date
-  });
+            const txObj = {
+                id: Date.now(),
+                type: currentTransactionType,
+                categoryId: selectedCategoryId,
+                amount,
+                currency: selectedCurrency,
+                amountUSD,
+                rateAtTime,
+                rateSource, // Kurun nereden geldiğini kaydet
+                note,
+                date
+            };
+            transactions.push(txObj);
+            applyBalanceAutomation(txObj);
 
-  closeModal('transactionModal');
-  saveData();
-  updateAll();
-  
-  // Bildirim göster
-  if (selectedCurrency !== 'USD') {
-    const rateInfo = rateSource === 'historical' ? '📡 Canlı' : '📅 Aylık';
-    showToast(`Kaydedildi ✓ | ${rateInfo} kur: 1$ = ${symbol}${rateAtTime.toFixed(2)}`);
-  } else {
-    showToast('Kaydedildi ✓');
-  }
-}
+
+            closeModal('transactionModal');
+            saveData();
+            updateAll();
+
+            if (selectedCurrency !== 'USD') {
+                const rateInfo = rateSource === 'live' ? '📡 Canlı' : '📅 Aylık';
+                showToast(`Kaydedildi ✓ | ${rateInfo} kur: 1$ = ${symbol}${rateAtTime.toFixed(2)}`);
+            } else {
+                showToast('Kaydedildi ✓');
+            }
+        }
+
+        // Belirli bir para birimi için canlı kur çek
+        async function fetchLiveRateForCurrency(currency) {
+            try {
+                // cache (son 5 dakika)
+                if (cachedLiveRates[currency] && cachedLiveRates.timestamp) {
+                    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                    if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo) {
+                        return cachedLiveRates[currency];
+                    }
+                }
+
+                // Tek kaynak: open.er-api (stabil)
+                const r = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' });
+                if (r.ok) {
+                    const j = await r.json();
+                    if (j && j.rates && j.rates[currency]) {
+                        cachedLiveRates[currency] = Number(j.rates[currency]);
+                        cachedLiveRates.timestamp = new Date();
+                        return cachedLiveRates[currency];
+                    }
+                }
+
+                return null;
+            } catch (error) {
+                console.error('Canlı kur alınamadı:', error);
+                return null;
+            }
+        }
+
 
         // İşlem modalında para birimi seçildiğinde
         async function selectTransactionCurrency(currency) {
-  selectedCurrency = currency;
-  updateCurrencyButtons();
-  await updateLiveRateDisplay(); // Canlı kur gösterimi güncelle
-  updateUsdEquivalent(); // USD karşılığını güncelle
-}
+            selectedCurrency = currency;
+            updateCurrencyButtons();
+            await updateLiveRateDisplay();
+            updateUsdEquivalent();
+        }
 
         // Canlı kur gösterimini güncelle
         async function updateLiveRateDisplay() {
@@ -3074,25 +3404,47 @@
                 liveRateTime.textContent = '⚠️ Aylık kayıtlı kur kullanılıyor';
             }
 
-            function updateUsdEquivalent() {
-    const amount = parseFloat(document.getElementById('transactionAmount').value) || 0;
-    const liveUsdEquivalent = document.getElementById('liveUsdEquivalent');
-    const date = document.getElementById('transactionDate').value;
-    
-    if (selectedCurrency === 'USD') {
-        if (liveUsdEquivalent) liveUsdEquivalent.textContent = '$' + amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
-        return;
-    }
+            updateUsdEquivalent();
+        }
 
-    // Gösterim için aylık kur kullan
-    const month = date ? new Date(date).getMonth() : currentMonth;
-    const monthlyRate = getRateForMonth(selectedCurrency, month);
-    const usdAmount = monthlyRate > 0 ? amount / monthlyRate : 0;
-    
-    if (liveUsdEquivalent) {
-        liveUsdEquivalent.textContent = '≈ $' + usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
-    }
-}
+        // Tutar girildiğinde dolar karşılığını hesapla
+        function updateUsdEquivalent() {
+            const amount = parseFloat(document.getElementById('transactionAmount').value) || 0;
+            const liveUsdEquivalent = document.getElementById('liveUsdEquivalent');
+
+            if (selectedCurrency === 'USD') {
+                if (liveUsdEquivalent) liveUsdEquivalent.textContent = `$${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+                return;
+            }
+
+            const rate = cachedLiveRates[selectedCurrency];
+            if (rate && rate > 0) {
+                const usdAmount = amount / rate;
+                if (liveUsdEquivalent) {
+                    liveUsdEquivalent.textContent = `$${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+                }
+            } else {
+                // Aylık kur kullan
+                const txDate = document.getElementById('transactionDate')?.value;
+                const month = txDate ? new Date(txDate).getMonth() : currentMonth;
+                const monthlyRate = getRateForMonth(selectedCurrency, month);
+                const usdAmount = monthlyRate > 0 ? amount / monthlyRate : 0;
+                if (liveUsdEquivalent) {
+                    liveUsdEquivalent.textContent = `$${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+                }
+            }
+        }
+
+        function renderMonthlyBudgetGrid(containerId, values = null) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = monthNames.map((month, i) => `
+                <div class="monthly-input">
+                    <label>${month}</label>
+                    <input type="number" id="${containerId}_${i}" value="${values ? (values[i] || 0) : 0}" step="0.01" inputmode="decimal">
+                </div>
+            `).join('');
+        }
+
         function getMonthlyBudgets(containerId) {
             const budgets = [];
             for (let i = 0; i < 12; i++) {
@@ -4646,40 +4998,111 @@
             showToast('Kurlar güncellendi ✓');
         }
 
-       // ✅ YENİ: İşlem tarihindeki kur çekme (geçmiş için)
-async function fetchHistoricalRate(currency, date) {
-    try {
-        const dateStr = new Date(date).toISOString().split('T')[0]; // YYYY-MM-DD
-        
-        // ✅ DÜZELTİLDİ: Boşluk kaldırıldı
-        const response = await fetch('https://api.frankfurter.app/' + dateStr + '?from=USD&to=' + currency);
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.rates && data.rates[currency]) {
-                return {
-                    rate: data.rates[currency],
-                    source: 'historical'
-                };
+        // ==================== OTOMATIK KUR GÜNCELLEME ====================
+        let cachedLiveRates = { TRY: null, RUB: null, timestamp: null };
+
+        async function fetchCurrentRates() {
+            const icon = document.getElementById('fetchRateIcon');
+            const display = document.getElementById('currentRateDisplay');
+
+            // Animasyon başlat
+            icon.classList.add('fa-spin');
+
+            try {
+                // Frankfurter API - ücretsiz ve CORS destekli
+                const response = await fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,RUB');
+
+                if (!response.ok) {
+                    throw new Error('API yanıt vermedi');
+                }
+
+                const data = await response.json();
+
+                if (data.rates && data.rates.TRY && data.rates.RUB) {
+                    cachedLiveRates.TRY = data.rates.TRY;
+                    cachedLiveRates.RUB = data.rates.RUB;
+                    cachedLiveRates.timestamp = new Date();
+
+                    // Gösterimi güncelle
+                    document.getElementById('liveRateTRY').textContent = data.rates.TRY.toFixed(4);
+                    document.getElementById('liveRateRUB').textContent = data.rates.RUB.toFixed(4);
+                    document.getElementById('rateUpdateTime').textContent =
+                        `Son güncelleme: ${cachedLiveRates.timestamp.toLocaleString('tr-TR')}`;
+
+                    display.style.display = 'block';
+                    showToast('Güncel kurlar alındı ✓');
+                } else {
+                    throw new Error('Kur verisi alınamadı');
+                }
+            } catch (error) {
+                console.error('Kur API hatası:', error);
+
+                // Yedek API dene - ExchangeRate API
+                try {
+                    const backupResponse = await fetch('https://open.er-api.com/v6/latest/USD');
+                    const backupData = await backupResponse.json();
+
+                    if (backupData.rates && backupData.rates.TRY && backupData.rates.RUB) {
+                        cachedLiveRates.TRY = backupData.rates.TRY;
+                        cachedLiveRates.RUB = backupData.rates.RUB;
+                        cachedLiveRates.timestamp = new Date();
+
+                        document.getElementById('liveRateTRY').textContent = backupData.rates.TRY.toFixed(4);
+                        document.getElementById('liveRateRUB').textContent = backupData.rates.RUB.toFixed(4);
+                        document.getElementById('rateUpdateTime').textContent =
+                            `Son güncelleme: ${cachedLiveRates.timestamp.toLocaleString('tr-TR')}`;
+
+                        display.style.display = 'block';
+                        showToast('Güncel kurlar alındı ✓');
+                    } else {
+                        throw new Error('Yedek API de çalışmadı');
+                    }
+                } catch (backupError) {
+                    showToast('Kurlar alınamadı, internet bağlantınızı kontrol edin');
+                }
+            } finally {
+                icon.classList.remove('fa-spin');
             }
         }
-        
-        // API başarısız olursa aylık kur kullan
-        const month = new Date(date).getMonth();
-        return {
-            rate: getRateForMonth(currency, month),
-            source: 'monthly'
-        };
-        
-    } catch (error) {
-        console.error('Tarihsel kur alınamadı:', error);
-        const month = new Date(date).getMonth();
-        return {
-            rate: getRateForMonth(currency, month),
-            source: 'monthly'
-        };
-    }
-}
+
+        function fillAllMonthsWithCurrent() {
+            if (!cachedLiveRates.TRY || !cachedLiveRates.RUB) {
+                showToast('Önce "Güncel Kurları Al" butonuna tıklayın');
+                return;
+            }
+
+            // Tüm aylara güncel kuru uygula
+            const tryInputs = document.querySelectorAll('#monthlyRatesTRY input');
+            const rubInputs = document.querySelectorAll('#monthlyRatesRUB input');
+
+            tryInputs.forEach(input => {
+                input.value = cachedLiveRates.TRY.toFixed(2);
+            });
+
+            rubInputs.forEach(input => {
+                input.value = cachedLiveRates.RUB.toFixed(2);
+            });
+
+            showToast('Tüm aylara güncel kur uygulandı ✓');
+        }
+
+        function fillCurrentMonthWithLiveRate() {
+            if (!cachedLiveRates.TRY || !cachedLiveRates.RUB) {
+                return;
+            }
+
+            const tryInputs = document.querySelectorAll('#monthlyRatesTRY input');
+            const rubInputs = document.querySelectorAll('#monthlyRatesRUB input');
+
+            // Sadece mevcut ayı güncelle
+            if (tryInputs[currentMonth]) {
+                tryInputs[currentMonth].value = cachedLiveRates.TRY.toFixed(2);
+            }
+            if (rubInputs[currentMonth]) {
+                rubInputs[currentMonth].value = cachedLiveRates.RUB.toFixed(2);
+            }
+        }
+
         // ==================== DELETE ====================
         function confirmDelete(type, id, categoryType, name) {
             const message = document.getElementById('confirmMessage');
@@ -4771,6 +5194,318 @@ async function fetchHistoricalRate(currency, date) {
         if (isIOS && !isStandalone) {
             setTimeout(showInstallBanner, 2000);
         }
-    </script>
+    
+        // ==================== BALANCE SHEET (Assets/Liabilities/Equity) ====================
+        function ymFromDateISO(dateISO){
+            const d = dateISO ? new Date(dateISO) : new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth()+1).padStart(2,'0');
+            return `${y}-${m}`;
+        }
+
+        function ensureBalanceMonth(ym){
+            if (!balanceSheets) balanceSheets = {};
+            if (!balanceSheets[ym]) {
+                balanceSheets[ym] = {
+                    assets: { cash: [], receivables: [], investments: [] },
+                    liabilities: { loans: [], cards: [], payables: [] }
+                };
+            }
+            // normalize minimal
+            const bm = balanceSheets[ym];
+            bm.assets = bm.assets || { cash: [], receivables: [], investments: [] };
+            bm.liabilities = bm.liabilities || { loans: [], cards: [], payables: [] };
+            bm.assets.cash = Array.isArray(bm.assets.cash) ? bm.assets.cash : [];
+            bm.assets.receivables = Array.isArray(bm.assets.receivables) ? bm.assets.receivables : [];
+            bm.assets.investments = Array.isArray(bm.assets.investments) ? bm.assets.investments : [];
+            bm.liabilities.loans = Array.isArray(bm.liabilities.loans) ? bm.liabilities.loans : [];
+            bm.liabilities.cards = Array.isArray(bm.liabilities.cards) ? bm.liabilities.cards : [];
+            bm.liabilities.payables = Array.isArray(bm.liabilities.payables) ? bm.liabilities.payables : [];
+            return bm;
+        }
+
+        function getActiveYM(){
+            // use currentYear/currentMonth UI as base
+            const y = currentYear || new Date().getFullYear();
+            const m = String((currentMonth ?? new Date().getMonth()) + 1).padStart(2,'0');
+            return `${y}-${m}`;
+        }
+
+        function groupMeta(type){
+            if (type === 'asset') {
+                return [
+                    { key:'cash', label:'Nakit' },
+                    { key:'receivables', label:'Alacaklar' },
+                    { key:'investments', label:'Yatırımlar' }
+                ];
+            }
+            return [
+                { key:'loans', label:'Krediler' },
+                { key:'cards', label:'Kredi Kartı Borçları' },
+                { key:'payables', label:'Şahıslara Borçlar' }
+            ];
+        }
+
+        function sumItems(arr){
+            return (arr||[]).reduce((a,b)=>a + (Number(b?.amountUSD)||0), 0);
+        }
+
+        function computeBalanceTotals(ym){
+            const bm = ensureBalanceMonth(ym);
+            const assetsTotal = sumItems(bm.assets.cash) + sumItems(bm.assets.receivables) + sumItems(bm.assets.investments);
+            const liabilitiesTotal = sumItems(bm.liabilities.loans) + sumItems(bm.liabilities.cards) + sumItems(bm.liabilities.payables);
+            const equity = assetsTotal - liabilitiesTotal;
+            return { assetsTotal, liabilitiesTotal, equity };
+        }
+
+        function fmtUSD(v){
+            const n = Number(v)||0;
+            return '$' + n.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+        }
+
+        function renderBalance(){
+            const ym = getActiveYM();
+            const bm = ensureBalanceMonth(ym);
+            const totals = computeBalanceTotals(ym);
+
+            const aBox = document.getElementById('assetsGroups');
+            const lBox = document.getElementById('liabilitiesGroups');
+            const aTot = document.getElementById('assetsTotal');
+            const lTot = document.getElementById('liabilitiesTotal');
+            const eTot = document.getElementById('equityTotal');
+
+            if (aTot) aTot.textContent = fmtUSD(totals.assetsTotal);
+            if (lTot) lTot.textContent = fmtUSD(totals.liabilitiesTotal);
+            if (eTot) eTot.textContent = fmtUSD(totals.equity);
+
+            function renderGroup(box, typeKey, groups){
+                if (!box) return;
+                box.innerHTML = groups.map(g=>{
+                    const items = typeKey === 'asset' ? bm.assets[g.key] : bm.liabilities[g.key];
+                    const groupSum = sumItems(items);
+                    const itemHtml = (items||[]).map((it, idx)=>`
+                        <div class="balance-item">
+                            <div>
+                                <div class="balance-item-name">${escapeHtml(it.name||'')}</div>
+                                <div class="muted">${fmtUSD(it.amountUSD||0)}</div>
+                            </div>
+                            <div class="balance-item-actions">
+                                <button title="Sil" onclick="deleteBalanceItem('${typeKey}','${g.key}',${idx})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                    return `
+                        <div class="balance-group">
+                            <div class="balance-group-title">
+                                <span>${g.label}</span>
+                                <span class="muted">${fmtUSD(groupSum)}</span>
+                            </div>
+                            ${itemHtml || '<div class="muted">(boş)</div>'}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderGroup(aBox, 'asset', groupMeta('asset'));
+            renderGroup(lBox, 'liability', groupMeta('liability'));
+            renderBalanceChart();
+        }
+
+        function openBalanceItemModal(){
+            currentBalanceType = 'asset';
+            document.getElementById('balTypeAsset')?.classList.add('active');
+            document.getElementById('balTypeLiab')?.classList.remove('active');
+            const sel = document.getElementById('balanceGroupSelect');
+            if (sel){
+                sel.innerHTML = groupMeta('asset').map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
+            }
+            document.getElementById('balanceItemName').value = '';
+            document.getElementById('balanceItemAmount').value = '';
+            document.getElementById('balanceItemModal').classList.add('active');
+        }
+
+        function setBalanceType(t){
+            currentBalanceType = t;
+            document.getElementById('balTypeAsset')?.classList.toggle('active', t==='asset');
+            document.getElementById('balTypeLiab')?.classList.toggle('active', t==='liability');
+
+            const sel = document.getElementById('balanceGroupSelect');
+            const groups = groupMeta(t);
+            if (sel){
+                sel.innerHTML = groups.map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
+            }
+        }
+
+        function saveBalanceItem(){
+            const name = (document.getElementById('balanceItemName').value || '').trim();
+            const amountUSD = parseFloat(document.getElementById('balanceItemAmount').value);
+            const groupKey = document.getElementById('balanceGroupSelect').value;
+
+            if (!name){ showToast('Kategori adı girin'); return; }
+            if (!amountUSD || amountUSD < 0){ showToast('USD tutar girin'); return; }
+
+            const ym = getActiveYM();
+            const bm = ensureBalanceMonth(ym);
+            const item = { name, amountUSD: Number(amountUSD) };
+
+            if (currentBalanceType === 'asset') {
+                bm.assets[groupKey] = bm.assets[groupKey] || [];
+                bm.assets[groupKey].push(item);
+            } else {
+                bm.liabilities[groupKey] = bm.liabilities[groupKey] || [];
+                bm.liabilities[groupKey].push(item);
+            }
+
+            closeModal('balanceItemModal');
+            saveData();
+            updateAll();
+            showToast('Eklendi ✓');
+        }
+
+        function deleteBalanceItem(typeKey, groupKey, idx){
+            const ym = getActiveYM();
+            const bm = ensureBalanceMonth(ym);
+            const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
+            if (idx<0 || idx>=arr.length) return;
+            arr.splice(idx,1);
+            saveData();
+            updateAll();
+            showToast('Silindi');
+        }
+
+        // Apply automation on expense transactions:
+        // If category name matches a liability item name -> decrease it (not below 0)
+        // If same name exists in assets -> increase it
+        function applyBalanceAutomation(tx){
+            try{
+                if (!tx || tx.type !== 'expense') return;
+                const ym = ymFromDateISO(tx.date);
+                const bm = ensureBalanceMonth(ym);
+
+                const cat = [...(categories?.income||[]), ...(categories?.expense||[])].find(c=>c.id===tx.categoryId);
+                const name = (cat?.name || '').trim();
+                if (!name) return;
+
+                const delta = Number(tx.amountUSD)||0;
+                if (!delta) return;
+
+                // find liability item
+                let liabItem = null;
+                let liabArr = null;
+                ['loans','cards','payables'].some(k=>{
+                    const arr = bm.liabilities[k]||[];
+                    const it = arr.find(x=>String(x.name||'').trim()===name);
+                    if (it){ liabItem=it; liabArr=arr; return true; }
+                    return false;
+                });
+
+                if (liabItem){
+                    liabItem.amountUSD = Math.max(0, (Number(liabItem.amountUSD)||0) - delta);
+                }
+
+                // find asset item with same name (only if exists)
+                let assetItem = null;
+                ['cash','receivables','investments'].some(k=>{
+                    const arr = bm.assets[k]||[];
+                    const it = arr.find(x=>String(x.name||'').trim()===name);
+                    if (it){ assetItem=it; return true; }
+                    return false;
+                });
+                if (assetItem){
+                    assetItem.amountUSD = (Number(assetItem.amountUSD)||0) + delta;
+                }
+            }catch(e){}
+        }
+
+        // chart
+        let balanceChartInstance = null;
+        function renderBalanceChart(){
+            const canvas = document.getElementById('balanceChart');
+            if (!canvas) return;
+
+            const months = Object.keys(balanceSheets||{}).sort();
+            if (!months.length){
+                if (balanceChartInstance){ balanceChartInstance.destroy(); balanceChartInstance=null; }
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                return;
+            }
+
+            const assets = months.map(ym=>computeBalanceTotals(ym).assetsTotal);
+            const liabs  = months.map(ym=>computeBalanceTotals(ym).liabilitiesTotal);
+            const equity = months.map(ym=>computeBalanceTotals(ym).equity);
+
+            if (balanceChartInstance) balanceChartInstance.destroy();
+            balanceChartInstance = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: 'Assets', data: assets, tension: 0.25 },
+                        { label: 'Liabilities', data: liabs, tension: 0.25 },
+                        { label: 'Equity', data: equity, tension: 0.25 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { y: { ticks: { callback: (v)=>'$'+v } } }
+                }
+            });
+        }
+
+        // Hook into existing updateAll
+        const __origUpdateAll = (typeof updateAll === 'function') ? updateAll : null;
+        if (__origUpdateAll){
+            updateAll = function(){
+                __origUpdateAll();
+                try{ renderBalance(); }catch(e){}
+                // hide FAB on balance tab
+                const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+                const fab = document.querySelector('.fab');
+                if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
+            }
+        }
+
+</script>
 </body>
 </html>
+    <!-- Balance Item Modal -->
+    <div class="modal" id="balanceItemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Yeni Bilanço Kalemi</h3>
+                <button class="close-btn" onclick="closeModal('balanceItemModal')">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Tip</label>
+                <div class="toggle-group">
+                    <button class="toggle-btn active" id="balTypeAsset" onclick="setBalanceType('asset')">Varlık</button>
+                    <button class="toggle-btn" id="balTypeLiab" onclick="setBalanceType('liability')">Borç</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Grup</label>
+                <select id="balanceGroupSelect" class="select">
+                    <option value="cash">Nakit</option>
+                    <option value="receivables">Alacaklar</option>
+                    <option value="investments">Yatırımlar</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Kategori Adı (alt kalem)</label>
+                <input type="text" id="balanceItemName" placeholder="Örn: Akbank / BTC / Ahmet" class="input">
+            </div>
+
+            <div class="form-group">
+                <label>Tutar (USD)</label>
+                <input type="number" id="balanceItemAmount" step="0.01" inputmode="decimal" class="input">
+            </div>
+
+            <button class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
+        </div>
+    </div>
+
