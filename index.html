@@ -1640,10 +1640,16 @@
     <section class="section" id="balance-section">
         <div class="section-title">
             <span>Bilanço (Varlıklar / Borçlar / Öz Sermaye)</span>
+            <div style="display:flex; gap:10px; align-items:center;">
             <button class="add-btn" onclick="openBalanceItemModal()">
                 <i class="fas fa-plus"></i> Kalem Ekle
             </button>
+            <button class="add-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.25);" onclick="copyPrevBalanceMonth()">
+                <i class="fas fa-copy"></i> Önceki Aydan Kopyala
+            </button>
         </div>
+        </div>
+        <div class="month-filter" id="balanceMonthFilter"></div>
 
         <div class="balance-top">
             <div class="balance-card">
@@ -3122,6 +3128,84 @@
             renderMonthFilter();
             renderTransactions();
         }
+// ==================== BALANCE MONTH FILTER (Son Durum + Aylar) ====================
+let balanceMonthMode = 'latest'; // 'latest' | 0..11
+
+function ymKey(year, monthIndex){
+  const m = String(monthIndex+1).padStart(2,'0');
+  return `${year}-${m}`;
+}
+
+function getLatestBalanceMonthIndex(year){
+  try{
+    const keys = Object.keys((appData && appData.balanceSheets) ? appData.balanceSheets : {});
+    const yKeys = keys.filter(k => k.startsWith(String(year)+'-'));
+    let best = -1;
+    for (const k of yKeys){
+      const mi = parseInt(k.slice(5,7),10)-1;
+      const rec = appData.balanceSheets[k];
+      const has = !!(rec && ((rec.assets && rec.assets.length) || (rec.liabilities && rec.liabilities.length)));
+      if (has && mi > best) best = mi;
+    }
+    return best;
+  }catch(e){ return -1; }
+}
+
+function getBalanceMonthIndex(){
+  if (balanceMonthMode === 'latest'){
+    const best = getLatestBalanceMonthIndex(currentYear);
+    return best >= 0 ? best : currentMonth;
+  }
+  return typeof balanceMonthMode === 'number' ? balanceMonthMode : currentMonth;
+}
+
+function getBalanceYM(){
+  const mi = getBalanceMonthIndex();
+  return { year: currentYear, monthIndex: mi, key: ymKey(currentYear, mi) };
+}
+
+function renderBalanceMonthFilter(){
+  const el = document.getElementById('balanceMonthFilter');
+  if (!el) return;
+
+  const makeChip = (label, active, onClick) => {
+    const b = document.createElement('button');
+    b.className = 'month-chip' + (active ? ' active' : '');
+    b.type = 'button';
+    b.textContent = label;
+    b.addEventListener('click', (e)=>{ e.preventDefault(); onClick(); });
+    return b;
+  };
+
+  el.innerHTML = '';
+  el.appendChild(makeChip('Son Durum', balanceMonthMode==='latest', ()=>{
+    balanceMonthMode='latest'; renderBalance();
+  }));
+
+  for (let i=0;i<12;i++){
+    el.appendChild(makeChip(monthNames[i], balanceMonthMode===i, ()=>{
+      balanceMonthMode=i; renderBalance();
+    }));
+  }
+}
+
+// Optional: copy previous month snapshot into selected month (only for balance)
+function copyPrevBalanceMonth(){
+  const targetMi = getBalanceMonthIndex();
+  if (targetMi <= 0) { showToast('Önceki ay yok'); return; }
+  const prevKey = ymKey(currentYear, targetMi-1);
+  const curKey = ymKey(currentYear, targetMi);
+  const prev = appData.balanceSheets?.[prevKey];
+  if (!prev){ showToast('Önceki ayda veri yok'); return; }
+  appData.balanceSheets[curKey] = {
+    assets: JSON.parse(JSON.stringify(prev.assets || [])),
+    liabilities: JSON.parse(JSON.stringify(prev.liabilities || []))
+  };
+  saveData();
+  renderBalance();
+  showToast('Önceki aydan kopyalandı ✓');
+}
+
 
         function renderTransactions() {
             const container = document.getElementById('transactionsList');
@@ -5264,7 +5348,8 @@
         }
 
         function renderBalance(){
-            const ym = getActiveYM();
+  renderBalanceMonthFilter();
+            const ym = getBalanceYM().key;
             const bm = ensureBalanceMonth(ym);
             const totals = computeBalanceTotals(ym);
 
@@ -5311,7 +5396,57 @@
             renderBalanceChart();
         }
 
-        function openBalanceItemModal(){
+        
+        // Balance item currency helpers
+        window.selectedBalanceCurrency = 'USD';
+
+        function selectBalanceCurrency(currency){
+            window.selectedBalanceCurrency = currency;
+            document.querySelectorAll('#balanceCurrencyToggle .currency-btn').forEach(btn=>{
+                btn.classList.toggle('active', btn.dataset.currency === currency);
+            });
+            updateBalanceLiveRateDisplay();
+        }
+
+        async function updateBalanceLiveRateDisplay(){
+            const box = document.getElementById('balanceLiveRateBox');
+            const v = document.getElementById('balanceLiveRateValue');
+            const t = document.getElementById('balanceLiveRateTime');
+            const usdEq = document.getElementById('balanceUsdEquivalent');
+            if (!box || !v || !t || !usdEq) return;
+
+            const currency = window.selectedBalanceCurrency || 'USD';
+            const amount = parseFloat(document.getElementById('balanceItemAmount')?.value) || 0;
+
+            if (currency === 'USD'){
+                box.style.display='none';
+                return;
+            }
+
+            box.style.display='block';
+            v.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
+            t.textContent='';
+            usdEq.textContent='';
+
+            const rate = await fetchLiveRateForCurrency(currency);
+            const sym = currency === 'TRY' ? '₺' : '₽';
+
+            if (rate){
+                v.textContent = `1$ = ${sym}${Number(rate).toFixed(4)}`;
+                t.textContent = `Son güncelleme: ${new Date().toLocaleString('tr-TR')}`;
+                const usd = rate > 0 ? (amount / rate) : 0;
+                usdEq.textContent = `USD karşılığı: $${usd.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+            } else {
+                const mi = getBalanceMonthIndex();
+                const monthlyRate = getRateForMonth(currency, mi);
+                v.textContent = `1$ = ${sym}${Number(monthlyRate).toFixed(4)}`;
+                t.textContent = '⚠️ Aylık kayıtlı kur kullanılıyor';
+                const usd = monthlyRate > 0 ? (amount / monthlyRate) : 0;
+                usdEq.textContent = `USD karşılığı: $${usd.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+            }
+        }
+
+function openBalanceItemModal(){
             currentBalanceType = 'asset';
             document.getElementById('balTypeAsset')?.classList.add('active');
             document.getElementById('balTypeLiab')?.classList.remove('active');
@@ -5320,7 +5455,13 @@
                 sel.innerHTML = groupMeta('asset').map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
             }
             document.getElementById('balanceItemName').value = '';
-            document.getElementById('balanceItemAmount').value = '';
+            const amtEl = document.getElementById('balanceItemAmount');
+            if (amtEl) amtEl.value = '';
+            selectBalanceCurrency('USD');
+            // update usd eq when typing
+            if (amtEl){
+                amtEl.oninput = ()=>{ updateBalanceLiveRateDisplay(); };
+            }
             document.getElementById('balanceItemModal').classList.add('active');
         }
 
@@ -5336,34 +5477,76 @@
             }
         }
 
-        function saveBalanceItem(){
+        
+        async function saveBalanceItem(){
+            const groupKey = document.getElementById('balanceGroup').value;
             const name = (document.getElementById('balanceItemName').value || '').trim();
-            const amountUSD = parseFloat(document.getElementById('balanceItemAmount').value);
-            const groupKey = document.getElementById('balanceGroupSelect').value;
+            const amountRaw = parseFloat(document.getElementById('balanceItemAmount').value);
+            if (!groupKey){ showToast('Grup seçin'); return; }
+            if (!name){ showToast('İsim girin'); return; }
+            if (!amountRaw || amountRaw <= 0){ showToast('Tutar girin'); return; }
 
-            if (!name){ showToast('Kategori adı girin'); return; }
-            if (!amountUSD || amountUSD < 0){ showToast('USD tutar girin'); return; }
+            const currency = (window.selectedBalanceCurrency || 'USD');
+            let rateAtTime = 1;
+            let rateSource = 'live';
+            let amountUSD = amountRaw;
 
-            const ym = getActiveYM();
-            const bm = ensureBalanceMonth(ym);
-            const item = { name, amountUSD: Number(amountUSD) };
-
-            if (currentBalanceType === 'asset') {
-                bm.assets[groupKey] = bm.assets[groupKey] || [];
-                bm.assets[groupKey].push(item);
-            } else {
-                bm.liabilities[groupKey] = bm.liabilities[groupKey] || [];
-                bm.liabilities[groupKey].push(item);
+            if (currency !== 'USD'){
+                // 5 dk cache
+                if (cachedLiveRates[currency] && cachedLiveRates.timestamp){
+                    const fiveMinutesAgo = Date.now() - (5*60*1000);
+                    if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo){
+                        rateAtTime = cachedLiveRates[currency];
+                        amountUSD = amountRaw / rateAtTime;
+                        rateSource = 'live';
+                    }
+                }
+                if (!rateAtTime || rateAtTime === 1){
+                    const liveRate = await fetchLiveRateForCurrency(currency);
+                    if (liveRate){
+                        rateAtTime = liveRate;
+                        amountUSD = amountRaw / rateAtTime;
+                        rateSource = 'live';
+                    } else {
+                        const mi = getBalanceMonthIndex();
+                        rateAtTime = getRateForMonth(currency, mi);
+                        amountUSD = amountRaw / rateAtTime;
+                        rateSource = 'monthly';
+                    }
+                }
             }
 
-            closeModal('balanceItemModal');
+            const ym = getBalanceYM().key;
+            ensureBalanceMonth(ym);
+            const arr = appData.balanceSheets[ym].assets[groupKey] || appData.balanceSheets[ym].liabilities[groupKey];
+            if (!Array.isArray(arr)){ showToast('Veri yapısı hatalı'); return; }
+
+            arr.push({
+                id: Date.now(),
+                name,
+                amount: amountRaw,
+                currency,
+                amountUSD,
+                rateAtTime,
+                rateSource
+            });
+
             saveData();
-            updateAll();
-            showToast('Eklendi ✓');
+            closeModal('balanceItemModal');
+            renderBalance();
+            const sym = currency === 'TRY' ? '₺' : currency === 'RUB' ? '₽' : '$';
+            if (currency === 'USD'){
+                showToast('Kalem eklendi ✓');
+            } else {
+                const src = rateSource === 'live' ? '📡 Canlı' : '📅 Aylık';
+                showToast(`Kalem eklendi ✓ | ${src} kur: 1$ = ${sym}${Number(rateAtTime).toFixed(2)}`);
+            }
         }
 
+
+
         function deleteBalanceItem(typeKey, groupKey, idx){
-            const ym = getActiveYM();
+            const ym = getBalanceYM().key;
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
             if (idx<0 || idx>=arr.length) return;
@@ -5467,66 +5650,6 @@
             }
         }
 
-        // ===== BILANCO FIX: Button + Chart refresh =====
-
-// 1) Inline onclick çalışsın diye fonksiyonları window'a aç
-try {
-  if (typeof openBalanceItemModal === 'function') window.openBalanceItemModal = openBalanceItemModal;
-  if (typeof saveBalanceItem === 'function') window.saveBalanceItem = saveBalanceItem;
-  if (typeof setBalanceType === 'function') window.setBalanceType = setBalanceType;
-  if (typeof renderBalance === 'function') window.renderBalance = renderBalance;
-  if (typeof renderBalanceChart === 'function') window.renderBalanceChart = renderBalanceChart;
-} catch (e) {
-  console.warn("Bilanço expose uyarı:", e);
-}
-
-// 2) “Kalem Ekle” butonuna event bağla (onclick yoksa bile çalışsın)
-(function bindBalanceAddButton(){
-  const candidates = [
-    '#btnAddBalanceItem',
-    '#balanceAddBtn',
-    '#addBalanceItemBtn',
-    '.balance-add-btn',
-    '.btn-add-balance',
-    '[data-action="add-balance-item"]'
-  ];
-  let btn = null;
-  for (const sel of candidates){
-    const el = document.querySelector(sel);
-    if (el) { btn = el; break; }
-  }
-  if (!btn) return;
-
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      if (typeof openBalanceItemModal === 'function') openBalanceItemModal();
-      else if (typeof window.openBalanceItemModal === 'function') window.openBalanceItemModal();
-      else console.warn("openBalanceItemModal bulunamadı");
-    } catch(err){
-      console.error("Kalem Ekle click hatası:", err);
-      alert("Kalem Ekle çalışmadı. Console'a bak.");
-    }
-  }, { passive: false });
-})();
-
-// 3) Bilanço sekmesine gelince chart'ı garanti çiz (Chart.js görünür olunca)
-(function refreshBalanceChartOnTab(){
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => {
-      if (t.dataset.tab === 'balance') {
-        setTimeout(() => {
-          try { if (typeof renderBalance === 'function') renderBalance(); } catch(e){}
-          setTimeout(() => {
-            try { if (typeof renderBalanceChart === 'function') renderBalanceChart(); } catch(e){}
-          }, 60);
-        }, 0);
-      }
-    });
-  });
-})();
-        
 </script>
 </body>
 </html>
@@ -5561,8 +5684,18 @@ try {
             </div>
 
             <div class="form-group">
-                <label>Tutar (USD)</label>
-                <input type="number" id="balanceItemAmount" step="0.01" inputmode="decimal" class="input">
+                <label>Tutar</label>
+                <div class="currency-toggle" id="balanceCurrencyToggle" style="margin-bottom:10px;">
+                    <button type="button" class="currency-btn active" data-currency="USD" onclick="selectBalanceCurrency('USD')">$ USD</button>
+                    <button type="button" class="currency-btn" data-currency="TRY" onclick="selectBalanceCurrency('TRY')">₺ TRY</button>
+                    <button type="button" class="currency-btn" data-currency="RUB" onclick="selectBalanceCurrency('RUB')">₽ RUB</button>
+                </div>
+                <input type="number" id="balanceItemAmount" step="0.01" inputmode="decimal" class="input" placeholder="Tutar">
+                <div id="balanceLiveRateBox" class="muted" style="margin-top:8px; display:none;">
+                    <div id="balanceLiveRateValue"></div>
+                    <div id="balanceLiveRateTime" class="muted" style="font-size:12px;"></div>
+                    <div id="balanceUsdEquivalent" class="muted" style="font-size:12px; margin-top:4px;"></div>
+                </div>
             </div>
 
             <button class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
