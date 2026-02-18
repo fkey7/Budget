@@ -5467,6 +5467,66 @@
             }
         }
 
+        // ===== BILANCO FIX: Button + Chart refresh =====
+
+// 1) Inline onclick çalışsın diye fonksiyonları window'a aç
+try {
+  if (typeof openBalanceItemModal === 'function') window.openBalanceItemModal = openBalanceItemModal;
+  if (typeof saveBalanceItem === 'function') window.saveBalanceItem = saveBalanceItem;
+  if (typeof setBalanceType === 'function') window.setBalanceType = setBalanceType;
+  if (typeof renderBalance === 'function') window.renderBalance = renderBalance;
+  if (typeof renderBalanceChart === 'function') window.renderBalanceChart = renderBalanceChart;
+} catch (e) {
+  console.warn("Bilanço expose uyarı:", e);
+}
+
+// 2) “Kalem Ekle” butonuna event bağla (onclick yoksa bile çalışsın)
+(function bindBalanceAddButton(){
+  const candidates = [
+    '#btnAddBalanceItem',
+    '#balanceAddBtn',
+    '#addBalanceItemBtn',
+    '.balance-add-btn',
+    '.btn-add-balance',
+    '[data-action="add-balance-item"]'
+  ];
+  let btn = null;
+  for (const sel of candidates){
+    const el = document.querySelector(sel);
+    if (el) { btn = el; break; }
+  }
+  if (!btn) return;
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      if (typeof openBalanceItemModal === 'function') openBalanceItemModal();
+      else if (typeof window.openBalanceItemModal === 'function') window.openBalanceItemModal();
+      else console.warn("openBalanceItemModal bulunamadı");
+    } catch(err){
+      console.error("Kalem Ekle click hatası:", err);
+      alert("Kalem Ekle çalışmadı. Console'a bak.");
+    }
+  }, { passive: false });
+})();
+
+// 3) Bilanço sekmesine gelince chart'ı garanti çiz (Chart.js görünür olunca)
+(function refreshBalanceChartOnTab(){
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      if (t.dataset.tab === 'balance') {
+        setTimeout(() => {
+          try { if (typeof renderBalance === 'function') renderBalance(); } catch(e){}
+          setTimeout(() => {
+            try { if (typeof renderBalanceChart === 'function') renderBalanceChart(); } catch(e){}
+          }, 60);
+        }, 0);
+      }
+    });
+  });
+})();
+        
 </script>
 </body>
 </html>
