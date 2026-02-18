@@ -2926,40 +2926,57 @@
         }
 
         async function saveTransaction() {
-            const amount = parseFloat(document.getElementById('transactionAmount').value);
-            const note = document.getElementById('transactionNote').value.trim();
-            const date = document.getElementById('transactionDate').value;
+    const amount = parseFloat(document.getElementById('transactionAmount').value);
+    const note = document.getElementById('transactionNote').value.trim();
+    const date = document.getElementById('transactionDate').value;
 
-            if (!selectedCategoryId) { showToast('Kategori seçin'); return; }
-            if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
-            if (!date) { showToast('Tarih seçin'); return; }
+    if (!selectedCategoryId) { showToast('Kategori seçin'); return; }
+    if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
+    if (!date) { showToast('Tarih seçin'); return; }
 
-            const symbol = selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'RUB' ? '₽' : '$';
+    let rateAtTime;
+    let amountUSD;
+    let rateSource;
 
-            transactions.push({
-                id: Date.now(),
-                type: currentTransactionType,
-                categoryId: selectedCategoryId,
-                amount,
-                currency: selectedCurrency,
-                amountUSD,
-                rateAtTime,
-                rateSource, // Kurun nereden geldiğini kaydet
-                note,
-                date
-            });
+    // USD ise kur 1
+    if (selectedCurrency === 'USD') {
+        rateAtTime = 1;
+        amountUSD = amount;
+        rateSource = 'usd';
+    } else {
+        // ✅ BURADA KULLANIYORUZ!
+        const rateData = await fetchHistoricalRate(selectedCurrency, date);
+        rateAtTime = rateData.rate;
+        amountUSD = amount / rateAtTime;
+        rateSource = rateData.source;
+    }
 
-            closeModal('transactionModal');
-            saveData();
-            updateAll();
+    const symbol = selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'RUB' ? '₽' : '$';
 
-            if (selectedCurrency !== 'USD') {
-                const rateInfo = rateSource === 'live' ? '📡 Canlı' : '📅 Aylık';
-                showToast(`Kaydedildi ✓ | ${rateInfo} kur: 1$ = ${symbol}${rateAtTime.toFixed(2)}`);
-            } else {
-                showToast('Kaydedildi ✓');
-            }
-        }
+    transactions.push({
+        id: Date.now(),
+        type: currentTransactionType,
+        categoryId: selectedCategoryId,
+        amount: amount,
+        currency: selectedCurrency,
+        amountUSD: amountUSD,
+        rateAtTime: rateAtTime,
+        rateSource: rateSource,
+        note: note,
+        date: date
+    });
+
+    closeModal('transactionModal');
+    saveData();
+    updateAll();
+    
+    if (selectedCurrency !== 'USD') {
+        const rateInfo = rateSource === 'historical' ? '📡 Canlı' : '📅 Aylık';
+        showToast('Kaydedildi ✓ | ' + rateInfo + ' kur: 1$ = ' + symbol + rateAtTime.toFixed(2));
+    } else {
+        showToast('Kaydedildi ✓');
+    }
+}
 
         // Belirli bir para birimi için canlı kur çek
         async function saveTransaction() {
@@ -3058,25 +3075,24 @@
             }
 
             function updateUsdEquivalent() {
-  const amount = parseFloat(document.getElementById('transactionAmount').value) || 0;
-  const liveUsdEquivalent = document.getElementById('liveUsdEquivalent');
-  const date = document.getElementById('transactionDate').value;
-  
-  if (selectedCurrency === 'USD') {
-    if (liveUsdEquivalent) liveUsdEquivalent.textContent = `$${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
-    return;
-  }
+    const amount = parseFloat(document.getElementById('transactionAmount').value) || 0;
+    const liveUsdEquivalent = document.getElementById('liveUsdEquivalent');
+    const date = document.getElementById('transactionDate').value;
+    
+    if (selectedCurrency === 'USD') {
+        if (liveUsdEquivalent) liveUsdEquivalent.textContent = '$' + amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+        return;
+    }
 
-  // Gösterim için: seçili tarihteki aylık kur kullan (sadece UI için, kaydetmiyor!)
-  const month = date ? new Date(date).getMonth() : currentMonth;
-  const monthlyRate = getRateForMonth(selectedCurrency, month);
-  const usdAmount = monthlyRate > 0 ? amount / monthlyRate : 0;
-  
-  if (liveUsdEquivalent) {
-    liveUsdEquivalent.textContent = `≈ $${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
-  }
+    // Gösterim için aylık kur kullan
+    const month = date ? new Date(date).getMonth() : currentMonth;
+    const monthlyRate = getRateForMonth(selectedCurrency, month);
+    const usdAmount = monthlyRate > 0 ? amount / monthlyRate : 0;
+    
+    if (liveUsdEquivalent) {
+        liveUsdEquivalent.textContent = '≈ $' + usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+    }
 }
-
         function getMonthlyBudgets(containerId) {
             const budgets = [];
             for (let i = 0; i < 12; i++) {
@@ -4630,13 +4646,13 @@
             showToast('Kurlar güncellendi ✓');
         }
 
-        // ✅ YENİ: İşlem tarihindeki kur çekme (geçmiş için)
+       // ✅ YENİ: İşlem tarihindeki kur çekme (geçmiş için)
 async function fetchHistoricalRate(currency, date) {
     try {
         const dateStr = new Date(date).toISOString().split('T')[0]; // YYYY-MM-DD
         
-        // Frankfurter API tarih bazlı sorgu
-        const response = await fetch(`https://api.frankfurter.app/${dateStr}?from=USD&to=${currency}`);
+        // ✅ DÜZELTİLDİ: Boşluk kaldırıldı
+        const response = await fetch('https://api.frankfurter.app/' + dateStr + '?from=USD&to=' + currency);
         
         if (response.ok) {
             const data = await response.json();
@@ -4664,7 +4680,6 @@ async function fetchHistoricalRate(currency, date) {
         };
     }
 }
-
         // ==================== DELETE ====================
         function confirmDelete(type, id, categoryType, name) {
             const message = document.getElementById('confirmMessage');
