@@ -1495,7 +1495,7 @@
         <div class="header-top">
             <div class="header-brand">
                 <h1><i class="fas fa-wallet"></i> Bütçe Takip</h1>
-                <span class="header-credit">made by Daşdemir</span>
+                <span class="header-credit">made by ARIK</span>
             </div>
             <div class="header-actions">
                 <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
@@ -2299,6 +2299,8 @@
         function changeYear(delta) {
             currentYear += delta;
             document.getElementById('yearDisplay').textContent = currentYear;
+            // ✅ bilanço yılını da senkronize et: yıl değişince 'Son Durum'a dön
+            if (typeof activeBalanceYM !== 'undefined') activeBalanceYM = 'latest';
             updateAll();
         }
 
@@ -3231,6 +3233,10 @@
             updateCurrencyButtons();
             updateCurrentRatesDisplay();
             updateLiveRateDisplay();
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
         }
 
         function closeModal(id) {
@@ -5377,23 +5383,19 @@ function toggleBalanceGroup(groupKey){
         }
 
 function renderBalanceMonthFilter(){
-            const el = document.getElementById('balanceMonthFilter');
-            if (!el) return;
-            const ym = resolveBalanceYM();
-            const activeKey = (activeBalanceYM==='latest') ? 'latest' : ym;
+            const container = document.getElementById('balanceMonthFilter');
+            if (!container) return;
+
             const months = monthNames || ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
-            const btn = (label, key) => {
-                const active = (key === 'latest' && activeBalanceYM==='latest') || (key === activeKey);
-                return `<button class="month-btn ${active ? 'active' : ''}" onclick="setBalanceYM('${key}')">${label}</button>`;
-            };
-
-            const monthButtons = months.map((mn, i)=>{
+            // Transactions UI ile aynı görünüm: .month-chip kullan
+            let html = `<div class="month-chip ${activeBalanceYM === 'latest' ? 'active' : ''}" onclick="setBalanceYM('latest')">Son Durum</div>`;
+            for (let i = 0; i < 12; i++){
                 const key = `${currentYear}-${String(i+1).padStart(2,'0')}`;
-                return btn(mn, key);
-            }).join('');
-
-            el.innerHTML = btn('Son Durum', 'latest') + monthButtons;
+                const active = (activeBalanceYM === key);
+                html += `<div class="month-chip ${active ? 'active' : ''}" onclick="setBalanceYM('${key}')">${months[i]}</div>`;
+            }
+            container.innerHTML = html;
         }
 
 function renderBalance(){
