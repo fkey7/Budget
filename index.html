@@ -5728,11 +5728,11 @@ function deleteBalanceItem(typeKey, groupKey, idx){
 </script>
 
     <!-- Balance Item Modal -->
-    <div class="modal" id="balanceItemModal">
-        <div class="modal-content">
+    <div class="modal-overlay" id="balanceItemModal">
+        <div class="modal">
             <div class="modal-header">
-                <h3 id="balanceItemModalTitle">Yeni Bilanço Kalemi</h3>
-                <button class="close-btn" onclick="closeModal('balanceItemModal')">&times;</button>
+                <h2 id="balanceItemModalTitle">Yeni Bilanço Kalemi</h2>
+                <button type="button" class="modal-close" onclick="closeModal('balanceItemModal')">×</button>
             </div>
 
             <div class="muted" id="balanceItemMonthInfo" style="margin-bottom:10px;"></div>
@@ -5740,8 +5740,8 @@ function deleteBalanceItem(typeKey, groupKey, idx){
             <div class="form-group">
                 <label>Tip</label>
                 <div class="toggle-group">
-                    <button class="toggle-btn active" id="balTypeAsset" onclick="setBalanceType('asset')">Varlık</button>
-                    <button class="toggle-btn" id="balTypeLiab" onclick="setBalanceType('liability')">Borç</button>
+                    <button type="button" class="toggle-btn active" id="balTypeAsset" onclick="setBalanceType('asset')">Varlık</button>
+                    <button type="button" class="toggle-btn" id="balTypeLiab" onclick="setBalanceType('liability')">Borç</button>
                 </div>
             </div>
 
@@ -5752,27 +5752,29 @@ function deleteBalanceItem(typeKey, groupKey, idx){
 
             <div class="form-group">
                 <label>Kategori Adı</label>
-                <input id="balanceItemName" class="input" placeholder="Örn: Akbank Ev Kredisi / İş Bankası / Ahmet">
+                <input id="balanceItemName" class="input" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
             </div>
 
             <div class="form-group">
                 <label>Tutar</label>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input id="balanceItemAmount" type="number" step="0.01" inputmode="decimal" class="input" style="flex:1;" placeholder="0">
-                    <div class="toggle-group" style="flex:0 0 auto;">
-                        <button class="toggle-btn active" id="balCurUSD" onclick="setBalanceCurrency('USD')">USD</button>
-                        <button class="toggle-btn" id="balCurTRY" onclick="setBalanceCurrency('TRY')">TRY</button>
-                        <button class="toggle-btn" id="balCurRUB" onclick="setBalanceCurrency('RUB')">RUB</button>
-                    </div>
-                </div>
+                <input id="balanceItemAmount" class="input" inputmode="decimal" placeholder="Örn: 10000">
                 <div class="muted" id="balRateHint" style="margin-top:8px; display:none;"></div>
                 <div class="muted" id="balUsdEq" style="margin-top:6px;"></div>
             </div>
 
-            <button class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
+            <div class="form-group">
+                <label>Para Birimi</label>
+                <div class="toggle-group">
+                    <button type="button" class="toggle-btn active" id="balCurUSD" onclick="setBalanceCurrency('USD')">USD</button>
+                    <button type="button" class="toggle-btn" id="balCurTRY" onclick="setBalanceCurrency('TRY')">TRY</button>
+                    <button type="button" class="toggle-btn" id="balCurRUB" onclick="setBalanceCurrency('RUB')">RUB</button>
+                </div>
+            </div>
+
+            <button type="button" class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
         </div>
     </div>
 
+
 </body>
 </html>
-    
