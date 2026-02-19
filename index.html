@@ -5375,7 +5375,7 @@ function setBalanceYM(ym){
         }
 
 function toggleBalanceGroup(groupKey){
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             openBalanceGroups[ym] = openBalanceGroups[ym] || {};
             const cur = !!openBalanceGroups[ym][groupKey];
             openBalanceGroups[ym][groupKey] = !cur;
@@ -5399,7 +5399,7 @@ function renderBalanceMonthFilter(){
         }
 
 function renderBalance(){
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             const bm = ensureBalanceMonth(ym);
             renderBalanceMonthFilter();
             const totals = computeBalanceTotals(ym);
@@ -5417,7 +5417,7 @@ function renderBalance(){
             
 function renderGroup(box, typeKey, groups){
                 if (!box) return;
-                const ym = resolveBalanceYM();
+                const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
                 openBalanceGroups[ym] = openBalanceGroups[ym] || {};
                 box.innerHTML = groups.map(g=>{
                     const items = typeKey === 'asset' ? bm.assets[g.key] : bm.liabilities[g.key];
@@ -5464,10 +5464,13 @@ function renderGroup(box, typeKey, groups){
 function openBalanceItemModal(){
             balanceEditPtr = null;
             document.getElementById('balanceItemModalTitle').textContent = 'Yeni Bilanço Kalemi';
+            const _bd = document.getElementById('balanceItemDate');
+            if (_bd) { _bd.value = new Date().toISOString().slice(0,10); }
+
             selectedBalanceCurrency = 'USD';
             setBalanceCurrency('USD');
             setBalanceType('asset');
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             const info = document.getElementById('balanceItemMonthInfo');
             if (info){
                 info.textContent = `Ay: ${ym}  (Bu ayın snapshot’ına kayıt edilir. Geçmiş aylar değişmez.)`;
@@ -5495,7 +5498,7 @@ function openBalanceItemModal(){
 
         
 async function saveBalanceItem(){
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             const bm = ensureBalanceMonth(ym);
 
             const group = document.getElementById('balanceGroupSelect')?.value;
@@ -5547,7 +5550,7 @@ async function saveBalanceItem(){
 
 
 function openEditBalanceItemModal(typeKey, groupKey, index){
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey==='asset') ? bm.assets[groupKey] : bm.liabilities[groupKey];
             const it = arr?.[index];
@@ -5605,7 +5608,7 @@ async function updateBalanceUsdPreview(){
             let rate = live;
             let src = 'live';
             if (!rate){
-                const ym = resolveBalanceYM();
+                const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
                 const m = Number((ym.split('-')[1]||'01')) - 1;
                 rate = getRateForMonth(selectedBalanceCurrency, m);
                 src = 'monthly';
@@ -5621,7 +5624,7 @@ async function updateBalanceUsdPreview(){
 
         
 function deleteBalanceItem(typeKey, groupKey, idx){
-            const ym = resolveBalanceYM();
+            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
             if (idx<0 || idx>=arr.length) return;
@@ -5728,52 +5731,64 @@ function deleteBalanceItem(typeKey, groupKey, idx){
 </script>
 
     <!-- Balance Item Modal -->
-    <div class="modal-overlay" id="balanceItemModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="balanceItemModalTitle">Yeni Bilanço Kalemi</h2>
-                <button type="button" class="modal-close" onclick="closeModal('balanceItemModal')">×</button>
-            </div>
-
-            <div class="muted" id="balanceItemMonthInfo" style="margin-bottom:10px;"></div>
-
-            <div class="form-group">
-                <label>Tip</label>
-                <div class="toggle-group">
-                    <button type="button" class="toggle-btn active" id="balTypeAsset" onclick="setBalanceType('asset')">Varlık</button>
-                    <button type="button" class="toggle-btn" id="balTypeLiab" onclick="setBalanceType('liability')">Borç</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Grup</label>
-                <select id="balanceGroupSelect" class="select"></select>
-            </div>
-
-            <div class="form-group">
-                <label>Kategori Adı</label>
-                <input id="balanceItemName" class="input" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
-            </div>
-
-            <div class="form-group">
-                <label>Tutar</label>
-                <input id="balanceItemAmount" class="input" inputmode="decimal" placeholder="Örn: 10000">
-                <div class="muted" id="balRateHint" style="margin-top:8px; display:none;"></div>
-                <div class="muted" id="balUsdEq" style="margin-top:6px;"></div>
-            </div>
-
-            <div class="form-group">
-                <label>Para Birimi</label>
-                <div class="toggle-group">
-                    <button type="button" class="toggle-btn active" id="balCurUSD" onclick="setBalanceCurrency('USD')">USD</button>
-                    <button type="button" class="toggle-btn" id="balCurTRY" onclick="setBalanceCurrency('TRY')">TRY</button>
-                    <button type="button" class="toggle-btn" id="balCurRUB" onclick="setBalanceCurrency('RUB')">RUB</button>
-                </div>
-            </div>
-
-            <button type="button" class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
-        </div>
+    
+<div class="modal-overlay" id="balanceItemModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="balanceItemModalTitle">Yeni Bilanço Kalemi</div>
+      <button class="close-btn" onclick="closeModal('balanceItemModal')">×</button>
     </div>
+
+    <div class="form-group">
+      <label>Tarih</label>
+      <input type="date" id="balanceItemDate" value="2026-02-19">
+    </div>
+
+    <div class="form-group">
+      <label>Tip</label>
+      <div class="type-toggle">
+        <button id="balTypeAsset" class="type-btn income active" onclick="setBalanceType('asset')">
+          <i class="fas fa-gem"></i> Varlık
+        </button>
+        <button id="balTypeLiab" class="type-btn expense" onclick="setBalanceType('liability')">
+          <i class="fas fa-building-columns"></i> Borç
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Grup</label>
+      <select id="balanceGroupSelect" class="select"></select>
+    </div>
+
+    <div class="form-group">
+      <label>Kategori Adı</label>
+      <input id="balanceItemName" type="text" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
+    </div>
+
+    <div class="form-group">
+      <label>Tutar</label>
+      <input id="balanceItemAmount" type="number" inputmode="decimal" step="0.01" placeholder="Örn: 10000" oninput="updateBalanceUsdPreview()">
+      <div class="muted" id="balRateHint" style="margin-top:8px; display:none;"></div>
+      <div class="muted" id="balUsdEq" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Para Birimi</label>
+      <div class="currency-toggle" id="balanceCurrencyToggle">
+        <button id="balCurUSD" class="currency-btn active" onclick="setBalanceCurrency('USD')">$ USD</button>
+        <button id="balCurTRY" class="currency-btn" onclick="setBalanceCurrency('TRY')">₺ TRY</button>
+        <button id="balCurRUB" class="currency-btn" onclick="setBalanceCurrency('RUB')">₽ RUB</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="saveBalanceItem()">Kaydet</button>
+
+    <div class="muted" style="margin-top:10px; font-size:12px;">
+      Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.
+    </div>
+  </div>
+</div>
 
 
 </body>
