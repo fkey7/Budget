@@ -1640,16 +1640,12 @@
     <section class="section" id="balance-section">
         <div class="section-title">
             <span>Bilanço (Varlıklar / Borçlar / Öz Sermaye)</span>
-            <div style="display:flex; gap:10px; align-items:center;">
             <button class="add-btn" onclick="openBalanceItemModal()">
                 <i class="fas fa-plus"></i> Kalem Ekle
             </button>
-            <button class="add-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.25);" onclick="copyPrevBalanceMonth()">
-                <i class="fas fa-copy"></i> Önceki Aydan Kopyala
-            </button>
         </div>
-        </div>
-        <div class="month-filter" id="balanceMonthFilter"></div>
+        <div class="month-filter" id="balanceMonthFilter" style="margin-top:12px;"></div>
+
 
         <div class="balance-top">
             <div class="balance-card">
@@ -3120,6 +3116,39 @@
             for (let i = 0; i < 12; i++) {
                 html += `<div class="month-chip ${selectedMonth === i ? 'active' : ''}" onclick="filterMonth(${i})">${monthNames[i]}</div>`;
             }
+        // ==================== BALANCE MONTH FILTER ====================
+        function renderBalanceMonthFilter(){
+            const el = document.getElementById('balanceMonthFilter');
+            if (!el) return;
+            const y = currentYear || new Date().getFullYear();
+            const lastYM = findLastBalanceYM();
+            const sonDurumYM = lastYM || `${y}-${String((currentMonth ?? new Date().getMonth())+1).padStart(2,'0')}`;
+
+            const active = window.__selectedBalanceYM || 'latest';
+
+            const btn = (key,label)=>`<button class="month-btn ${active===key?'active':''}" onclick="setBalanceMonth('${key}')">${label}</button>`;
+
+            let htmlBtns = btn('latest','Son Durum');
+            for (let i=0;i<12;i++){
+                const ym = `${y}-${String(i+1).padStart(2,'0')}`;
+                htmlBtns += btn(ym, monthNames[i]);
+            }
+            el.innerHTML = htmlBtns;
+
+            // map latest to concrete YM
+            window.__latestBalanceYM = sonDurumYM;
+        }
+
+        function setBalanceMonth(key){
+            if (key === 'latest'){
+                window.__selectedBalanceYM = window.__latestBalanceYM || getActiveYM();
+            } else {
+                window.__selectedBalanceYM = key;
+            }
+            renderBalanceMonthFilter();
+            renderBalance();
+        }
+
             container.innerHTML = html;
         }
 
@@ -3128,84 +3157,6 @@
             renderMonthFilter();
             renderTransactions();
         }
-// ==================== BALANCE MONTH FILTER (Son Durum + Aylar) ====================
-let balanceMonthMode = 'latest'; // 'latest' | 0..11
-
-function ymKey(year, monthIndex){
-  const m = String(monthIndex+1).padStart(2,'0');
-  return `${year}-${m}`;
-}
-
-function getLatestBalanceMonthIndex(year){
-  try{
-    const keys = Object.keys((appData && appData.balanceSheets) ? appData.balanceSheets : {});
-    const yKeys = keys.filter(k => k.startsWith(String(year)+'-'));
-    let best = -1;
-    for (const k of yKeys){
-      const mi = parseInt(k.slice(5,7),10)-1;
-      const rec = appData.balanceSheets[k];
-      const has = !!(rec && ((rec.assets && rec.assets.length) || (rec.liabilities && rec.liabilities.length)));
-      if (has && mi > best) best = mi;
-    }
-    return best;
-  }catch(e){ return -1; }
-}
-
-function getBalanceMonthIndex(){
-  if (balanceMonthMode === 'latest'){
-    const best = getLatestBalanceMonthIndex(currentYear);
-    return best >= 0 ? best : currentMonth;
-  }
-  return typeof balanceMonthMode === 'number' ? balanceMonthMode : currentMonth;
-}
-
-function getBalanceYM(){
-  const mi = getBalanceMonthIndex();
-  return { year: currentYear, monthIndex: mi, key: ymKey(currentYear, mi) };
-}
-
-function renderBalanceMonthFilter(){
-  const el = document.getElementById('balanceMonthFilter');
-  if (!el) return;
-
-  const makeChip = (label, active, onClick) => {
-    const b = document.createElement('button');
-    b.className = 'month-chip' + (active ? ' active' : '');
-    b.type = 'button';
-    b.textContent = label;
-    b.addEventListener('click', (e)=>{ e.preventDefault(); onClick(); });
-    return b;
-  };
-
-  el.innerHTML = '';
-  el.appendChild(makeChip('Son Durum', balanceMonthMode==='latest', ()=>{
-    balanceMonthMode='latest'; renderBalance();
-  }));
-
-  for (let i=0;i<12;i++){
-    el.appendChild(makeChip(monthNames[i], balanceMonthMode===i, ()=>{
-      balanceMonthMode=i; renderBalance();
-    }));
-  }
-}
-
-// Optional: copy previous month snapshot into selected month (only for balance)
-function copyPrevBalanceMonth(){
-  const targetMi = getBalanceMonthIndex();
-  if (targetMi <= 0) { showToast('Önceki ay yok'); return; }
-  const prevKey = ymKey(currentYear, targetMi-1);
-  const curKey = ymKey(currentYear, targetMi);
-  const prev = appData.balanceSheets?.[prevKey];
-  if (!prev){ showToast('Önceki ayda veri yok'); return; }
-  appData.balanceSheets[curKey] = {
-    assets: JSON.parse(JSON.stringify(prev.assets || [])),
-    liabilities: JSON.parse(JSON.stringify(prev.liabilities || []))
-  };
-  saveData();
-  renderBalance();
-  showToast('Önceki aydan kopyalandı ✓');
-}
-
 
         function renderTransactions() {
             const container = document.getElementById('transactionsList');
@@ -5290,13 +5241,16 @@ function copyPrevBalanceMonth(){
         function ensureBalanceMonth(ym){
             if (!balanceSheets) balanceSheets = {};
             if (!balanceSheets[ym]) {
-                balanceSheets[ym] = {
-                    assets: { cash: [], receivables: [], investments: [] },
-                    liabilities: { loans: [], cards: [], payables: [] }
-                };
+                // İlk kez oluşturuluyorsa: bir önceki ayın snapshot'ını devral (delta mantığı)
+                const prev = findPrevBalanceYM(ym);
+                if (prev && balanceSheets[prev]) {
+                    balanceSheets[ym] = deepClone(balanceSheets[prev]);
+                } else {
+                    balanceSheets[ym] = defaultBalanceMonth();
+                }
             }
             // normalize minimal
-            const bm = balanceSheets[ym];
+            const bm = balanceSheets[ym] || defaultBalanceMonth();
             bm.assets = bm.assets || { cash: [], receivables: [], investments: [] };
             bm.liabilities = bm.liabilities || { loans: [], cards: [], payables: [] };
             bm.assets.cash = Array.isArray(bm.assets.cash) ? bm.assets.cash : [];
@@ -5305,36 +5259,44 @@ function copyPrevBalanceMonth(){
             bm.liabilities.loans = Array.isArray(bm.liabilities.loans) ? bm.liabilities.loans : [];
             bm.liabilities.cards = Array.isArray(bm.liabilities.cards) ? bm.liabilities.cards : [];
             bm.liabilities.payables = Array.isArray(bm.liabilities.payables) ? bm.liabilities.payables : [];
+            balanceSheets[ym] = bm;
             return bm;
         }
 
-        function getActiveYM(){
-            // use currentYear/currentMonth UI as base
-            const y = currentYear || new Date().getFullYear();
-            const m = String((currentMonth ?? new Date().getMonth()) + 1).padStart(2,'0');
-            return `${y}-${m}`;
+        function deepClone(obj){
+            return JSON.parse(JSON.stringify(obj));
         }
 
-        function groupMeta(type){
-            if (type === 'asset') {
-                return [
-                    { key:'cash', label:'Nakit' },
-                    { key:'receivables', label:'Alacaklar' },
-                    { key:'investments', label:'Yatırımlar' }
-                ];
+        function ymToNum(ym){
+            const [y,m]=String(ym).split('-');
+            return Number(y)*100 + Number(m);
+        }
+
+        function findPrevBalanceYM(ym){
+            const target = ymToNum(ym);
+            const keys = Object.keys(balanceSheets||{}).filter(k=>/^\d{4}-\d{2}$/.test(k));
+            let best = null, bestNum = -Infinity;
+            for (const k of keys){
+                const n = ymToNum(k);
+                if (n < target && n > bestNum){ bestNum=n; best=k; }
             }
-            return [
-                { key:'loans', label:'Krediler' },
-                { key:'cards', label:'Kredi Kartı Borçları' },
-                { key:'payables', label:'Şahıslara Borçlar' }
-            ];
+            return best;
         }
 
-        function sumItems(arr){
-            return (arr||[]).reduce((a,b)=>a + (Number(b?.amountUSD)||0), 0);
+        function findLastBalanceYM(){
+            const keys = Object.keys(balanceSheets||{}).filter(k=>/^\d{4}-\d{2}$/.test(k));
+            let best=null, bestNum=-Infinity;
+            for (const k of keys){
+                const bm = balanceSheets[k];
+                if (!bm) continue;
+                const any = ['cash','receivables','investments'].some(g=>(bm.assets?.[g]||[]).some(it=>Number(it.amountUSD||0)!==0))
+                       || ['loans','cards','payables'].some(g=>(bm.liabilities?.[g]||[]).some(it=>Number(it.amountUSD||0)!==0));
+                const n=ymToNum(k);
+                if (any && n>bestNum){ bestNum=n; best=k; }
+            }
+            return best;
         }
-
-        function computeBalanceTotals(ym){
+function computeBalanceTotals(ym){
             const bm = ensureBalanceMonth(ym);
             const assetsTotal = sumItems(bm.assets.cash) + sumItems(bm.assets.receivables) + sumItems(bm.assets.investments);
             const liabilitiesTotal = sumItems(bm.liabilities.loans) + sumItems(bm.liabilities.cards) + sumItems(bm.liabilities.payables);
@@ -5348,8 +5310,7 @@ function copyPrevBalanceMonth(){
         }
 
         function renderBalance(){
-  renderBalanceMonthFilter();
-            const ym = getBalanceYM().key;
+            const ym = getActiveYM();
             const bm = ensureBalanceMonth(ym);
             const totals = computeBalanceTotals(ym);
 
@@ -5366,7 +5327,8 @@ function copyPrevBalanceMonth(){
             function renderGroup(box, typeKey, groups){
                 if (!box) return;
                 box.innerHTML = groups.map(g=>{
-                    const items = typeKey === 'asset' ? bm.assets[g.key] : bm.liabilities[g.key];
+                    let items = typeKey === 'asset' ? bm.assets[g.key] : bm.liabilities[g.key];
+                    items = (items||[]).filter(it=>Number(it.amountUSD||0)!==0);
                     const groupSum = sumItems(items);
                     const itemHtml = (items||[]).map((it, idx)=>`
                         <div class="balance-item">
@@ -5381,11 +5343,11 @@ function copyPrevBalanceMonth(){
                     `).join('');
                     return `
                         <div class="balance-group">
-                            <div class="balance-group-title">
+                            <div class="balance-group-title" onclick="toggleBalanceGroup(this)">
                                 <span>${g.label}</span>
                                 <span class="muted">${fmtUSD(groupSum)}</span>
                             </div>
-                            ${itemHtml || '<div class="muted">(boş)</div>'}
+                            <div class="balance-group-items">${itemHtml || '<div class="muted">(boş)</div>'}</div>
                         </div>
                     `;
                 }).join('');
@@ -5397,55 +5359,14 @@ function copyPrevBalanceMonth(){
         }
 
         
-        // Balance item currency helpers
-        window.selectedBalanceCurrency = 'USD';
-
-        function selectBalanceCurrency(currency){
-            window.selectedBalanceCurrency = currency;
-            document.querySelectorAll('#balanceCurrencyToggle .currency-btn').forEach(btn=>{
-                btn.classList.toggle('active', btn.dataset.currency === currency);
-            });
-            updateBalanceLiveRateDisplay();
+        function toggleBalanceGroup(el){
+            try{
+                const group = el?.parentElement;
+                const list = group?.querySelector('.balance-group-items');
+                if (!list) return;
+                const isHidden = list.classList.toggle('hidden');
+            }catch(e){}
         }
-
-        async function updateBalanceLiveRateDisplay(){
-            const box = document.getElementById('balanceLiveRateBox');
-            const v = document.getElementById('balanceLiveRateValue');
-            const t = document.getElementById('balanceLiveRateTime');
-            const usdEq = document.getElementById('balanceUsdEquivalent');
-            if (!box || !v || !t || !usdEq) return;
-
-            const currency = window.selectedBalanceCurrency || 'USD';
-            const amount = parseFloat(document.getElementById('balanceItemAmount')?.value) || 0;
-
-            if (currency === 'USD'){
-                box.style.display='none';
-                return;
-            }
-
-            box.style.display='block';
-            v.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
-            t.textContent='';
-            usdEq.textContent='';
-
-            const rate = await fetchLiveRateForCurrency(currency);
-            const sym = currency === 'TRY' ? '₺' : '₽';
-
-            if (rate){
-                v.textContent = `1$ = ${sym}${Number(rate).toFixed(4)}`;
-                t.textContent = `Son güncelleme: ${new Date().toLocaleString('tr-TR')}`;
-                const usd = rate > 0 ? (amount / rate) : 0;
-                usdEq.textContent = `USD karşılığı: $${usd.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
-            } else {
-                const mi = getBalanceMonthIndex();
-                const monthlyRate = getRateForMonth(currency, mi);
-                v.textContent = `1$ = ${sym}${Number(monthlyRate).toFixed(4)}`;
-                t.textContent = '⚠️ Aylık kayıtlı kur kullanılıyor';
-                const usd = monthlyRate > 0 ? (amount / monthlyRate) : 0;
-                usdEq.textContent = `USD karşılığı: $${usd.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
-            }
-        }
-
 function openBalanceItemModal(){
             currentBalanceType = 'asset';
             document.getElementById('balTypeAsset')?.classList.add('active');
@@ -5455,13 +5376,7 @@ function openBalanceItemModal(){
                 sel.innerHTML = groupMeta('asset').map(g=>`<option value="${g.key}">${g.label}</option>`).join('');
             }
             document.getElementById('balanceItemName').value = '';
-            const amtEl = document.getElementById('balanceItemAmount');
-            if (amtEl) amtEl.value = '';
-            selectBalanceCurrency('USD');
-            // update usd eq when typing
-            if (amtEl){
-                amtEl.oninput = ()=>{ updateBalanceLiveRateDisplay(); };
-            }
+            document.getElementById('balanceItemAmount').value = '';
             document.getElementById('balanceItemModal').classList.add('active');
         }
 
@@ -5477,76 +5392,34 @@ function openBalanceItemModal(){
             }
         }
 
-        
-        async function saveBalanceItem(){
-            const groupKey = document.getElementById('balanceGroup').value;
+        function saveBalanceItem(){
             const name = (document.getElementById('balanceItemName').value || '').trim();
-            const amountRaw = parseFloat(document.getElementById('balanceItemAmount').value);
-            if (!groupKey){ showToast('Grup seçin'); return; }
-            if (!name){ showToast('İsim girin'); return; }
-            if (!amountRaw || amountRaw <= 0){ showToast('Tutar girin'); return; }
+            const amountUSD = parseFloat(document.getElementById('balanceItemAmount').value);
+            const groupKey = document.getElementById('balanceGroupSelect').value;
 
-            const currency = (window.selectedBalanceCurrency || 'USD');
-            let rateAtTime = 1;
-            let rateSource = 'live';
-            let amountUSD = amountRaw;
+            if (!name){ showToast('Kategori adı girin'); return; }
+            if (!amountUSD || amountUSD < 0){ showToast('USD tutar girin'); return; }
 
-            if (currency !== 'USD'){
-                // 5 dk cache
-                if (cachedLiveRates[currency] && cachedLiveRates.timestamp){
-                    const fiveMinutesAgo = Date.now() - (5*60*1000);
-                    if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo){
-                        rateAtTime = cachedLiveRates[currency];
-                        amountUSD = amountRaw / rateAtTime;
-                        rateSource = 'live';
-                    }
-                }
-                if (!rateAtTime || rateAtTime === 1){
-                    const liveRate = await fetchLiveRateForCurrency(currency);
-                    if (liveRate){
-                        rateAtTime = liveRate;
-                        amountUSD = amountRaw / rateAtTime;
-                        rateSource = 'live';
-                    } else {
-                        const mi = getBalanceMonthIndex();
-                        rateAtTime = getRateForMonth(currency, mi);
-                        amountUSD = amountRaw / rateAtTime;
-                        rateSource = 'monthly';
-                    }
-                }
-            }
+            const ym = getActiveYM();
+            const bm = ensureBalanceMonth(ym);
+            const item = { name, amountUSD: Number(amountUSD) };
 
-            const ym = getBalanceYM().key;
-            ensureBalanceMonth(ym);
-            const arr = appData.balanceSheets[ym].assets[groupKey] || appData.balanceSheets[ym].liabilities[groupKey];
-            if (!Array.isArray(arr)){ showToast('Veri yapısı hatalı'); return; }
-
-            arr.push({
-                id: Date.now(),
-                name,
-                amount: amountRaw,
-                currency,
-                amountUSD,
-                rateAtTime,
-                rateSource
-            });
-
-            saveData();
-            closeModal('balanceItemModal');
-            renderBalance();
-            const sym = currency === 'TRY' ? '₺' : currency === 'RUB' ? '₽' : '$';
-            if (currency === 'USD'){
-                showToast('Kalem eklendi ✓');
+            if (currentBalanceType === 'asset') {
+                bm.assets[groupKey] = bm.assets[groupKey] || [];
+                bm.assets[groupKey].push(item);
             } else {
-                const src = rateSource === 'live' ? '📡 Canlı' : '📅 Aylık';
-                showToast(`Kalem eklendi ✓ | ${src} kur: 1$ = ${sym}${Number(rateAtTime).toFixed(2)}`);
+                bm.liabilities[groupKey] = bm.liabilities[groupKey] || [];
+                bm.liabilities[groupKey].push(item);
             }
+
+            closeModal('balanceItemModal');
+            saveData();
+            updateAll();
+            showToast('Eklendi ✓');
         }
 
-
-
         function deleteBalanceItem(typeKey, groupKey, idx){
-            const ym = getBalanceYM().key;
+            const ym = getActiveYM();
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
             if (idx<0 || idx>=arr.length) return;
@@ -5642,6 +5515,7 @@ function openBalanceItemModal(){
         if (__origUpdateAll){
             updateAll = function(){
                 __origUpdateAll();
+                try{ renderBalanceMonthFilter(); }catch(e){}
                 try{ renderBalance(); }catch(e){}
                 // hide FAB on balance tab
                 const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
@@ -5684,18 +5558,8 @@ function openBalanceItemModal(){
             </div>
 
             <div class="form-group">
-                <label>Tutar</label>
-                <div class="currency-toggle" id="balanceCurrencyToggle" style="margin-bottom:10px;">
-                    <button type="button" class="currency-btn active" data-currency="USD" onclick="selectBalanceCurrency('USD')">$ USD</button>
-                    <button type="button" class="currency-btn" data-currency="TRY" onclick="selectBalanceCurrency('TRY')">₺ TRY</button>
-                    <button type="button" class="currency-btn" data-currency="RUB" onclick="selectBalanceCurrency('RUB')">₽ RUB</button>
-                </div>
-                <input type="number" id="balanceItemAmount" step="0.01" inputmode="decimal" class="input" placeholder="Tutar">
-                <div id="balanceLiveRateBox" class="muted" style="margin-top:8px; display:none;">
-                    <div id="balanceLiveRateValue"></div>
-                    <div id="balanceLiveRateTime" class="muted" style="font-size:12px;"></div>
-                    <div id="balanceUsdEquivalent" class="muted" style="font-size:12px; margin-top:4px;"></div>
-                </div>
+                <label>Tutar (USD)</label>
+                <input type="number" id="balanceItemAmount" step="0.01" inputmode="decimal" class="input">
             </div>
 
             <button class="btn primary" onclick="saveBalanceItem()">Kaydet</button>
