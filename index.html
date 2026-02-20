@@ -1488,6 +1488,15 @@
 
 /* balance month filter button style align with existing */
 #balanceMonthFilter { margin-top: 10px; }
+
+/* --- UI additions (Theme/Lang + Balance chart toggle) --- */
+.balance-trend-header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.segmented{display:flex;gap:6px;background:rgba(0,0,0,0.06);padding:4px;border-radius:999px;}
+.dark .segmented{background:rgba(255,255,255,0.10);}
+.seg-btn{border:0;background:transparent;padding:6px 10px;border-radius:999px;font-weight:700;cursor:pointer;font-size:12px;}
+.seg-btn.active{background:rgba(108,92,231,0.18);}
+.dark .seg-btn.active{background:rgba(108,92,231,0.28);}
+.lang-pill{font-weight:800;font-size:12px;letter-spacing:0.5px;}
 </style>
 </head>
 <body>
@@ -1498,7 +1507,14 @@
                 <span class="header-credit">made by ARIK</span>
             </div>
             <div class="header-actions">
-                <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
+                
+                <button id="btnTheme" class="header-btn" type="button" title="Tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="btnLang" class="header-btn" type="button" title="Dil">
+                    <span class="lang-pill">TR</span>
+                </button>
+<button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
                     <i class="fas fa-file-pdf"></i>
                 </button>
                 <button class="header-btn" onclick="generateExcelReport()" title="Excel Rapor">
@@ -1667,26 +1683,32 @@
 
         <div class="balance-top">
             <div class="balance-card">
-                <div class="balance-card-title">Varlıklar (Assets)</div>
+                <div class="balance-card-title">💎 Varlıklar</div>
                 <div class="balance-total" id="assetsTotal">$0</div>
                 <div class="balance-groups" id="assetsGroups"></div>
             </div>
 
             <div class="balance-card">
-                <div class="balance-card-title">Borçlar (Liabilities)</div>
+                <div class="balance-card-title">🏦 Borçlar</div>
                 <div class="balance-total" id="liabilitiesTotal">$0</div>
                 <div class="balance-groups" id="liabilitiesGroups"></div>
             </div>
 
             <div class="balance-card">
-                <div class="balance-card-title">Öz Sermaye (Equity)</div>
+                <div class="balance-card-title">📈 Öz Sermaye</div>
                 <div class="balance-total" id="equityTotal">$0</div>
                 <div class="muted" id="equityNote">Equity = Assets - Liabilities</div>
             </div>
         </div>
 
         <div class="chart-card" style="margin-top:16px;">
-            <div class="chart-title">Bilanço Trend (Aylık)</div>
+            <div class="chart-title balance-trend-header">
+                <span id="balanceTrendTitle">Bilanço Trend</span>
+                <div class="segmented" id="balanceTrendToggle">
+                    <button id="btnBalTrendMonthly" class="seg-btn active" type="button">Aylık</button>
+                    <button id="btnBalTrendYearly" class="seg-btn" type="button">Yıllık</button>
+                </div>
+            </div>
             <canvas id="balanceChart"></canvas>
         </div>
 
@@ -2066,7 +2088,154 @@
             return monthlyRates[currency]?.[month] || exchangeRates[currency] || 1;
         }
 
-        // ==================== FIREBASE SYNC (single user via Google Login) ====================
+        
+        // ==================== APP SETTINGS (Theme + Language) ====================
+        let appSettings = { lang: 'tr', theme: 'light' };
+        function loadAppSettings(){
+            try{
+                const raw = localStorage.getItem('budgetAppSettings');
+                if (raw) appSettings = { ...appSettings, ...(JSON.parse(raw)||{}) };
+            }catch(e){}
+        }
+        function saveAppSettings(){
+            try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
+        }
+
+        const I18N = {
+            tr: {
+                appTitle: 'Bütçe Takip',
+                budget: 'Bütçe',
+                transactions: 'İşlemler',
+                balance: 'Bilanço',
+                assets: 'Varlıklar',
+                liabilities: 'Borçlar',
+                equity: 'Öz Sermaye',
+                balanceTrendMonthly: 'Bilanço Trend',
+                balanceTrendYearly: 'Bilanço Trend',
+                monthly: 'Aylık',
+                yearly: 'Yıllık',
+                theme: 'Tema',
+                lang: 'Dil',
+                pdfReport: 'PDF Rapor',
+                excelReport: 'Excel Rapor',
+                dataMgmt: 'Veri Yönetimi',
+                rates: 'Döviz Kurları',
+                install: 'Yükle',
+                balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)',
+                addItem: 'Kalem Ekle'
+            },
+            en: {
+                appTitle: 'Budget Tracker',
+                budget: 'Budget',
+                transactions: 'Transactions',
+                balance: 'Balance',
+                assets: 'Assets',
+                liabilities: 'Liabilities',
+                equity: 'Equity',
+                balanceTrendMonthly: 'Balance Trend',
+                balanceTrendYearly: 'Balance Trend',
+                monthly: 'Monthly',
+                yearly: 'Yearly',
+                theme: 'Theme',
+                lang: 'Language',
+                pdfReport: 'PDF Report',
+                excelReport: 'Excel Report',
+                dataMgmt: 'Data',
+                rates: 'FX Rates',
+                install: 'Install',
+                balanceSectionTitle: 'Balance (Assets / Liabilities / Equity)',
+                addItem: 'Add Item'
+            }
+        };
+
+        function t(key){
+            const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
+            return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
+        }
+
+        function applyTheme(){
+            const dark = appSettings.theme === 'dark';
+            document.documentElement.classList.toggle('dark', dark);
+            const btn = document.getElementById('btnTheme');
+            if (btn){
+                btn.title = t('theme');
+                btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            }
+        }
+
+        function applyLanguage(){
+            document.title = t('appTitle');
+            const h1 = document.querySelector('.header-title h1');
+            if (h1) h1.textContent = t('appTitle');
+
+            // Tabs
+            const tabBudget = document.querySelector('.tab[data-tab="budget"]');
+            const tabTx = document.querySelector('.tab[data-tab="transactions"]');
+            const tabBal = document.querySelector('.tab[data-tab="balance"]');
+            if (tabBudget) tabBudget.textContent = t('budget');
+            if (tabTx) tabTx.textContent = t('transactions');
+            if (tabBal) tabBal.textContent = t('balance');
+
+            // Header button titles (existing)
+            document.querySelectorAll('.header-actions .header-btn').forEach(b=>{
+                const oc = (b.getAttribute('onclick')||'').trim();
+                if (oc.startsWith('generatePDFReport')) b.title = t('pdfReport');
+                if (oc.startsWith('generateExcelReport')) b.title = t('excelReport');
+                if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
+                if (oc.startsWith('openRatesModal')) b.title = t('rates');
+                if (oc.startsWith('showInstallBanner')) b.title = t('install');
+            });
+
+            const langBtn = document.getElementById('btnLang');
+            if (langBtn){
+                langBtn.title = t('lang');
+                const pill = langBtn.querySelector('.lang-pill');
+                if (pill) pill.textContent = (appSettings.lang || 'tr').toUpperCase();
+            }
+
+            // Balance section title + add button
+            const balTitleSpan = document.querySelector('#balance-section .section-title span');
+            if (balTitleSpan) balTitleSpan.textContent = t('balanceSectionTitle');
+            const balAddBtn = document.querySelector('#balance-section .section-title button.add-btn');
+            if (balAddBtn) balAddBtn.innerHTML = '<i class="fas fa-plus"></i> ' + t('addItem');
+
+            // Balance card titles (keep emojis)
+            const aT = document.querySelector('#assetsTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+            const lT = document.querySelector('#liabilitiesTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+            const eT = document.querySelector('#equityTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+            if (aT) aT.textContent = '💎 ' + t('assets');
+            if (lT) lT.textContent = '🏦 ' + t('liabilities');
+            if (eT) eT.textContent = '📈 ' + t('equity');
+
+            // Balance trend toggle labels
+            const bm = document.getElementById('btnBalTrendMonthly');
+            const by = document.getElementById('btnBalTrendYearly');
+            if (bm) bm.textContent = t('monthly');
+            if (by) by.textContent = t('yearly');
+
+            try{ renderBalanceChart(); }catch(e){}
+        }
+
+        function wireHeaderToggles(){
+            const btnTheme = document.getElementById('btnTheme');
+            if (btnTheme){
+                btnTheme.addEventListener('click', ()=>{
+                    appSettings.theme = (appSettings.theme === 'dark') ? 'light' : 'dark';
+                    saveAppSettings();
+                    applyTheme();
+                });
+            }
+            const btnLang = document.getElementById('btnLang');
+            if (btnLang){
+                btnLang.addEventListener('click', ()=>{
+                    appSettings.lang = (appSettings.lang === 'tr') ? 'en' : 'tr';
+                    saveAppSettings();
+                    applyLanguage();
+                });
+            }
+        }
+
+// ==================== FIREBASE SYNC (single user via Google Login) ====================
         // Uses compat SDK (firebase global). Data path: users/<uid>/budgetAppData
         (function firebaseSyncInit(){
             if (!window.firebase || !window.firebase.auth || !window.firebase.database) return;
@@ -3822,30 +3991,33 @@
             document.getElementById('dataModal').classList.add('active');
         }
 
-        function exportData() {
+        
+function exportData() {
             const data = {
-                version: 1,
-                exportDate: new Date().toISOString(),
                 categories,
                 transactions,
-                monthlyRates,
                 exchangeRates,
-                nextCategoryId
+                monthlyRates,
+                nextCategoryId,
+                balanceSheets: balanceSheets || {},
+                appSettings: appSettings || { lang:'tr', theme:'light' }
             };
 
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
+
             const a = document.createElement('a');
             a.href = url;
             a.download = `butce-yedek-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+
             URL.revokeObjectURL(url);
-            showToast('Veriler indirildi ✓');
+            showToast('Yedek indirildi ✓');
         }
 
-        function importData(event) {
+        
+function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -3854,13 +4026,6 @@
                 try {
                     const data = JSON.parse(e.target.result);
 
-                    // Validate data structure
-                    if (!data.categories || !data.transactions) {
-                        showToast('Geçersiz dosya formatı');
-                        return;
-                    }
-
-                    // Import data
                     categories = data.categories || { income: [], expense: [] };
                     transactions = data.transactions || [];
                     monthlyRates = data.monthlyRates || {
@@ -3869,6 +4034,15 @@
                     };
                     exchangeRates = data.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
                     nextCategoryId = data.nextCategoryId || 1;
+
+                    // Balance + settings
+                    balanceSheets = data.balanceSheets || balanceSheets || {};
+                    if (data.appSettings){
+                        appSettings = { ...appSettings, ...data.appSettings };
+                        saveAppSettings();
+                        applyTheme();
+                        applyLanguage();
+                    }
 
                     saveData();
                     closeModal('dataModal');
@@ -3879,7 +4053,7 @@
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Reset input
+            event.target.value = '';
         }
 
         function confirmClearAllData() {
@@ -4464,36 +4638,47 @@
                 y = drawTable(doc, incomeTableHeaders, incomeTableRows, y, [48, 16, 38, 38, 30, 18]);
             }
 
-            // ==================== SON ISLEMLER ====================
-            const txList = isMonthly
-                ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth)
-                : yearTx;
+            // ==================== BILANCO ====================
+            const reportYM = isMonthly
+                ? `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+                : getLatestBalanceYMForYear(currentYear);
 
-            if (txList.length > 0) {
-                y = checkPageBreak(doc, y, 50);
-                y = drawSectionTitle(doc, 'SON ISLEMLER', y, colors.primary);
+            const bt = computeBalanceTotals(reportYM);
 
-                const txTableHeaders = ['Tarih', 'Kategori', 'PB', 'Tutar', 'Tutar ($)', 'Not'];
-                const txTableRows = txList.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20).map(tx => {
-                    const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
-                    const catName = cat ? cat.name : 'Bilinmiyor';
-                    const txDate = new Date(tx.date);
-                    const sign = tx.type === 'income' ? '+' : '-';
-                    const color = tx.type === 'income' ? colors.income : colors.expense;
-                    const symbol = getCurrencySymbol(tx.currency);
+            y = checkPageBreak(doc, y, 55);
+            y = drawSectionTitle(doc, 'BILANCO', y, colors.primary);
 
-                    return [
-                        txDate.toLocaleDateString('tr-TR'),
-                        catName.length > 12 ? catName.substring(0, 12) + '...' : catName,
-                        tx.currency,
-                        { text: `${sign}${symbol}${formatNum(tx.amount)}`, color },
-                        { text: `${sign}$${formatNum(tx.amountUSD)}`, color },
-                        (tx.note || '-').substring(0, 18)
-                    ];
-                });
+            const balHeaders = ['Kalem', 'Tutar ($)'];
+            const balRows = [
+                ['Varliklar', `$${formatNum(bt.assetsTotal)}`],
+                ['Borclar', `$${formatNum(bt.liabilitiesTotal)}`],
+                ['Oz Sermaye', `$${formatNum(bt.equity)}`]
+            ];
+            y = drawTable(doc, balHeaders, balRows, y, [70, 120]);
 
-                y = drawTable(doc, txTableHeaders, txTableRows, y, [25, 32, 16, 32, 28, 50]);
-            }
+            // Optional: breakdown by groups (top level)
+            try{
+                const snap = ensureBalanceMonth(reportYM);
+                const aggGroup = (items)=> {
+                    const out = {};
+                    Object.keys(items||{}).forEach(k=>{
+                        const it = items[k]||{};
+                        out[k] = Object.values(it).reduce((s,v)=>s+(Number(v.usd)||0),0);
+                    });
+                    return out;
+                };
+                const aG = aggGroup(snap.assets);
+                const lG = aggGroup(snap.liabilities);
+
+                const gRows = [];
+                Object.keys(aG).forEach(k=> gRows.push([`Varlik: ${k}`, `$${formatNum(aG[k])}`]));
+                Object.keys(lG).forEach(k=> gRows.push([`Borc: ${k}`, `$${formatNum(lG[k])}`]));
+                if (gRows.length){
+                    y = checkPageBreak(doc, y, 55);
+                    y = drawSectionTitle(doc, 'BILANCO DETAY', y, colors.primary);
+                    y = drawTable(doc, ['Grup', 'Tutar ($)'], gRows, y, [90, 100]);
+                }
+            }catch(e){}
 
             // Footer on each page
             const pageCount = doc.internal.getNumberOfPages();
@@ -5012,6 +5197,25 @@
             const filename = isMonthly
                 ? `butce-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}.xlsx`
                 : `butce-${currentYear}-yillik.xlsx`;
+
+            
+            // ==================== BALANCE SHEET ====================
+            const balRows = [['Year', currentYear], [], ['Month', 'Assets($)', 'Liabilities($)', 'Equity($)']];
+            for (let i=0;i<12;i++){
+                const ym = `${currentYear}-${String(i+1).padStart(2,'0')}`;
+                const t0 = computeBalanceTotals(ym);
+                balRows.push([monthNames[i], t0.assetsTotal, t0.liabilitiesTotal, t0.equity]);
+            }
+            balRows.push([]);
+            balRows.push(['Last 5 Years', '', '', '']);
+            balRows.push(['Year', 'Assets($)', 'Liabilities($)', 'Equity($)']);
+            for (let y = currentYear-4; y<=currentYear; y++){
+                const ymY = getLatestBalanceYMForYear(y);
+                const tY = computeBalanceTotals(ymY);
+                balRows.push([y, tY.assetsTotal, tY.liabilitiesTotal, tY.equity]);
+            }
+            const wsBalance = XLSX.utils.aoa_to_sheet(balRows);
+            XLSX.utils.book_append_sheet(wb, wsBalance, 'Balance');
 
             XLSX.writeFile(wb, filename);
             showToast('Excel raporu oluşturuldu ✓');
@@ -5680,42 +5884,111 @@ function deleteBalanceItem(typeKey, groupKey, idx){
 
         // chart
         let balanceChartInstance = null;
-        function renderBalanceChart(){
+        
+function renderBalanceChart(){
             const canvas = document.getElementById('balanceChart');
             if (!canvas) return;
 
-            const months = Object.keys(balanceSheets||{}).sort();
-            if (!months.length){
-                if (balanceChartInstance){ balanceChartInstance.destroy(); balanceChartInstance=null; }
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                return;
+            if (window.balanceChartInstance) {
+                try { window.balanceChartInstance.destroy(); } catch(e){}
+                window.balanceChartInstance = null;
             }
 
-            const assets = months.map(ym=>computeBalanceTotals(ym).assetsTotal);
-            const liabs  = months.map(ym=>computeBalanceTotals(ym).liabilitiesTotal);
-            const equity = months.map(ym=>computeBalanceTotals(ym).equity);
+            const mode = window.balanceTrendMode || 'monthly';
+            const year = currentYear;
 
-            if (balanceChartInstance) balanceChartInstance.destroy();
-            balanceChartInstance = new Chart(canvas, {
+            let labels = [];
+            let assets = [];
+            let liabilities = [];
+            let equity = [];
+
+            if (mode === 'yearly') {
+                const years = [];
+                for (let y = year - 4; y <= year; y++) years.push(y);
+                labels = years.map(y=>String(y));
+                years.forEach(y=>{
+                    const ym = getLatestBalanceYMForYear(y);
+                    const t0 = computeBalanceTotals(ym);
+                    assets.push(t0.assetsTotal);
+                    liabilities.push(t0.liabilitiesTotal);
+                    equity.push(t0.equity);
+                });
+            } else {
+                labels = monthNames.map(m=>m);
+                for (let i=0;i<12;i++){
+                    const ym = `${year}-${String(i+1).padStart(2,'0')}`;
+                    const t0 = computeBalanceTotals(ym);
+                    assets.push(t0.assetsTotal);
+                    liabilities.push(t0.liabilitiesTotal);
+                    equity.push(t0.equity);
+                }
+            }
+
+            const ctx = canvas.getContext('2d');
+            window.balanceChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: months,
+                    labels,
                     datasets: [
-                        { label: 'Assets', data: assets, tension: 0.25 },
-                        { label: 'Liabilities', data: liabs, tension: 0.25 },
-                        { label: 'Equity', data: equity, tension: 0.25 }
+                        { label: t('assets'), data: assets, tension: 0.25 },
+                        { label: t('liabilities'), data: liabilities, tension: 0.25 },
+                        { label: t('equity'), data: equity, tension: 0.25 }
                     ]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { display: true } },
-                    scales: { y: { ticks: { callback: (v)=>'$'+v } } }
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${fmtUSD(ctx.parsed.y)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { callback: (v)=>'$' + Number(v).toLocaleString('tr-TR') }
+                        }
+                    }
                 }
             });
+
+            const titleEl = document.getElementById('balanceTrendTitle');
+            if (titleEl){
+                titleEl.textContent = (mode === 'yearly') ? t('balanceTrendYearly') : t('balanceTrendMonthly');
+            }
+            const bM = document.getElementById('btnBalTrendMonthly');
+            const bY = document.getElementById('btnBalTrendYearly');
+            if (bM && bY){
+                bM.classList.toggle('active', mode !== 'yearly');
+                bY.classList.toggle('active', mode === 'yearly');
+            }
         }
 
-        // Hook into existing updateAll
+
+        
+        // ==================== INIT: Theme / Language / Balance Trend ====================
+        loadAppSettings();
+        window.balanceTrendMode = window.balanceTrendMode || 'monthly';
+
+        function setBalanceTrendMode(mode){
+            window.balanceTrendMode = (mode === 'yearly') ? 'yearly' : 'monthly';
+            try{ renderBalanceChart(); }catch(e){}
+        }
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+            wireHeaderToggles();
+            applyTheme();
+            applyLanguage();
+
+            const bM = document.getElementById('btnBalTrendMonthly');
+            const bY = document.getElementById('btnBalTrendYearly');
+            if (bM) bM.addEventListener('click', ()=>setBalanceTrendMode('monthly'));
+            if (bY) bY.addEventListener('click', ()=>setBalanceTrendMode('yearly'));
+        });
+
+// Hook into existing updateAll
         const __origUpdateAll = (typeof updateAll === 'function') ? updateAll : null;
         if (__origUpdateAll){
             updateAll = function(){
