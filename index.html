@@ -5375,7 +5375,7 @@ function setBalanceYM(ym){
         }
 
 function toggleBalanceGroup(groupKey){
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const ym = getSelectedBalanceYM();
             openBalanceGroups[ym] = openBalanceGroups[ym] || {};
             const cur = !!openBalanceGroups[ym][groupKey];
             openBalanceGroups[ym][groupKey] = !cur;
@@ -5399,7 +5399,7 @@ function renderBalanceMonthFilter(){
         }
 
 function renderBalance(){
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const ym = getSelectedBalanceYM();
             const bm = ensureBalanceMonth(ym);
             renderBalanceMonthFilter();
             const totals = computeBalanceTotals(ym);
@@ -5417,7 +5417,7 @@ function renderBalance(){
             
 function renderGroup(box, typeKey, groups){
                 if (!box) return;
-                const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+                const ym = getSelectedBalanceYM();
                 openBalanceGroups[ym] = openBalanceGroups[ym] || {};
                 box.innerHTML = groups.map(g=>{
                     const items = typeKey === 'asset' ? bm.assets[g.key] : bm.liabilities[g.key];
@@ -5470,7 +5470,7 @@ function openBalanceItemModal(){
             selectedBalanceCurrency = 'USD';
             setBalanceCurrency('USD');
             setBalanceType('asset');
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const ym = getSelectedBalanceYM();
             const info = document.getElementById('balanceItemMonthInfo');
             if (info){
                 info.textContent = `Ay: ${ym}  (Bu ayın snapshot’ına kayıt edilir. Geçmiş aylar değişmez.)`;
@@ -5498,7 +5498,8 @@ function openBalanceItemModal(){
 
         
 async function saveBalanceItem(){
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const _d = document.getElementById('balanceItemDate')?.value;
+            const ym = (_d ? _d.slice(0,7) : getSelectedBalanceYM());
             const bm = ensureBalanceMonth(ym);
 
             const group = document.getElementById('balanceGroupSelect')?.value;
@@ -5550,7 +5551,7 @@ async function saveBalanceItem(){
 
 
 function openEditBalanceItemModal(typeKey, groupKey, index){
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const ym = getSelectedBalanceYM();
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey==='asset') ? bm.assets[groupKey] : bm.liabilities[groupKey];
             const it = arr?.[index];
@@ -5608,7 +5609,7 @@ async function updateBalanceUsdPreview(){
             let rate = live;
             let src = 'live';
             if (!rate){
-                const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+                const ym = getSelectedBalanceYM();
                 const m = Number((ym.split('-')[1]||'01')) - 1;
                 rate = getRateForMonth(selectedBalanceCurrency, m);
                 src = 'monthly';
@@ -5624,7 +5625,7 @@ async function updateBalanceUsdPreview(){
 
         
 function deleteBalanceItem(typeKey, groupKey, idx){
-            const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
+            const ym = getSelectedBalanceYM();
             const bm = ensureBalanceMonth(ym);
             const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
             if (idx<0 || idx>=arr.length) return;
@@ -5793,3 +5794,9 @@ function deleteBalanceItem(typeKey, groupKey, idx){
 
 </body>
 </html>
+
+        // Aktif bilanço görüntüleme ayı (UI seçiminden gelir). Modal içindeki tarih alanı yalnızca kayıt için kullanılır.
+        function getSelectedBalanceYM(){
+            return resolveBalanceYM();
+        }
+
