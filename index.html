@@ -2104,47 +2104,115 @@
         const I18N = {
             tr: {
                 appTitle: 'Bütçe Takip',
+                madeBy: 'Made by ARIK',
                 budget: 'Bütçe',
                 transactions: 'İşlemler',
                 balance: 'Bilanço',
+                year: 'Yıl',
+                month: 'Ay',
+                all: 'Tümü',
+                lastStatus: '${t('lastStatus')}',
+                budgetSummary: 'Bütçe Özeti',
+                monthlyCashflow: 'Aylık Nakit Akışı',
+                monthlyBudgetVsActual: 'Aylık Bütçe vs Gerçekleşen',
+                planned: 'Planlanan',
+                actual: 'Gerçekleşen',
+                income: 'Gelir',
+                expense: 'Gider',
+                net: 'Net',
+                cumulative: 'Kümülatif',
+                login: 'Google ile Giriş',
+                logout: 'Çıkış',
+                theme: 'Tema',
+                language: 'Dil',
+                pdfReport: 'PDF',
+                excelReport: 'Excel',
+                dataMgmt: 'Veri',
+                rates: 'Kur',
+                updateRates: 'Kuru Güncelle',
+                install: 'Yükle',
+                monthly: 'Aylık',
+                yearly: 'Yıllık',
+                balanceTrend: 'Bilanço Trend',
+                balanceSectionTitle: 'Bilanço',
+                addItem: 'Kalem Ekle',
+                addBalanceItemTitle: 'Yeni Bilanço Kalemi',
+                type: 'Tip',
+                asset: 'Varlık',
+                liability: 'Borç',
+                group: 'Grup',
+                subCategory: 'Kategori',
+                currency: 'Para Birimi',
+                amount: 'Tutar',
+                note: 'Not',
+                date: 'Tarih',
+                save: 'Kaydet',
+                cancel: 'İptal',
                 assets: 'Varlıklar',
                 liabilities: 'Borçlar',
                 equity: 'Öz Sermaye',
-                balanceTrendMonthly: 'Bilanço Trend',
-                balanceTrendYearly: 'Bilanço Trend',
-                monthly: 'Aylık',
-                yearly: 'Yıllık',
-                theme: 'Tema',
-                lang: 'Dil',
-                pdfReport: 'PDF Rapor',
-                excelReport: 'Excel Rapor',
-                dataMgmt: 'Veri Yönetimi',
-                rates: 'Döviz Kurları',
-                install: 'Yükle',
-                balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)',
-                addItem: 'Kalem Ekle'
+                cash: 'Nakit',
+                investments: 'Yatırımlar',
+                receivables: 'Alacaklar',
+                loans: 'Krediler',
+                creditCards: 'Kredi Kartı Borçları',
+                personalDebts: 'Şahıslara Borçlar'
             },
             en: {
                 appTitle: 'Budget Tracker',
+                madeBy: 'Made by ARIK',
                 budget: 'Budget',
                 transactions: 'Transactions',
                 balance: 'Balance',
+                year: 'Year',
+                month: 'Month',
+                all: 'All',
+                lastStatus: 'Latest',
+                budgetSummary: 'Budget Summary',
+                monthlyCashflow: 'Monthly Cashflow',
+                monthlyBudgetVsActual: 'Monthly Budget vs Actual',
+                planned: 'Planned',
+                actual: 'Actual',
+                income: 'Income',
+                expense: 'Expense',
+                net: 'Net',
+                cumulative: 'Cumulative',
+                login: 'Sign in with Google',
+                logout: 'Sign out',
+                theme: 'Theme',
+                language: 'Language',
+                pdfReport: 'PDF',
+                excelReport: 'Excel',
+                dataMgmt: 'Data',
+                rates: 'Rates',
+                updateRates: 'Update Rates',
+                install: 'Install',
+                monthly: 'Monthly',
+                yearly: 'Yearly',
+                balanceTrend: 'Balance Trend',
+                balanceSectionTitle: 'Balance Sheet',
+                addItem: 'Add item',
+                addBalanceItemTitle: 'New Balance Item',
+                type: 'Type',
+                asset: 'Asset',
+                liability: 'Liability',
+                group: 'Group',
+                subCategory: 'Category',
+                currency: 'Currency',
+                amount: 'Amount',
+                note: 'Note',
+                date: 'Date',
+                save: 'Save',
+                cancel: 'Cancel',
                 assets: 'Assets',
                 liabilities: 'Liabilities',
                 equity: 'Equity',
-                balanceTrendMonthly: 'Balance Trend',
-                balanceTrendYearly: 'Balance Trend',
-                monthly: 'Monthly',
-                yearly: 'Yearly',
-                theme: 'Theme',
-                lang: 'Language',
-                pdfReport: 'PDF Report',
-                excelReport: 'Excel Report',
-                dataMgmt: 'Data',
-                rates: 'FX Rates',
-                install: 'Install',
-                balanceSectionTitle: 'Balance (Assets / Liabilities / Equity)',
-                addItem: 'Add Item'
+                cash: 'Cash',
+                investments: 'Investments',
+                receivables: 'Receivables',
+                loans: 'Loans',
+                creditCards: 'Credit Card Debt',
+                personalDebts: 'Personal Debts'
             }
         };
 
@@ -2164,48 +2232,79 @@
         }
 
         function applyLanguage(){
-            document.title = t('appTitle');
-            const h1 = document.querySelector('.header-title h1');
-            if (h1) h1.textContent = t('appTitle');
+            // month names + document language
+            monthNames = (appSettings.lang === 'en') ? monthNamesEN.slice() : monthNamesTR.slice();
+            document.documentElement.lang = (appSettings.lang === 'en') ? 'en' : 'tr';
 
-            // Tabs
-            const tabBudget = document.querySelector('.tab[data-tab="budget"]');
-            const tabTx = document.querySelector('.tab[data-tab="transactions"]');
-            const tabBal = document.querySelector('.tab[data-tab="balance"]');
-            if (tabBudget) tabBudget.textContent = t('budget');
-            if (tabTx) tabTx.textContent = t('transactions');
-            if (tabBal) tabBal.textContent = t('balance');
+            // Header title + subtitle
+            const brandTitle = document.querySelector('.app-title');
+            if (brandTitle) brandTitle.textContent = t('appTitle');
 
-            // Header button titles (existing)
-            document.querySelectorAll('.header-actions .header-btn').forEach(b=>{
-                const oc = (b.getAttribute('onclick')||'').trim();
-                if (oc.startsWith('generatePDFReport')) b.title = t('pdfReport');
-                if (oc.startsWith('generateExcelReport')) b.title = t('excelReport');
-                if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
-                if (oc.startsWith('openRatesModal')) b.title = t('rates');
-                if (oc.startsWith('showInstallBanner')) b.title = t('install');
-            });
+            const made = document.querySelector('.madeby');
+            if (made) made.textContent = t('madeBy');
 
-            const langBtn = document.getElementById('btnLang');
-            if (langBtn){
-                langBtn.title = t('lang');
-                const pill = langBtn.querySelector('.lang-pill');
-                if (pill) pill.textContent = (appSettings.lang || 'tr').toUpperCase();
+            // Header buttons
+            const btnTheme = document.getElementById('btnTheme');
+            if (btnTheme) btnTheme.title = t('theme');
+
+            const btnLang = document.getElementById('btnLang');
+            if (btnLang){
+                const pill = btnLang.querySelector('.lang-pill');
+                if (pill) pill.textContent = (appSettings.lang === 'en') ? 'EN' : 'TR';
+                btnLang.title = t('language');
             }
 
-            // Balance section title + add button
-            const balTitleSpan = document.querySelector('#balance-section .section-title span');
-            if (balTitleSpan) balTitleSpan.textContent = t('balanceSectionTitle');
-            const balAddBtn = document.querySelector('#balance-section .section-title button.add-btn');
-            if (balAddBtn) balAddBtn.innerHTML = '<i class="fas fa-plus"></i> ' + t('addItem');
+            const btnPdf = document.getElementById('btnPdf');
+            if (btnPdf) btnPdf.title = t('pdfReport');
 
-            // Balance card titles (keep emojis)
-            const aT = document.querySelector('#assetsTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-            const lT = document.querySelector('#liabilitiesTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-            const eT = document.querySelector('#equityTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-            if (aT) aT.textContent = '💎 ' + t('assets');
-            if (lT) lT.textContent = '🏦 ' + t('liabilities');
-            if (eT) eT.textContent = '📈 ' + t('equity');
+            const btnExcel = document.getElementById('btnExcel');
+            if (btnExcel) btnExcel.title = t('excelReport');
+
+            const btnData = document.getElementById('btnData');
+            if (btnData) btnData.title = t('dataMgmt');
+
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab=>{
+                const k = tab.dataset.tab;
+                if (k === 'budget') tab.textContent = t('budget');
+                if (k === 'transactions') tab.textContent = t('transactions');
+                if (k === 'balance') tab.textContent = t('balance');
+            });
+
+            // Budget section headings (static)
+            const incomeTitle = document.querySelector('#budget-section .section-title:nth-of-type(1) span');
+            if (incomeTitle) incomeTitle.textContent = (appSettings.lang==='en') ? 'Income items' : 'Gelir Kalemleri';
+            const incomeBtn = document.querySelector('#budget-section .section-title:nth-of-type(1) button');
+            if (incomeBtn) incomeBtn.innerHTML = `<i class="fas fa-plus"></i> ${(appSettings.lang==='en')?'Add':'Ekle'}`;
+
+            const expenseTitle = document.querySelector('#budget-section .section-title:nth-of-type(2) span');
+            if (expenseTitle) expenseTitle.textContent = (appSettings.lang==='en') ? 'Expense items' : 'Gider Kalemleri';
+            const expenseBtn = document.querySelector('#budget-section .section-title:nth-of-type(2) button');
+            if (expenseBtn) expenseBtn.innerHTML = `<i class="fas fa-plus"></i> ${(appSettings.lang==='en')?'Add':'Ekle'}`;
+
+            // Chart titles
+            const cashflowTitle = document.querySelector('.summary-card .summary-title');
+            if (cashflowTitle && cashflowTitle.textContent.includes('Nakit')) cashflowTitle.textContent = t('monthlyCashflow');
+            const chartTitle = document.querySelector('.chart-title');
+            if (chartTitle) chartTitle.textContent = t('monthlyBudgetVsActual');
+
+            // Balance section header + button
+            const bTitle = document.querySelector('#balance-section .section-title span');
+            if (bTitle) bTitle.textContent = t('balanceSectionTitle');
+            const bBtn = document.querySelector('#balance-section .section-title button');
+            if (bBtn) bBtn.innerHTML = `<i class="fas fa-plus"></i> ${t('addItem')}`;
+
+            // Balance cards titles (remove English parens)
+            const cardTitles = document.querySelectorAll('#balance-section .balance-card-title');
+            if (cardTitles?.length>=3){
+                cardTitles[0].innerHTML = `💎 ${t('assets')}`;
+                cardTitles[1].innerHTML = `🏦 ${t('liabilities')}`;
+                cardTitles[2].innerHTML = `📈 ${t('equity')}`;
+            }
+
+            // Balance groups labels inside renderBalance() output:
+            // We'll patch by re-rendering balance after language change
+            try{ renderBalance(); }catch(e){}
 
             // Balance trend toggle labels
             const bm = document.getElementById('btnBalTrendMonthly');
@@ -2213,10 +2312,28 @@
             if (bm) bm.textContent = t('monthly');
             if (by) by.textContent = t('yearly');
 
-            try{ renderBalanceChart(); }catch(e){}
-        }
+            // Modals (balance item modal)
+            const bmTitle = document.getElementById('balanceItemModalTitle');
+            if (bmTitle) bmTitle.textContent = t('addBalanceItemTitle');
+            const lblType = document.querySelector('#balanceItemModal label[for="balanceType"]');
+            if (lblType) lblType.textContent = t('type');
+            const lblGroup = document.querySelector('#balanceItemModal label[for="balanceGroup"]');
+            if (lblGroup) lblGroup.textContent = t('group');
+            const lblName = document.querySelector('#balanceItemModal label[for="balanceName"]');
+            if (lblName) lblName.textContent = t('subCategory');
+            const lblCur = document.querySelector('#balanceItemModal label[for="balanceCurrency"]');
+            if (lblCur) lblCur.textContent = t('currency');
+            const lblAmt = document.querySelector('#balanceItemModal label[for="balanceAmount"]');
+            if (lblAmt) lblAmt.textContent = t('amount');
+            const lblDate = document.querySelector('#balanceItemModal label[for="balanceDate"]');
+            if (lblDate) lblDate.textContent = t('date');
+            const saveBtn = document.getElementById('btnSaveBalanceItem');
+            if (saveBtn) saveBtn.textContent = t('save');
 
-        function wireHeaderToggles(){
+            // Re-render charts (labels depend on language/month names)
+            try{ renderMonthlyChart(); }catch(e){}
+            try{ renderBalanceChart(); }catch(e){}
+        }function wireHeaderToggles(){
             const btnTheme = document.getElementById('btnTheme');
             if (btnTheme){
                 btnTheme.addEventListener('click', ()=>{
@@ -2391,7 +2508,11 @@
         // Geriye uyumluluk için eski format desteği
         let exchangeRates = { USD: 1, TRY: 38.50, RUB: 96.00 };
         const currencySymbols = { USD: '$', TRY: '₺', RUB: '₽' };
-        const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+        let monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+        const monthNamesTR = monthNames.slice();
+        const monthNamesEN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 
         function formatMoney(n){
             const x = Number(n||0);
@@ -4095,9 +4216,13 @@ function importData(event) {
                 bgLight: [248, 249, 250]
             };
 
-            // Ay isimleri ASCII uyumlu
-            const monthNamesASCII = ['Oca', 'Sub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Agu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-            const monthNamesFullASCII = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'];
+            // Month names (ASCII-safe for PDF)
+            const monthNamesASCII = (appSettings.lang==='en')
+                ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                : ['Oca','Sub','Mar','Nis','May','Haz','Tem','Agu','Eyl','Eki','Kas','Ara'];
+            const monthNamesFullASCII = (appSettings.lang==='en')
+                ? ['January','February','March','April','May','June','July','August','September','October','November','December']
+                : ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'];
 
             // Binlik ayracli sayi formatlama
             function formatNum(num, decimals = 0) {
