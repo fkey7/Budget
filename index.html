@@ -1504,7 +1504,7 @@
     <header class="header">
         <div class="header-top">
             <div class="header-brand">
-                <h1><i class="fas fa-wallet"></i> Bütçe Takip</h1>
+                <h1 id="appTitleH1"><i class="fas fa-wallet"></i> Bütçe Takip</h1>
                 <span class="header-credit">made by ARIK</span>
             </div>
             <div class="header-actions">
@@ -1598,7 +1598,7 @@
             </div>
         </div>
         <div class="summary-card full">
-            <div class="label">Net Durum (Gerçekleşen)</div>
+            <div class="label" id="netLabel">Net Durum (Gerçekleşen)</div>
             <div class="amount positive" id="netBalance">$0</div>
             <div class="sub-amount" id="netBalanceSub">₺0 / ₽0</div>
         </div>
@@ -1637,7 +1637,7 @@
     <!-- Grafikler -->
     <div class="chart-container">
         <div class="chart-card">
-            <div class="chart-title">Aylık Bütçe vs Gerçekleşen</div>
+            <div class="chart-title" id="monthlyChartTitle">Aylık Bütçe vs Gerçekleşen</div>
             <canvas id="monthlyChart"></canvas>
         </div>
     </div>
@@ -1650,17 +1650,17 @@
 
     <section class="section active" id="budget-section">
         <div class="section-title">
-            <span>Gelir Kalemleri</span>
+            <span id="incomeItemsTitle">Gelir Kalemleri</span>
             <button class="add-btn" onclick="openCategoryModal('income')">
-                <i class="fas fa-plus"></i> Ekle
+                <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
             </button>
         </div>
         <div id="incomeBudgets"></div>
 
         <div class="section-title" style="margin-top: 24px;">
-            <span>Gider Kalemleri</span>
+            <span id="expenseItemsTitle">Gider Kalemleri</span>
             <button class="add-btn" onclick="openCategoryModal('expense')">
-                <i class="fas fa-plus"></i> Ekle
+                <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
             </button>
         </div>
         <div id="expenseBudgets"></div>
@@ -1684,19 +1684,19 @@
 
         <div class="balance-top">
             <div class="balance-card">
-                <div class="balance-card-title" id="balCardAssetsTitle">💎 Varlıklar</div>
+                <div class="balance-card-title">💎 Varlıklar</div>
                 <div class="balance-total" id="assetsTotal">$0</div>
                 <div class="balance-groups" id="assetsGroups"></div>
             </div>
 
             <div class="balance-card">
-                <div class="balance-card-title" id="balCardLiabTitle">🧾 Borçlar</div>
+                <div class="balance-card-title">🏦 Borçlar</div>
                 <div class="balance-total" id="liabilitiesTotal">$0</div>
                 <div class="balance-groups" id="liabilitiesGroups"></div>
             </div>
 
             <div class="balance-card">
-                <div class="balance-card-title" id="balCardEquityTitle">⚖️ Öz Sermaye</div>
+                <div class="balance-card-title">📈 Öz Sermaye</div>
                 <div class="balance-total" id="equityTotal">$0</div>
                 <div class="muted" id="equityNote">Equity = Assets - Liabilities</div>
             </div>
@@ -1713,7 +1713,10 @@
             <canvas id="balanceChart"></canvas>
         </div>
 
-        <div class="muted" style="margin-top:10px;" id="balanceNoteText"></div>
+        <div class="muted" style="margin-top:10px;">
+            Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD’ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle <b>aynıysa</b>,
+            gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.
+        </div>
     </section>
 
 
@@ -1737,7 +1740,7 @@
     <div class="modal-overlay" id="transactionModal">
         <div class="modal">
             <div class="modal-header">
-                <h2 id="transactionModalTitle">Yeni İşlem</h2>
+                <h2>Yeni İşlem</h2>
                 <button class="modal-close" onclick="closeModal('transactionModal')">×</button>
             </div>
             <div class="type-toggle">
@@ -1749,11 +1752,11 @@
                 </button>
             </div>
             <div class="form-group">
-                <label id="txLabelCategory">Kategori</label>
+                <label>Kategori</label>
                 <div class="category-select-grid" id="categorySelectGrid"></div>
             </div>
             <div class="form-group">
-                <label id="txLabelCurrency">Para Birimi</label>
+                <label data-i18n="currency">Para Birimi</label>
                 <div class="currency-toggle" id="currencyToggle">
                     <button class="currency-btn active" data-currency="USD" onclick="selectTransactionCurrency('USD')">$ USD</button>
                     <button class="currency-btn" data-currency="TRY" onclick="selectTransactionCurrency('TRY')">₺ TRY</button>
@@ -1762,11 +1765,11 @@
                 <div id="liveRateBox" style="background: var(--accent-main-light); padding: 10px 14px; border-radius: 10px; margin-top: 10px; display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);"><span id="txLiveRateLabel">📡 Güncel Kur</span></span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">📡 Güncel Kur</span>
                             <div style="font-weight: 700; color: var(--accent-main); font-size: 1.1rem;" id="liveRateValue">-</div>
                         </div>
                         <div style="text-align: right;">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);"><span id="txUsdEqLabel">≈ Dolar Karşılığı</span></span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">≈ Dolar Karşılığı</span>
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;" id="liveUsdEquivalent">$0</div>
                         </div>
                     </div>
@@ -1775,18 +1778,18 @@
                 <div class="rates-display" id="currentRates"></div>
             </div>
             <div class="form-group">
-                <label id="txLabelAmount">Tutar</label>
+                <label data-i18n="amount">Tutar</label>
                 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
             </div>
             <div class="form-group">
-                <label id="txLabelNote">Not (Opsiyonel)</label>
+                <label>Not (Opsiyonel)</label>
                 <input type="text" id="transactionNote" placeholder="Açıklama...">
             </div>
             <div class="form-group">
-                <label id="txLabelDate">Tarih</label>
+                <label data-i18n="date">Tarih</label>
                 <input type="date" id="transactionDate">
             </div>
-            <button class="submit-btn" id="txSaveBtn" onclick="saveTransaction()">Kaydet</button>
+            <button class="submit-btn" onclick="saveTransaction()"><span data-i18n="save">Kaydet</span></button>
         </div>
     </div>
 
@@ -1798,7 +1801,7 @@
                 <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
             </div>
             <div class="form-group">
-                <label id="balLabelName">Kategori Adı</label>
+                <label data-i18n="categoryName">Kategori Adı</label>
                 <input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
             </div>
             <div class="form-group">
@@ -1822,7 +1825,7 @@
                 <label>İkon</label>
                 <div class="icon-grid" id="iconGrid"></div>
             </div>
-            <button class="submit-btn" onclick="saveCategory()">Kaydet</button>
+            <button class="submit-btn" onclick="saveCategory()"><span data-i18n="save">Kaydet</span></button>
         </div>
     </div>
 
@@ -1834,7 +1837,7 @@
                 <button class="modal-close" onclick="closeModal('editBudgetModal')">×</button>
             </div>
             <div class="form-group">
-                <label id="balLabelCategoryName">Kategori Adı</label>
+                <label data-i18n="categoryName">Kategori Adı</label>
                 <input type="text" id="editCategoryName">
             </div>
             <div class="form-group">
@@ -1931,7 +1934,7 @@
                 </button>
             </div>
             <div id="currentRateDisplay" style="background: var(--bg-secondary); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: none;">
-                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;"><span id="txLiveRateLabel">📡 Güncel Kur</span>lar (Canlı)</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">📡 Güncel Kurlar (Canlı)</div>
                 <div style="display: flex; gap: 20px; font-weight: 600;">
                     <span>🇹🇷 1$ = <span id="liveRateTRY">-</span> ₺</span>
                     <span>🇷🇺 1$ = <span id="liveRateRUB">-</span> ₽</span>
@@ -1946,7 +1949,7 @@
                 <label>🇷🇺 Rus Rublesi (RUB)</label>
                 <div class="monthly-grid" id="monthlyRatesRUB"></div>
             </div>
-            <button class="submit-btn" onclick="saveRates()">Kaydet</button>
+            <button class="submit-btn" onclick="saveRates()"><span data-i18n="save">Kaydet</span></button>
         </div>
     </div>
 
@@ -2105,13 +2108,15 @@
                 budget: 'Bütçe',
                 transactions: 'İşlemler',
                 balance: 'Bilanço',
-
-                // Common
+                assets: 'Varlıklar',
+                liabilities: 'Borçlar',
+                equity: 'Öz Sermaye',
+                balanceTrendMonthly: 'Bilanço Trend',
+                balanceTrendYearly: 'Bilanço Trend',
                 monthly: 'Aylık',
                 yearly: 'Yıllık',
                 monthsShort: ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],
                 monthsFull: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
-
                 theme: 'Tema',
                 lang: 'Dil',
                 pdfReport: 'PDF Rapor',
@@ -2119,154 +2124,23 @@
                 dataMgmt: 'Veri Yönetimi',
                 rates: 'Döviz Kurları',
                 install: 'Yükle',
-
-                // Header/auth
-                loginWithGoogle: 'Google ile Giriş',
-                logout: 'Çıkış',
-                authNotSignedIn: 'Giriş yapılmadı',
-
-                // Summary
-                monthlyIncomePlan: 'Aylık Gelir Planı',
-                monthlyExpensePlan: 'Aylık Gider Planı',
-                netActual: 'Son Durum (Gerçekleşen)',
-                actualPrefix: 'Gerçekleşen:',
-                plannedPrefix: 'Planlanan:',
-
-                // Budget summary & cashflow
-                budgetSummaryTitle: '📊 Bütçe Özeti (Para Birimi Bazında)',
-                plannedIncome: 'Planlanan Gelir',
-                actualIncome: 'Gerçekleşen Gelir',
-                plannedExpense: 'Planlanan Gider',
-                actualExpense: 'Gerçekleşen Gider',
-                net: 'Net',
-                cashflowTitle: '💰 Aylık Nakit Akışı (Cash Flow)',
-                cfMonth: 'Ay',
-                cfIncomePlan: 'Gelir Plan',
-                cfIncomeAct: 'Gelir Gerç.',
-                cfExpensePlan: 'Gider Plan',
-                cfExpenseAct: 'Gider Gerç.',
-                cfNetPlan: 'Net Plan',
-                cfNetAct: 'Net Gerç.',
-                cfCumulative: 'Kümülatif',
-                total: 'Toplam',
-
-                // Cashflow extra cards (yearly section)
-                yearlySavingsPlan: 'Yıllık Tasarruf Planı',
-                actualSavings: 'Gerçekleşen Tasarruf',
-                monthlySavingsTarget: 'Aylık Tasarruf Hedefi',
-                yearEndForecast: 'Yıl Sonu Tahmini',
-                categoryDistribution: 'Kategori Dağılımı',
-                lastStatus: 'Son Durum',
-
-                // Balance
                 balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)',
-                assetsTitle: '💎 Varlıklar',
-                liabilitiesTitle: '🧾 Borçlar',
-                equityTitle: '⚖️ Öz Sermaye',
-                assets: 'Varlıklar',
-                liabilities: 'Borçlar',
-                equity: 'Öz Sermaye',
-                balanceTrendTitle: 'Bilanço Trend',
-                balanceNote: 'Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD’ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.',
-
-                balGroup_cash: 'Nakit',
-                balGroup_receivables: 'Alacaklar',
-                balGroup_investments: 'Yatırımlar',
-                balGroup_loans: 'Krediler',
-                balGroup_cards: 'Kredi Kartı Borçları',
-                balGroup_payables: 'Şahıslara Borçlar',
-
-                addItem: 'Kalem Ekle',
-
-                // Balance modal
-                newBalanceItem: 'Yeni Bilanço Kalemi',
-                date: 'Tarih',
-                type: 'Tip',
-                asset: 'Varlık',
-                liability: 'Borç',
-                group: 'Grup',
-                categoryName: 'Kategori Adı',
-                amount: 'Tutar',
-                currency: 'Para Birimi',
-                save: 'Kaydet',
-                balanceSnapshotNote: '<span id="balSnapshotNote">Bu kayıt seçtiğin ayın snapshot\'ına işlenir. Geçmiş aylar değişmez.</span>',
-                balanceMonthInfoPrefix: 'Ay:',
-
-                // Transaction modal
-                newTransaction: 'Yeni İşlem',
-                income: 'Gelir',
-                expense: 'Gider',
-                category: 'Kategori',
-                noteOptional: 'Not (Opsiyonel)',
-
-                // PDF/Excel
-                reportAppName: 'Bütçe Takip Uygulaması',
-                reportCreated: 'Rapor Tarihi',
-                reportMonthly: 'Aylık Bütçe Raporu',
-                reportYearly: 'Yıllık Bütçe Raporu',
-                reportBalanceDetail: 'BİLANÇO DETAY',
-                reportGroup: 'Grup',
-                reportAmountUsd: 'Tutar ($)',
-                reportAssetPrefix: 'Varlık:',
-                reportLiabPrefix: 'Borç:',
-                toastPdfCreated: 'PDF raporu oluşturuldu',
-                toastExcelCreated: 'Excel raporu oluşturuldu'
-                // Extra UI
-                incomeItems: 'Gelir Kalemleri',
-                expenseItems: 'Gider Kalemleri',
-                add: 'Ekle',
-                all: 'Tümü',
-                balanceSnapshotText: "Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.",
-                balanceItemNamePlaceholder: 'Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi',
-
-                // Reports (PDF/Excel)
-                reportBudgetReport: 'Bütçe Raporu',
-                reportYearBudgetReport: 'Yılı Bütçe Raporu',
-                reportCreated: 'Oluşturulma',
-                reportOverview: 'GENEL BAKIŞ',
-                reportIncomePlan: 'GELİR PLANI',
-                reportExpensePlan: 'GİDER PLANI',
-                reportNetPlan: t('reportNetPlan'),
-                reportActualIncome: 'GERÇEKLEŞEN GELİR',
-                reportActualExpense: 'GERÇEKLEŞEN GİDER',
-                reportNetStatus: t('reportNetStatus'),
-                reportMonthlyBudgetByCurrency: 'AYLIK BÜTÇE - PARA BİRİMİ BAZINDA (Plan/Gerçekleşen)',
-                reportYearlySummary: 'YILLIK ÖZET (Plan / Gerçekleşen)',
-                reportSpendingTrend: 'HARCAMA TRENDİ & TAHMİN',
-                reportMonthAnalysis: 'Ayı Analizi',
-                reportBalanceSheet: 'BİLANÇO',
-                reportBalanceDetail: 'BİLANÇO DETAY',
-                reportTotal: 'TOPLAM',
-                reportExpenseCategoriesDetail: 'GİDER KATEGORİLERİ DETAYI (Orijinal Para Birimi)',
-                reportIncomeCategoriesDetail: 'GELİR KATEGORİLERİ DETAYI (Orijinal Para Birimi)',
-                colCategory: 'Kategori',
-                colCurrency: 'PB',
-                colPlanned: 'Plan',
-                colActual: 'Gerçekleşen',
-                colDiff: 'Fark',
-                colRatio: 'Oran',
-                balItem: 'Kalem',
-                balAmountUsd: 'Tutar ($)',
-                balAssetsLbl: 'Varlıklar',
-                balLiabilitiesLbl: 'Borçlar',
-                balEquityLbl: 'Öz Sermaye',
-                trendOk: '[OK] Bu trendle devam ederseniz ay sonunda ${{diff}} bütçe altında kalırsınız.',
-                trendWarn: '[!] Bu trendle devam ederseniz ay sonunda ${{diff}} bütçe aşımı olacak!',
-
-
+                addItem: 'Kalem Ekle'
             },
-
             en: {
                 appTitle: 'Budget Tracker',
                 budget: 'Budget',
                 transactions: 'Transactions',
                 balance: 'Balance',
-
+                assets: 'Assets',
+                liabilities: 'Liabilities',
+                equity: 'Equity',
+                balanceTrendMonthly: 'Balance Trend',
+                balanceTrendYearly: 'Balance Trend',
                 monthly: 'Monthly',
                 yearly: 'Yearly',
                 monthsShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
                 monthsFull: ['January','February','March','April','May','June','July','August','September','October','November','December'],
-
                 theme: 'Theme',
                 lang: 'Language',
                 pdfReport: 'PDF Report',
@@ -2274,150 +2148,15 @@
                 dataMgmt: 'Data',
                 rates: 'FX Rates',
                 install: 'Install',
-
-                loginWithGoogle: 'Sign in with Google',
-                logout: 'Logout',
-                authNotSignedIn: 'Not signed in',
-
-                monthlyIncomePlan: 'Monthly Income Plan',
-                monthlyExpensePlan: 'Monthly Expense Plan',
-                netActual: 'Net Position (Actual)',
-                actualPrefix: 'Actual:',
-                plannedPrefix: 'Planned:',
-
-                budgetSummaryTitle: '📊 Budget Summary (by Currency)',
-                plannedIncome: 'Planned Income',
-                actualIncome: 'Actual Income',
-                plannedExpense: 'Planned Expense',
-                actualExpense: 'Actual Expense',
-                net: 'Net',
-                cashflowTitle: '💰 Monthly Cash Flow',
-                cfMonth: 'Month',
-                cfIncomePlan: 'Income (Plan)',
-                cfIncomeAct: 'Income (Actual)',
-                cfExpensePlan: 'Expense (Plan)',
-                cfExpenseAct: 'Expense (Actual)',
-                cfNetPlan: 'Net (Plan)',
-                cfNetAct: 'Net (Actual)',
-                cfCumulative: 'Cumulative',
-                total: 'Total',
-
-                yearlySavingsPlan: 'Annual Savings Plan',
-                actualSavings: 'Actual Savings',
-                monthlySavingsTarget: 'Monthly Savings Target',
-                yearEndForecast: 'Year-End Forecast',
-                categoryDistribution: 'Category Breakdown',
-                lastStatus: 'Net Position',
-
-                balanceSectionTitle: 'Balance Sheet (Assets / Liabilities / Equity)',
-                assetsTitle: '💎 Assets',
-                liabilitiesTitle: '🧾 Liabilities',
-                equityTitle: '⚖️ Equity',
-                assets: 'Assets',
-                liabilities: 'Liabilities',
-                equity: 'Equity',
-                balanceTrendTitle: 'Balance Trend',
-                balanceNote: 'Note: Balance items are stored in USD. You may enter TRY/RUB and it will be converted to USD on save. If a transaction category name matches a balance sub-item, expense transactions reduce the related liability; if an asset item with the same name exists, it increases that asset.',
-
-                balGroup_cash: 'Cash',
-                balGroup_receivables: 'Receivables',
-                balGroup_investments: 'Investments',
-                balGroup_loans: 'Loans',
-                balGroup_cards: 'Credit Card Debt',
-                balGroup_payables: 'Payables',
-
-                addItem: 'Add Item',
-
-                newBalanceItem: 'New Balance Item',
-                date: 'Date',
-                type: 'Type',
-                asset: 'Asset',
-                liability: 'Liability',
-                group: 'Group',
-                categoryName: 'Category Name',
-                amount: 'Amount',
-                currency: 'Currency',
-                save: 'Save',
-                balanceSnapshotNote: 'This entry is saved to the snapshot of the selected month. Past months do not change.',
-                balanceMonthInfoPrefix: 'Month:',
-
-                newTransaction: 'New Transaction',
-                income: 'Income',
-                expense: 'Expense',
-                category: 'Category',
-                noteOptional: 'Note (Optional)',
-
-                reportAppName: 'Budget Tracker',
-                reportCreated: 'Report Date',
-                reportMonthly: 'Monthly Budget Report',
-                reportYearly: 'Annual Budget Report',
-                reportBalanceDetail: t('reportBalanceDetail'),
-                reportGroup: 'Group',
-                reportAmountUsd: 'Amount ($)',
-                reportAssetPrefix: 'Asset:',
-                reportLiabPrefix: 'Liability:',
-                toastPdfCreated: 'PDF report created',
-                toastExcelCreated: 'Excel report created'
-                // Extra UI
-                incomeItems: 'Income Items',
-                expenseItems: 'Expense Items',
-                add: 'Add',
-                all: 'All',
-                balanceSnapshotText: 'This entry is saved into the snapshot of the selected month. Past months do not change.',
-                balanceItemNamePlaceholder: 'e.g., Akbank / İş Bankası / John / Mortgage Loan',
-
-                // Reports (PDF/Excel)
-                reportBudgetReport: 'Budget Report',
-                reportYearBudgetReport: 'Budget Report',
-                reportCreated: 'Created',
-                reportOverview: t('reportOverview'),
-                reportIncomePlan: 'INCOME PLAN',
-                reportExpensePlan: 'EXPENSE PLAN',
-                reportNetPlan: t('reportNetPlan'),
-                reportActualIncome: 'ACTUAL INCOME',
-                reportActualExpense: 'ACTUAL EXPENSE',
-                reportNetStatus: 'NET POSITION',
-                reportMonthlyBudgetByCurrency: 'MONTHLY BUDGET - BY CURRENCY (Planned/Actual)',
-                reportYearlySummary: 'YEARLY SUMMARY (Planned / Actual)',
-                reportSpendingTrend: t('reportSpendingTrend'),
-                reportMonthAnalysis: 'Month Analysis',
-                reportBalanceSheet: t('reportBalanceSheet'),
-                reportBalanceDetail: t('reportBalanceDetail'),
-                reportTotal: 'TOTAL',
-                reportExpenseCategoriesDetail: 'EXPENSE CATEGORIES DETAIL (Original Currency)',
-                reportIncomeCategoriesDetail: 'INCOME CATEGORIES DETAIL (Original Currency)',
-                colCategory: 'Category',
-                colCurrency: 'CCY',
-                colPlanned: 'Planned',
-                colActual: 'Actual',
-                colDiff: 'Diff',
-                colRatio: 'Ratio',
-                balItem: 'Item',
-                balAmountUsd: 'Amount ($)',
-                balAssetsLbl: 'Assets',
-                balLiabilitiesLbl: 'Liabilities',
-                balEquityLbl: 'Equity',
-                trendOk: '[OK] If you keep this pace, you will stay under budget by ${{diff}} at month-end.',
-                trendWarn: '[!] If you keep this pace, you will exceed the budget by ${{diff}} at month-end!',
-
-
+                balanceSectionTitle: 'Balance (Assets / Liabilities / Equity)',
+                addItem: 'Add Item'
             }
         };
 
         function t(key){
             const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
             return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
-        
-
-        function tf(key, vars){
-            let s = String(t(key));
-            const v = vars || {};
-            for (const k in v){
-                s = s.split(`{{${k}}}`).join(String(v[k]));
-            }
-            return s;
         }
-}
 
         function applyTheme(){
             const dark = appSettings.theme === 'dark';
@@ -2431,12 +2170,25 @@
 
         function applyLanguage(){
             document.title = t('appTitle');
-            document.documentElement.lang = (appSettings.lang||'tr');
-            const metaAppTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-            if (metaAppTitle) metaAppTitle.setAttribute('content', t('appTitle'));
-
-            const h1 = document.querySelector('.header-brand h1');
+            const h1 = document.getElementById('appTitleH1') || document.querySelector('.header h1');
             if (h1) h1.innerHTML = '<i class="fas fa-wallet"></i> ' + t('appTitle');
+            document.documentElement.setAttribute('lang', (appSettings.lang||'tr')==='en'?'en':'tr');
+            const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (appleTitle) appleTitle.setAttribute('content', t('appTitle'));
+            // Generic data-i18n texts
+            document.querySelectorAll('[data-i18n]').forEach(el=>{
+                const k = el.getAttribute('data-i18n');
+                if (k) el.textContent = t(k);
+            });
+            // Specific ids
+            const incT = document.getElementById('incomeItemsTitle'); if (incT) incT.textContent = t('incomeItems');
+            const expT = document.getElementById('expenseItemsTitle'); if (expT) expT.textContent = t('expenseItems');
+            const donutT = document.getElementById('donutChartTitle'); if (donutT) donutT.textContent = t('categoryDistribution');
+            const mct = document.getElementById('monthlyChartTitle'); if (mct) mct.textContent = t('budgetVsActual');
+            const netL = document.getElementById('netLabel'); if (netL) netL.textContent = t('netPositionActual');
+            const balMT = document.getElementById('balModalTitle'); if (balMT) balMT.textContent = t('balanceNewItem');
+            const balNote = document.getElementById('balSnapshotNote'); if (balNote) balNote.textContent = t('snapshotNote');
+    
 
             // Tabs
             const tabBudget = document.querySelector('.tab[data-tab="budget"]');
@@ -2446,19 +2198,7 @@
             if (tabTx) tabTx.textContent = t('transactions');
             if (tabBal) tabBal.textContent = t('balance');
 
-            
-            // Budget section titles + add buttons
-            const bSec = document.getElementById('budget-section');
-            if (bSec){
-                const titles = bSec.querySelectorAll('.section-title span');
-                if (titles && titles.length>=2){
-                    titles[0].textContent = t('incomeItems');
-                    titles[1].textContent = t('expenseItems');
-                }
-                const btns = bSec.querySelectorAll('.section-title button.add-btn');
-                btns.forEach(b=>{ b.innerHTML = '<i class="fas fa-plus"></i> ' + t('add'); });
-            }
-// Header button titles (existing)
+            // Header button titles (existing)
             document.querySelectorAll('.header-actions .header-btn').forEach(b=>{
                 const oc = (b.getAttribute('onclick')||'').trim();
                 if (oc.startsWith('generatePDFReport')) b.title = t('pdfReport');
@@ -2486,8 +2226,8 @@
             const lT = document.querySelector('#liabilitiesTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
             const eT = document.querySelector('#equityTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
             if (aT) aT.textContent = '💎 ' + t('assets');
-            if (lT) lT.textContent = '💳 ' + t('liabilities');
-            if (eT) eT.textContent = '⚖️ ' + t('equity');
+            if (lT) lT.textContent = '🧱 ' + t('liabilities');
+            if (eT) eT.textContent = '📈 ' + t('equity');
 
             // Balance trend toggle labels
             const bm = document.getElementById('btnBalTrendMonthly');
@@ -2505,150 +2245,34 @@
 
             // Budget Summary title
             const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
-            if (sumTitle) sumTitle.textContent = t('budgetSummaryTitle');
+            if (sumTitle) sumTitle.textContent = '📊 ' + (t('budgetSummaryTitle') || (appSettings.lang==='en'?'Budget Summary (By Currency)':'Bütçe Özeti (Para Birimi Bazında)'));
 
             // Cashflow section title
             const cfTitle = document.querySelector('#cashflowSection .summary-title');
-            if (cfTitle) cfTitle.textContent = t('cashflowTitle');
+            if (cfTitle) cfTitle.textContent = '💰 ' + (t('cashflowTitle') || (appSettings.lang==='en'?'Monthly Cashflow':'Aylık Nakit Akışı'));
 
             // Cashflow table headers
             const cfTable = document.getElementById('cashflowTable');
             if (cfTable){
                 const th = cfTable.querySelectorAll('thead th');
-                if (th && th.length>=8){
-                    th[0].textContent = t('cfMonth');
-                    th[1].textContent = t('cfIncomePlan');
-                    th[2].textContent = t('cfIncomeAct');
-                    th[3].textContent = t('cfExpensePlan');
-                    th[4].textContent = t('cfExpenseAct');
-                    th[5].textContent = t('cfNetPlan');
-                    th[6].textContent = t('cfNetAct');
-                    th[7].textContent = t('cfCumulative');
+                if (th && th.length>=5){
+                    th[0].textContent = (appSettings.lang==='en'?'Month':'Ay');
+                    th[1].textContent = (appSettings.lang==='en'?'Income Plan':'Gelir Plan');
+                    th[2].textContent = (appSettings.lang==='en'?'Income Actual':'Gelir Gerçek');
+                    th[3].textContent = (appSettings.lang==='en'?'Expense Plan':'Gider Plan');
+                    th[4].textContent = (appSettings.lang==='en'?'Expense Actual':'Gider Gerçek');
+                    if (th.length>5) th[5].textContent = (appSettings.lang==='en'?'Net':'Net');
                 }
             }
 
             // Generic labels used around summaries
-            const mf = document.getElementById('monthFilter');
-            if (mf){
-                const allChip = mf.querySelector('[data-month="all"]') || mf.querySelector('.month-chip') ;
-                if (allChip) allChip.textContent = t('all');
-            }
+            document.querySelectorAll('.chip.all').forEach(x=>{
+                if (x.textContent.trim().toLowerCase()==='tümü' || x.textContent.trim().toLowerCase()==='all'){
+                    x.textContent = (appSettings.lang==='en'?'All':'Tümü');
+                }
+            });
 
 try{ renderBalanceChart(); }catch(e){}
-        
-            // ---- Extended i18n (full UI) ----
-            // Update global month name arrays used by existing logic
-            if (typeof monthNamesFull !== 'undefined') monthNamesFull = I18N[(appSettings.lang||'tr')].monthsFull.slice();
-            if (typeof monthNamesShort !== 'undefined') monthNamesShort = I18N[(appSettings.lang||'tr')].monthsShort.slice();
-            if (typeof monthNames !== 'undefined') monthNames = I18N[(appSettings.lang||'tr')].monthsShort.slice();
-
-            // View toggle
-            const vbM = document.querySelector('#viewToggle .view-btn[data-view="monthly"]');
-            const vbY = document.querySelector('#viewToggle .view-btn[data-view="yearly"]');
-            if (vbM) vbM.textContent = t('monthly');
-            if (vbY) vbY.textContent = t('yearly');
-
-            // Month display (monthly)
-            const md = document.getElementById('monthDisplay');
-            if (md) md.textContent = I18N[(appSettings.lang||'tr')].monthsFull[currentMonth] || md.textContent;
-
-            // Summary labels
-            const incL = document.getElementById('incomeLabel');
-            const expL = document.getElementById('expenseLabel');
-            if (incL){
-                incL.textContent = (viewMode==='monthly') ? t('monthlyIncomePlan') : ((appSettings.lang==='en') ? 'Annual Income Plan' : 'Yıllık Gelir Planı');
-            }
-            if (expL){
-                expL.textContent = (viewMode==='monthly') ? t('monthlyExpensePlan') : ((appSettings.lang==='en') ? 'Annual Expense Plan' : 'Yıllık Gider Planı');
-            }
-            const netL = document.getElementById('netLabel');
-            if (netL) netL.textContent = t('netActual');
-
-            // Budget Summary & Cashflow titles
-            const bsT = document.querySelector('#budgetSummarySection .summary-title');
-            if (bsT) bsT.textContent = t('budgetSummaryTitle');
-            const cfT = document.querySelector('#cashflowSection .summary-title');
-            if (cfT) cfT.textContent = t('cashflowTitle');
-
-            // Cashflow table headers (static header)
-            const cfHeads = document.querySelectorAll('#cashflowTable thead th');
-            if (cfHeads && cfHeads.length >= 8){
-                cfHeads[0].textContent = t('cfMonth');
-                cfHeads[1].textContent = t('cfIncomePlan');
-                cfHeads[2].textContent = t('cfIncomeAct');
-                cfHeads[3].textContent = t('cfExpensePlan');
-                cfHeads[4].textContent = t('cfExpenseAct');
-                cfHeads[5].textContent = t('cfNetPlan');
-                cfHeads[6].textContent = t('cfNetAct');
-                cfHeads[7].textContent = t('cfCumulative');
-            }
-
-            // Balance card titles & note
-            const ba = document.getElementById('balCardAssetsTitle'); if (ba) ba.textContent = t('assetsTitle');
-            const bl = document.getElementById('balCardLiabTitle'); if (bl) bl.textContent = t('liabilitiesTitle');
-            const be = document.getElementById('balCardEquityTitle'); if (be) be.textContent = t('equityTitle');
-
-            const bn = document.getElementById('balanceNoteText');
-            if (bn) bn.textContent = t('balanceNote');
-
-            // Auth texts
-            const as = document.getElementById('authStatus');
-            if (as && (['Giriş yapılmadı','Not signed in'].includes((as.textContent||'').trim()))){
-                as.textContent = t('authNotSignedIn');
-            }
-            const lbtn = document.getElementById('btnLogin');
-            if (lbtn){
-                lbtn.innerHTML = '<i class="fab fa-google"></i> ' + t('loginWithGoogle');
-            }
-            const lobtn = document.getElementById('btnLogout');
-            if (lobtn){
-                lobtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> ' + t('logout');
-            }
-
-            // Transaction modal
-            const txTitle = document.getElementById('transactionModalTitle');
-            if (txTitle) txTitle.textContent = t('newTransaction');
-            const txCat = document.getElementById('txLabelCategory'); if (txCat) txCat.textContent = t('category');
-            const txCur = document.getElementById('txLabelCurrency'); if (txCur) txCur.textContent = t('currency');
-            const txAmt = document.getElementById('txLabelAmount'); if (txAmt) txAmt.textContent = t('amount');
-            const txNote = document.getElementById('txLabelNote'); if (txNote) txNote.textContent = t('noteOptional');
-            const txDate = document.getElementById('txLabelDate'); if (txDate) txDate.textContent = t('date');
-            const txSave = document.getElementById('txSaveBtn'); if (txSave) txSave.textContent = t('save');
-
-            const txRateLab = document.getElementById('txLiveRateLabel'); if (txRateLab) txRateLab.textContent = (appSettings.lang==='en') ? '📡 Live Rate' : '📡 Güncel Kur';
-            const txUsdLab = document.getElementById('txUsdEqLabel'); if (txUsdLab) txUsdLab.textContent = (appSettings.lang==='en') ? '≈ USD Equivalent' : '≈ Dolar Karşılığı';
-            const txNoteInput = document.getElementById('transactionNote');
-            if (txNoteInput) txNoteInput.placeholder = (appSettings.lang==='en') ? 'Description...' : 'Açıklama...';
-
-            // Transaction type buttons (keep icons)
-            const txBtns = document.querySelectorAll('#transactionModal .type-toggle .type-btn');
-            if (txBtns && txBtns.length>=2){
-                txBtns[0].innerHTML = '<i class="fas fa-arrow-down"></i> ' + t('income');
-                txBtns[1].innerHTML = '<i class="fas fa-arrow-up"></i> ' + t('expense');
-            }
-
-            // Balance item modal
-            const bTitle = document.getElementById('balanceItemModalTitle'); if (bTitle && !balanceEditPtr) bTitle.textContent = t('newBalanceItem');
-            const bd = document.getElementById('balLabelDate'); if (bd) bd.textContent = t('date');
-            const bt = document.getElementById('balLabelType'); if (bt) bt.textContent = t('type');
-            const bg = document.getElementById('balLabelGroup'); if (bg) bg.textContent = t('group');
-            const bnL = document.getElementById('balLabelName'); if (bnL) bnL.textContent = t('categoryName');
-            const baL = document.getElementById('balLabelAmount'); if (baL) baL.textContent = t('amount');
-            const bcL = document.getElementById('balLabelCurrency'); if (bcL) bcL.textContent = t('currency');
-            const bsB = document.getElementById('balSaveBtn'); if (bsB) bsB.textContent = t('save');
-            const bsn = document.getElementById('balSnapshotNote'); if (bsn) bsn.textContent = t('balanceSnapshotNote');
-
-            const bta = document.getElementById('balTypeAssetText'); if (bta) bta.textContent = ' ' + t('asset');
-            const btl = document.getElementById('balTypeLiabText'); if (btl) btl.textContent = ' ' + t('liability');
-
-            // Balance modal placeholder
-            const bName = document.getElementById('balanceItemName');
-            if (bName){
-                bName.placeholder = (appSettings.lang==='en')
-                    ? 'e.g. Akbank / İşbank / John / Mortgage'
-                    : 'Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi';
-            }
-
         }
 
         function wireHeaderToggles(){
@@ -3005,17 +2629,17 @@ function formatMoney(n){
                 avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
                 avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-                document.getElementById('incomeLabel').textContent = (viewMode==='monthly') ? t('monthlyIncomePlan') : ((appSettings.lang==='en') ? 'Annual Income Plan' : 'Yıllık Gelir Planı');
-                document.getElementById('expenseLabel').textContent = (viewMode==='monthly') ? t('monthlyExpensePlan') : ((appSettings.lang==='en') ? 'Annual Expense Plan' : 'Yıllık Gider Planı');
+                document.getElementById('incomeLabel').textContent = 'Yıllık Gelir Planı';
+                document.getElementById('expenseLabel').textContent = 'Yıllık Gider Planı';
             }
 
             const net = factIncome - factExpense;
 
             // USD values
             document.getElementById('planIncome').textContent = formatCurrency(planIncome);
-            document.getElementById('factIncome').textContent = `${t('actualPrefix')} ${formatCurrency(factIncome)}`;
+            document.getElementById('factIncome').textContent = `Gerçekleşen: ${formatCurrency(factIncome)}`;
             document.getElementById('planExpense').textContent = formatCurrency(planExpense);
-            document.getElementById('factExpense').textContent = `${t('actualPrefix')} ${formatCurrency(factExpense)}`;
+            document.getElementById('factExpense').textContent = `Gerçekleşen: ${formatCurrency(factExpense)}`;
 
             // TRY ve RUB values
             document.getElementById('planIncomeSub').textContent = `${formatCurrency(planIncome * avgTryRate, 'TRY')} / ${formatCurrency(planIncome * avgRubRate, 'RUB')}`;
@@ -3120,23 +2744,23 @@ function formatMoney(n){
                     <div class="currency-symbol">$</div>
                     <div class="currency-label">Dolar (USD)</div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedIncome')}:</span>
+                        <span>Plan G:</span>
                         <span>$${fmt(planByCurrency.USD.income)}</span>
                     </div>
                     <div class="currency-row income">
-                        <span>${t('actualIncome')}:</span>
+                        <span>Gerç. G:</span>
                         <span>$${fmt(factByCurrency.USD.income)}</span>
                     </div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedExpense')}:</span>
+                        <span>Plan Gd:</span>
                         <span>$${fmt(planByCurrency.USD.expense)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>${t('actualExpense')}:</span>
+                        <span>Gerç. Gd:</span>
                         <span>$${fmt(factByCurrency.USD.expense)}</span>
                     </div>
                     <div class="currency-row net ${netUSD >= 0 ? 'positive' : 'negative'}">
-                        <span>${t('net')}:</span>
+                        <span>Net:</span>
                         <span>${netUSD >= 0 ? '+' : ''}$${fmt(Math.abs(netUSD))}</span>
                     </div>
                 </div>
@@ -3144,23 +2768,23 @@ function formatMoney(n){
                     <div class="currency-symbol">₺</div>
                     <div class="currency-label">Türk Lirası (TRY)</div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedIncome')}:</span>
+                        <span>Plan G:</span>
                         <span>₺${fmt(planByCurrency.TRY.income)}</span>
                     </div>
                     <div class="currency-row income">
-                        <span>${t('actualIncome')}:</span>
+                        <span>Gerç. G:</span>
                         <span>₺${fmt(factByCurrency.TRY.income)}</span>
                     </div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedExpense')}:</span>
+                        <span>Plan Gd:</span>
                         <span>₺${fmt(planByCurrency.TRY.expense)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>${t('actualExpense')}:</span>
+                        <span>Gerç. Gd:</span>
                         <span>₺${fmt(factByCurrency.TRY.expense)}</span>
                     </div>
                     <div class="currency-row net ${netTRY >= 0 ? 'positive' : 'negative'}">
-                        <span>${t('net')}:</span>
+                        <span>Net:</span>
                         <span>${netTRY >= 0 ? '+' : ''}₺${fmt(Math.abs(netTRY))}</span>
                     </div>
                 </div>
@@ -3168,23 +2792,23 @@ function formatMoney(n){
                     <div class="currency-symbol">₽</div>
                     <div class="currency-label">Ruble (RUB)</div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedIncome')}:</span>
+                        <span>Plan G:</span>
                         <span>₽${fmt(planByCurrency.RUB.income)}</span>
                     </div>
                     <div class="currency-row income">
-                        <span>${t('actualIncome')}:</span>
+                        <span>Gerç. G:</span>
                         <span>₽${fmt(factByCurrency.RUB.income)}</span>
                     </div>
                     <div class="currency-row" style="color: var(--text-secondary);">
-                        <span>${t('plannedExpense')}:</span>
+                        <span>Plan Gd:</span>
                         <span>₽${fmt(planByCurrency.RUB.expense)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>${t('actualExpense')}:</span>
+                        <span>Gerç. Gd:</span>
                         <span>₽${fmt(factByCurrency.RUB.expense)}</span>
                     </div>
                     <div class="currency-row net ${netRUB >= 0 ? 'positive' : 'negative'}">
-                        <span>${t('net')}:</span>
+                        <span>Net:</span>
                         <span>${netRUB >= 0 ? '+' : ''}₽${fmt(Math.abs(netRUB))}</span>
                     </div>
                 </div>
@@ -3253,7 +2877,7 @@ function formatMoney(n){
 
             tfoot.innerHTML = `
                 <tr>
-                    <td>${t('total').toUpperCase()}</td>
+                    <td>TOPLAM</td>
                     <td>$${yearlyIncomePlan.toFixed(0)}</td>
                     <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
                     <td>$${yearlyExpensePlan.toFixed(0)}</td>
@@ -3277,22 +2901,22 @@ function formatMoney(n){
 
             summary.innerHTML = `
                 <div class="cashflow-card savings">
-                    <div class="cashflow-card-title">📈 ${t('yearlySavingsPlan')}</div>
+                    <div class="cashflow-card-title">📈 Yıllık Tasarruf Planı</div>
                     <div class="cashflow-card-value">${yearlySavingsPlan >= 0 ? '+' : ''}$${yearlySavingsPlan.toFixed(0)}</div>
                     <div class="cashflow-card-sub">₺${(yearlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(yearlySavingsPlan * avgRubRate).toFixed(0)}</div>
                 </div>
                 <div class="cashflow-card ${yearlySavingsActual >= 0 ? 'savings' : 'spending'}">
-                    <div class="cashflow-card-title">💰 ${t('actualSavings')}</div>
+                    <div class="cashflow-card-title">💰 Gerçekleşen Tasarruf</div>
                     <div class="cashflow-card-value">${yearlySavingsActual >= 0 ? '+' : ''}$${yearlySavingsActual.toFixed(0)}</div>
                     <div class="cashflow-card-sub">₺${(yearlySavingsActual * avgTryRate).toFixed(0)} / ₽${(yearlySavingsActual * avgRubRate).toFixed(0)}</div>
                 </div>
                 <div class="cashflow-card savings">
-                    <div class="cashflow-card-title">🎯 ${t('monthlySavingsTarget')}</div>
+                    <div class="cashflow-card-title">🎯 Aylık Tasarruf Hedefi</div>
                     <div class="cashflow-card-value">${monthlySavingsPlan >= 0 ? '+' : ''}$${monthlySavingsPlan.toFixed(0)}</div>
                     <div class="cashflow-card-sub">₺${(monthlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(monthlySavingsPlan * avgRubRate).toFixed(0)}</div>
                 </div>
                 <div class="cashflow-card ${projectedSavings >= 0 ? 'savings' : 'spending'}">
-                    <div class="cashflow-card-title">🔮 ${t('yearEndForecast')}</div>
+                    <div class="cashflow-card-title">🔮 Yıl Sonu Tahmini</div>
                     <div class="cashflow-card-value">${projectedSavings >= 0 ? '+' : ''}$${projectedSavings.toFixed(0)}</div>
                     <div class="cashflow-card-sub">₺${(projectedSavings * avgTryRate).toFixed(0)} / ₽${(projectedSavings * avgRubRate).toFixed(0)}</div>
                 </div>
@@ -3326,7 +2950,7 @@ function formatMoney(n){
             // Chart title based on view mode
             const chartTitle = document.querySelector('.chart-title');
             chartTitle.textContent = viewMode === 'monthly' ?
-                `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}` :
+                `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
                 'Aylık Bütçe vs Gerçekleşen';
 
             const isDark = document.documentElement.classList.contains('dark');
@@ -4511,6 +4135,96 @@ function importData(event) {
         function generatePDFReport() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const R = (k)=>{
+                const L = (appSettings && appSettings.lang==='en') ? {
+                    reportTitle: 'Budget Report',
+                    createdAt: 'Created',
+                    overview: 'OVERVIEW',
+                    incomePlan: 'INCOME PLAN',
+                    expensePlan: 'EXPENSE PLAN',
+                    netPlan: 'NET PLAN',
+                    incomeActual: 'ACTUAL INCOME',
+                    expenseActual: 'ACTUAL EXPENSE',
+                    netPosition: 'NET POSITION',
+                    incomeAch: 'Income Achievement',
+                    expenseAch: 'Expense Achievement',
+                    budgetByCurrency: 'MONTHLY BUDGET - BY CURRENCY (Plan/Actual)',
+                    month: 'Month',
+                    total: 'TOTAL',
+                    yearlySummary: 'YEARLY SUMMARY (Plan / Actual)',
+                    spendingTrend: 'SPENDING TREND & PROJECTION',
+                    monthAnalysis: 'Month Analysis',
+                    dayInfo: 'As of day',
+                    totalSpend: 'total spending',
+                    dailyAvg: 'daily average',
+                    monthEndEst: 'estimated month-end spending',
+                    warning: 'If you continue this trend, you will exceed the budget by',
+                    expCats: 'EXPENSE CATEGORIES DETAIL (Original Currency)',
+                    incCats: 'INCOME CATEGORIES DETAIL (Original Currency)',
+                    category: 'Category',
+                    cur: 'Cur',
+                    plan: 'Plan',
+                    actual: 'Actual',
+                    diff: 'Diff',
+                    ratio: 'Ratio',
+                    balanceSheet: 'BALANCE SHEET',
+                    item: 'Item',
+                    amountUsd: 'Amount ($)',
+                    assets: 'Assets',
+                    liabilities: 'Liabilities',
+                    equity: 'Equity',
+                    balanceDetail: 'BALANCE DETAIL',
+                    group: 'Group',
+                    page: 'Page',
+                    appFooter: 'Budget Tracker App'
+                } : {
+                    reportTitle: RXL('reportTitle'),
+                    createdAt: 'Olusturulma',
+                    overview: 'OVERVIEW',
+                    incomePlan: 'GELIR PLANI',
+                    expensePlan: 'GIDER PLANI',
+                    netPlan: 'NET PLAN',
+                    incomeActual: 'GERCEKLESEN GELIR',
+                    expenseActual: 'GERCEKLESEN GIDER',
+                    netPosition: 'NET DURUM',
+                    incomeAch: 'Gelir Gerceklesme',
+                    expenseAch: 'Gider Gerceklesme',
+                    budgetByCurrency: 'MONTHLY BUDGET - BY CURRENCY (Plan/Actual)',
+                    month: 'Ay',
+                    total: 'TOPLAM',
+                    yearlySummary: 'YILLIK OZET (Plan / Gerceklesen)',
+                    spendingTrend: 'SPENDING TREND & PROJECTION',
+                    monthAnalysis: 'Ayi Analizi',
+                    dayInfo: 'gunu itibariyle',
+                    totalSpend: 'toplam harcama',
+                    dailyAvg: 'Gunluk ortalama harcama',
+                    monthEndEst: 'Ay sonu tahmini harcama',
+                    warning: 'Bu trendle devam ederseniz ay sonunda',
+                    expCats: 'GIDER KATEGORILERI DETAYI (Orijinal Para Birimi)',
+                    incCats: 'GELIR KATEGORILERI DETAYI (Orijinal Para Birimi)',
+                    category: 'Kategori',
+                    cur: 'PB',
+                    plan: 'Plan',
+                    actual: 'Gerceklesen',
+                    diff: 'Fark',
+                    ratio: 'Oran',
+                    balanceSheet: 'BALANCE SHEET',
+                    item: 'Kalem',
+                    amountUsd: 'Tutar ($)',
+                    assets: 'Varliklar',
+                    liabilities: 'Borclar',
+                    equity: 'Oz Sermaye',
+                    balanceDetail: 'BALANCE DETAIL',
+                    group: 'Grup',
+                    page: 'Sayfa',
+                    appFooter: 'Butce Takip Uygulamasi'
+                };
+                return L[k] || k;
+            };
+            // Month names ASCII for PDF
+            const monthNamesASCII = ((I18N[appSettings.lang]||I18N.tr).monthsShort||['Jan']).map(x=>String(x).normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/İ/g,'I').replace(/ı/g,'i').replace(/Ş/g,'S').replace(/ş/g,'s').replace(/Ğ/g,'G').replace(/ğ/g,'g').replace(/Ç/g,'C').replace(/ç/g,'c').replace(/Ö/g,'O').replace(/ö/g,'o').replace(/Ü/g,'U').replace(/ü/g,'u'));
+            const monthNamesFullASCII = ((I18N[appSettings.lang]||I18N.tr).monthsFull||['January']).map(x=>String(x).normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/İ/g,'I').replace(/ı/g,'i').replace(/Ş/g,'S').replace(/ş/g,'s').replace(/Ğ/g,'G').replace(/ğ/g,'g').replace(/Ç/g,'C').replace(/ç/g,'c').replace(/Ö/g,'O').replace(/ö/g,'o').replace(/Ü/g,'U').replace(/ü/g,'u'));
+    
 
             const isMonthly = viewMode === 'monthly';
             const yearTx = getYearTransactions();
@@ -4532,11 +4246,8 @@ function importData(event) {
                 bgLight: [248, 249, 250]
             };
 
-            // Ay isimleri ASCII uyumlu
-            const monthNamesASCII = ((appSettings.lang||'tr')==='en') ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Oca','Sub','Mar','Nis','May','Haz','Tem','Agu','Eyl','Eki','Kas','Ara'];
-            const monthNamesFullASCII = ((appSettings.lang||'tr')==='en') ? ['January','February','March','April','May','June','July','August','September','October','November','December'] : ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'];
-
-            // Binlik ayracli sayi formatlama
+            // Ay isimleri ASCII uyumlu (localized above)
+// Binlik ayracli sayi formatlama
             function formatNum(num, decimals = 0) {
                 return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
@@ -4649,12 +4360,11 @@ function importData(event) {
             }
 
             // Title
-            const lang = (appSettings.lang||'tr');
-            const locale = (lang==='en'?'en-US':'tr-TR');
             const title = isMonthly
-                ? `${monthNamesFullASCII[currentMonth]} ${currentYear} ${t('reportBudgetReport')}`
-                : `${currentYear} ${t('reportYearBudgetReport')}`;
-            const subtitle = `${t('reportCreated')}: ${today.toLocaleDateString(locale)} ${today.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}`;
+                ? `${monthNamesFullASCII[currentMonth]} ${currentYear} Butce Raporu`
+                : `${currentYear} Yili Butce Raporu`;
+
+            const subtitle = `Olusturulma: ${today.toLocaleDateString('tr-TR')} ${today.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}`;
 
             let y = drawHeader(doc, title, subtitle);
 
@@ -4680,19 +4390,19 @@ function importData(event) {
             const netColor = net >= 0 ? colors.income : colors.expense;
 
             // ==================== OZET BOLUMU ====================
-            y = drawSectionTitle(doc, (appSettings.lang==='en') ? t('reportOverview') : 'GENEL OZET', y);
+            y = drawSectionTitle(doc, 'GENEL OZET', y);
 
             const tryRate = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
             const rubRate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-            drawInfoBox(doc, 14, y, 58, 30, t('reportIncomePlan'), `$${formatNum(planIncome)}`, `TL ${formatNum(planIncome * tryRate)}`, colors.income);
-            drawInfoBox(doc, 76, y, 58, 30, t('reportExpensePlan'), `$${formatNum(planExpense)}`, `TL ${formatNum(planExpense * tryRate)}`, colors.expense);
-            drawInfoBox(doc, 138, y, 58, 30, t('reportNetPlan'), `${(planIncome - planExpense) >= 0 ? '+' : ''}$${formatNum(Math.abs(planIncome - planExpense))}`, `TL ${formatNum((planIncome - planExpense) * tryRate)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
+            drawInfoBox(doc, 14, y, 58, 30, 'GELIR PLANI', `$${formatNum(planIncome)}`, `TL ${formatNum(planIncome * tryRate)}`, colors.income);
+            drawInfoBox(doc, 76, y, 58, 30, 'GIDER PLANI', `$${formatNum(planExpense)}`, `TL ${formatNum(planExpense * tryRate)}`, colors.expense);
+            drawInfoBox(doc, 138, y, 58, 30, 'NET PLAN', `${(planIncome - planExpense) >= 0 ? '+' : ''}$${formatNum(Math.abs(planIncome - planExpense))}`, `TL ${formatNum((planIncome - planExpense) * tryRate)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
             y += 35;
 
-            drawInfoBox(doc, 14, y, 58, 30, t('reportActualIncome'), `$${formatNum(factIncome)}`, `TL ${formatNum(factIncome * tryRate)}`, colors.income);
-            drawInfoBox(doc, 76, y, 58, 30, t('reportActualExpense'), `$${formatNum(factExpense)}`, `TL ${formatNum(factExpense * tryRate)}`, colors.expense);
-            drawInfoBox(doc, 138, y, 58, 30, t('reportNetStatus'), `${net >= 0 ? '+' : ''}$${formatNum(Math.abs(net))}`, `TL ${formatNum(net * tryRate)}`, netColor);
+            drawInfoBox(doc, 14, y, 58, 30, 'GERCEKLESEN GELIR', `$${formatNum(factIncome)}`, `TL ${formatNum(factIncome * tryRate)}`, colors.income);
+            drawInfoBox(doc, 76, y, 58, 30, 'GERCEKLESEN GIDER', `$${formatNum(factExpense)}`, `TL ${formatNum(factExpense * tryRate)}`, colors.expense);
+            drawInfoBox(doc, 138, y, 58, 30, 'NET DURUM', `${net >= 0 ? '+' : ''}$${formatNum(Math.abs(net))}`, `TL ${formatNum(net * tryRate)}`, netColor);
             y += 38;
 
             doc.setTextColor(...colors.text);
@@ -4709,7 +4419,7 @@ function importData(event) {
 
             // ==================== AYLIK HARCAMALAR (PARA BIRIMI BAZINDA) ====================
             y = checkPageBreak(doc, y, 120);
-            y = drawSectionTitle(doc, (appSettings.lang==='en') ? t('reportMonthlyBudgetByCurrency') : 'AYLIK BUTCE - PARA BIRIMI BAZINDA (Plan/Gerceklesen)', y);
+            y = drawSectionTitle(doc, 'AYLIK BUTCE - PARA BIRIMI BAZINDA (Plan/Gerceklesen)', y);
 
             // Her ay için para birimi bazında plan ve gerçekleşen hesapla
             const monthlyByCurrencyData = [];
@@ -4803,7 +4513,7 @@ function importData(event) {
 
             doc.setTextColor(...colors.text);
             doc.setFontSize(9);
-            doc.text(t('reportYearlySummary'), 20, y + 8);
+            doc.text('YILLIK OZET (Plan / Gerceklesen)', 20, y + 8);
 
             doc.setFontSize(8);
             // USD satırı
@@ -4870,7 +4580,7 @@ function importData(event) {
 
             // ==================== HARCAMA TRENDI VE PROJEKSIYON ====================
             y = checkPageBreak(doc, y, 70);
-            y = drawSectionTitle(doc, (appSettings.lang==='en') ? t('reportSpendingTrend') : 'HARCAMA TRENDI VE PROJEKSIYON', y, colors.warning);
+            y = drawSectionTitle(doc, 'HARCAMA TRENDI VE PROJEKSIYON', y, colors.warning);
 
             const completedMonths = today.getFullYear() === currentYear ? today.getMonth() : 11;
             const totalExpenseSoFar = yearTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
@@ -4903,9 +4613,9 @@ function importData(event) {
                 doc.setTextColor(...(projectedDiff >= 0 ? colors.income : colors.expense));
                 doc.setFontSize(9);
                 if (projectedDiff >= 0) {
-                    doc.text(tf('trendOk',{diff:formatNum(projectedDiff)}), 20, y + 48);
+                    doc.text(`[OK] Bu trendle devam ederseniz ay sonunda $${formatNum(projectedDiff)} butce altinda kalirsiniz.`, 20, y + 48);
                 } else {
-                    doc.text(tf('trendWarn',{diff:formatNum(Math.abs(projectedDiff))}), 20, y + 48);
+                    doc.text(`[!] Bu trendle devam ederseniz ay sonunda $${formatNum(Math.abs(projectedDiff))} butce asimi olacak!`, 20, y + 48);
                 }
                 y += 62;
             } else {
@@ -4942,7 +4652,7 @@ function importData(event) {
 
             // ==================== KATEGORI BAZINDA HARCAMALAR ====================
             y = checkPageBreak(doc, y, 50);
-            y = drawSectionTitle(doc, t('reportExpenseCategoriesDetail'), y, colors.expense);
+            y = drawSectionTitle(doc, R('expCats'), y, colors.expense);
 
             const categoryData = categories.expense.map(cat => {
                 const budgetCurrency = getCategoryBudgetCurrency(cat);
@@ -4997,7 +4707,7 @@ function importData(event) {
                 };
             }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factUSD - a.factUSD);
 
-            const catTableHeaders = [t('colCategory'), t('colCurrency'), t('colPlanned'), t('colActual'), t('colDiff'), t('colRatio')];
+            const catTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
             const catTableRows = categoryData.map(c => {
                 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
                 const percentColor = c.percent > 100 ? colors.expense : (c.percent > 80 ? colors.warning : colors.income);
@@ -5018,7 +4728,7 @@ function importData(event) {
 
             // ==================== GELIR KATEGORILERI ====================
             y = checkPageBreak(doc, y, 50);
-            y = drawSectionTitle(doc, t('reportIncomeCategoriesDetail'), y, colors.income);
+            y = drawSectionTitle(doc, R('incCats'), y, colors.income);
 
             const incomeData = categories.income.map(cat => {
                 const budgetCurrency = getCategoryBudgetCurrency(cat);
@@ -5057,7 +4767,7 @@ function importData(event) {
                 };
             }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factOriginal - a.factOriginal);
 
-            const incomeTableHeaders = [t('colCategory'), t('colCurrency'), t('colPlanned'), t('colActual'), t('colDiff'), t('colRatio')];
+            const incomeTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
             const incomeTableRows = incomeData.map(c => {
                 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
                 const percentColor = c.percent >= 100 ? colors.income : (c.percent > 50 ? colors.warning : colors.expense);
@@ -5084,13 +4794,13 @@ function importData(event) {
             const bt = computeBalanceTotals(reportYM);
 
             y = checkPageBreak(doc, y, 55);
-            y = drawSectionTitle(doc, (appSettings.lang==='en') ? t('reportBalanceSheet') : 'BILANCO', y, colors.primary);
+            y = drawSectionTitle(doc, 'BILANCO', y, colors.primary);
 
-            const balHeaders = [t('balItem'), t('balAmountUsd')];
+            const balHeaders = ['Kalem', 'Tutar ($)'];
             const balRows = [
-                [t('balAssetsLbl'), `$${formatNum(bt.assetsTotal)}`],
-                [t('balLiabilitiesLbl'), `$${formatNum(bt.liabilitiesTotal)}`],
-                [t('balEquityLbl'), `$${formatNum(bt.equity)}`]
+                ['Varliklar', `$${formatNum(bt.assetsTotal)}`],
+                ['Borclar', `$${formatNum(bt.liabilitiesTotal)}`],
+                ['Oz Sermaye', `$${formatNum(bt.equity)}`]
             ];
             y = drawTable(doc, balHeaders, balRows, y, [70, 120]);
 
@@ -5101,7 +4811,7 @@ function importData(event) {
                     const out = {};
                     Object.keys(items||{}).forEach(k=>{
                         const it = items[k]||{};
-                        out[k] = Object.values(it).reduce((s,v)=>s+(Number(v.amountUSD)||0),0);
+                        out[k] = Object.values(it).reduce((s,v)=>s+(Number(v.amountUSD||v.usd)||0),0);
                     });
                     return out;
                 };
@@ -5113,8 +4823,8 @@ function importData(event) {
                 Object.keys(lG).forEach(k=> gRows.push([`Borc: ${k}`, `$${formatNum(lG[k])}`]));
                 if (gRows.length){
                     y = checkPageBreak(doc, y, 55);
-                    y = drawSectionTitle(doc, t('reportBalanceDetail'), y, colors.primary);
-                    y = drawTable(doc, [t('reportGroup'), t('reportAmountUsd')], gRows, y, [90, 100]);
+                    y = drawSectionTitle(doc, R('balanceDetail'), y, colors.primary);
+                    y = drawTable(doc, ['Grup', 'Tutar ($)'], gRows, y, [90, 100]);
                 }
             }catch(e){}
 
@@ -5126,8 +4836,8 @@ function importData(event) {
                 doc.rect(0, 287, 210, 10, 'F');
                 doc.setTextColor(...colors.white);
                 doc.setFontSize(8);
-                doc.text(t('reportAppName'), 105, 293, { align: 'center' });
-                doc.text(`${(appSettings.lang==='en')?'Page':'Sayfa'} ${i} / ${pageCount}`, 195, 293, { align: 'right' });
+                doc.text(R('appFooter'), 105, 293, { align: 'center' });
+                doc.text(`${R('page')} ${i} / ${pageCount}`, 195, 293, { align: 'right' });
             }
 
             // Save
@@ -5136,7 +4846,7 @@ function importData(event) {
                 : `butce-${currentYear}-yillik.pdf`;
 
             doc.save(filename);
-            showToast(t('toastPdfCreated'));
+            showToast((appSettings.lang==='en')?'PDF report created':'PDF raporu olusturuldu');
         }
 
         // ==================== EXCEL REPORT ====================
@@ -5148,6 +4858,50 @@ function importData(event) {
                 : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 
             const wb = XLSX.utils.book_new();
+            const RXL = (k)=>{
+                const en = {
+                    reportTitle: 'Budget Report',
+                    overview: 'OVERVIEW',
+                    incomePlan: 'Income Plan',
+                    expensePlan: 'Expense Plan',
+                    netPlan: 'Net Plan',
+                    incomeActual: 'Actual Income',
+                    expenseActual: 'Actual Expense',
+                    netPosition: 'Net Position',
+                    month: 'Month',
+                    total: 'Total',
+                    plan: 'Plan',
+                    actual: 'Actual',
+                    diff: 'Difference',
+                    ratio: 'Ratio',
+                    balanceSheet: 'Balance Sheet',
+                    assets: 'Assets',
+                    liabilities: 'Liabilities',
+                    equity: 'Equity'
+                };
+                const tr = {
+                    reportTitle: RXL('reportTitle'),
+                    overview: 'OVERVIEW',
+                    incomePlan: 'Gelir Plani',
+                    expensePlan: 'Gider Plani',
+                    netPlan: 'Net Plan',
+                    incomeActual: 'Gerceklesen Gelir',
+                    expenseActual: 'Gerceklesen Gider',
+                    netPosition: 'Net Durum',
+                    month: 'Ay',
+                    total: 'Toplam',
+                    plan: 'Plan',
+                    actual: 'Gerceklesen',
+                    diff: 'Fark',
+                    ratio: 'Oran',
+                    balanceSheet: 'Balance Sheet',
+                    assets: 'Varliklar',
+                    liabilities: 'Borclar',
+                    equity: 'Oz Sermaye'
+                };
+                const L = (appSettings.lang==='en')?en:tr;
+                return L[k]||k;
+            };
 
             // Stil sabitleri
             const borderStyle = { style: 'thin', color: { rgb: '000000' } };
@@ -5653,95 +5407,10 @@ function importData(event) {
                 balRows.push([y, tY.assetsTotal, tY.liabilitiesTotal, tY.equity]);
             }
             const wsBalance = XLSX.utils.aoa_to_sheet(balRows);
-            XLSX.utils.book_append_sheet(wb, wsBalance, (appSettings.lang==='en') ? 'Balance' : 'Bilanço');
-
-            
-            // Localize string cells in workbook (safe post-process)
-            try{
-                const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
-                const mapTR2EN = {
-                    'ÖZET':'OVERVIEW',
-                    'Plan ($)':'Planned ($)',
-                    'Plan (₺)':'Planned (₺)',
-                    'Gerçekleşen ($)':'Actual ($)',
-                    'Gerçekleşen (₺)':'Actual (₺)',
-                    'Fark ($)':'Diff ($)',
-                    'Fark (₺)':'Diff (₺)',
-                    '📊 TOPLAM':'📊 TOTAL',
-                    'TOPLAM':'TOTAL',
-                    'YILLIK OZET (Plan / Gerceklesen)':'YEARLY SUMMARY (Planned / Actual)',
-                    'YILLIK ÖZET (Plan / Gerçekleşen)':'YEARLY SUMMARY (Planned / Actual)',
-                    'NET DURUM':'NET POSITION',
-                    'GELIR PLANI':'INCOME PLAN',
-                    'GIDER PLANI':'EXPENSE PLAN',
-                    'GERCEKLESEN GELIR':'ACTUAL INCOME',
-                    'GERCEKLESEN GIDER':'ACTUAL EXPENSE',
-                    'BILANCO':'BALANCE',
-                    'BİLANÇO':'BALANCE',
-                    'Varlıklar':'Assets',
-                    'Borçlar':'Liabilities',
-                    'Öz Sermaye':'Equity',
-
-                    'Tarih':'Date',
-                    'Kategori':'Category',
-                    'Para Birimi':'Currency',
-                    'Tutar':'Amount',
-                    'Gelir':'Income',
-                    'Gider':'Expense',
-                    'Bütçe':'Budget',
-                    'Bilanço':'Balance',
-                    'Bütçe Özeti':'Budget Summary',
-                    'Aylık':'Monthly',
-                    'Yıllık':'Annual',
-                    'Toplam':'Total',
-                    'TOPLAM':'TOTAL',
-                    'Gerçekleşen':'Actual',
-                    'Planlanan':'Planned',
-                    'Varlıklar':'Assets',
-                    'Borçlar':'Liabilities',
-                    'Öz Sermaye':'Equity',
-                    'Nakit':'Cash',
-                    'Alacaklar':'Receivables',
-                    'Yatırımlar':'Investments',
-                    'Krediler':'Loans',
-                    'Kredi Kartı Borçları':'Credit Card Debt',
-                    'Şahıslara Borçlar':'Payables',
-                    'Son Durum':'Net Position'
-                };
-                const mapEN2TR = Object.fromEntries(Object.entries(mapTR2EN).map(([k,v])=>[v,k]));
-                const map = (lang==='en') ? mapTR2EN : mapEN2TR;
-
-                Object.keys(wb.Sheets||{}).forEach(sh=>{
-                    const ws = wb.Sheets[sh];
-                    if (!ws) return;
-                    Object.keys(ws).forEach(addr=>{
-                        if (addr[0]==='!') return;
-                        const cell = ws[addr];
-                        if (!cell) return;
-                        if (cell.t === 's' || typeof cell.v === 'string'){
-                            const v = String(cell.v);
-                            if (map[v] !== undefined) cell.v = map[v];
-                            // common prefixes
-                            if (lang==='en'){
-                                cell.v = String(cell.v)
-                                    .replace(/^Gerçekleşen\b/i,'Actual')
-                                    .replace(/^Planlanan\b/i,'Planned')
-                                    .replace(/^Varlik\b/i,'Asset')
-                                    .replace(/^Borc\b/i,'Liability');
-                            } else {
-                                cell.v = String(cell.v)
-                                    .replace(/^Actual\b/i,'Gerçekleşen')
-                                    .replace(/^Planned\b/i,'Planlanan')
-                                    .replace(/^Asset\b/i,'Varlık')
-                                    .replace(/^Liability\b/i,'Borç');
-                            }
-                        }
-                    });
-                });
-            }catch(e){}
+            XLSX.utils.book_append_sheet(wb, wsBalance, 'Balance');
 
             XLSX.writeFile(wb, filename);
-            showToast(t('toastExcelCreated') + ' ✓');
+            showToast('Excel raporu oluşturuldu ✓');
         }
 
         function saveRates() {
@@ -6042,18 +5711,17 @@ function applyTransactionToBalance(tx){
         }
 
         function groupMeta(type){
-            const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
             if (type === 'asset') {
                 return [
-                    { key:'cash', icon:'💵', label: `${'💵'} ${t('balGroup_cash')}` },
-                    { key:'receivables', icon:'🧾', label: `${'🧾'} ${t('balGroup_receivables')}` },
-                    { key:'investments', icon:'📊', label: `${'📊'} ${t('balGroup_investments')}` }
+                    { key:'cash', label:'💵 Nakit' },
+                    { key:'receivables', label:'🧾 Alacaklar' },
+                    { key:'investments', label:'💎 Yatırımlar' }
                 ];
             }
             return [
-                { key:'loans', icon:'🏦', label: `${'🏦'} ${t('balGroup_loans')}` },
-                { key:'cards', icon:'💳', label: `${'💳'} ${t('balGroup_cards')}` },
-                { key:'payables', icon:'🧷', label: `${'🧷'} ${t('balGroup_payables')}` }
+                { key:'loans', label:'🏦 Krediler' },
+                { key:'cards', label:'💳 Kredi Kartı Borçları' },
+                { key:'payables', label:'🤝 Şahıslara Borçlar' }
             ];
         }
 
@@ -6117,7 +5785,7 @@ function renderBalanceMonthFilter(){
             const months = monthNames || ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
             // Transactions UI ile aynı görünüm: .month-chip kullan
-            let html = `<div class="month-chip ${activeBalanceYM === 'latest' ? 'active' : ''}" onclick="setBalanceYM('latest')">${t('lastStatus')}</div>`;
+            let html = `<div class="month-chip ${activeBalanceYM === 'latest' ? 'active' : ''}" onclick="setBalanceYM('latest')">Son Durum</div>`;
             for (let i = 0; i < 12; i++){
                 const key = `${currentYear}-${String(i+1).padStart(2,'0')}`;
                 const active = (activeBalanceYM === key);
@@ -6191,7 +5859,7 @@ function renderGroup(box, typeKey, groups){
         
 function openBalanceItemModal(){
             balanceEditPtr = null;
-            document.getElementById('balanceItemModalTitle').textContent = t('newBalanceItem');
+            document.getElementById('balanceItemModalTitle').textContent = 'Yeni Bilanço Kalemi';
             const _bd = document.getElementById('balanceItemDate');
             if (_bd) { _bd.value = new Date().toISOString().slice(0,10); }
 
@@ -6201,7 +5869,7 @@ function openBalanceItemModal(){
             const ym = resolveBalanceYM();
             const info = document.getElementById('balanceItemMonthInfo');
             if (info){
-                info.textContent = `${t('balanceMonthInfoPrefix')} ${ym}  (${t('balanceSnapshotNote')})`;
+                info.textContent = `Ay: ${ym}  (Bu ayın snapshot’ına kayıt edilir. Geçmiş aylar değişmez.)`;
             }
             document.getElementById('balanceItemName').value = '';
             document.getElementById('balanceItemAmount').value = '';
@@ -6233,9 +5901,9 @@ async function saveBalanceItem(){
             const name = (document.getElementById('balanceItemName')?.value || '').trim();
             const amount = parseFloat(document.getElementById('balanceItemAmount')?.value || '0');
 
-            if (!group){ showToast((appSettings.lang==='en') ? 'Select a group' : 'Grup seçin'); return; }
-            if (!name){ showToast((appSettings.lang==='en') ? 'Enter a category name' : 'Kategori adı girin'); return; }
-            if (!amount || amount <= 0){ showToast((appSettings.lang==='en') ? 'Enter an amount' : 'Tutar girin'); return; }
+            if (!group){ showToast('Grup seçin'); return; }
+            if (!name){ showToast('Kategori adı girin'); return; }
+            if (!amount || amount <= 0){ showToast('Tutar girin'); return; }
 
             let amountUSD = amount;
             let rateAtTime = 1;
@@ -6273,7 +5941,7 @@ async function saveBalanceItem(){
             closeModal('balanceItemModal');
             saveData();
             updateAll();
-            showToast((appSettings.lang==='en') ? 'Saved ✓' : 'Kaydedildi ✓');
+            showToast('Kaydedildi ✓');
         }
 
 
@@ -6498,22 +6166,7 @@ function renderBalanceChart(){
 
         function setBalanceTrendMode(mode){
             window.balanceTrendMode = (mode === 'yearly') ? 'yearly' : 'monthly';
-            
-            // Balance item modal labels
-            const balModalTitle = document.getElementById('balanceItemModalTitle'); if (balModalTitle) balModalTitle.textContent = t('newBalanceItem');
-            const balLabelDate = document.getElementById('balLabelDate'); if (balLabelDate) balLabelDate.textContent = t('date');
-            const balLabelType = document.getElementById('balLabelType'); if (balLabelType) balLabelType.textContent = t('type');
-            const balTypeAssetText = document.getElementById('balTypeAssetText'); if (balTypeAssetText) balTypeAssetText.textContent = ' ' + t('asset');
-            const balTypeLiabText = document.getElementById('balTypeLiabText'); if (balTypeLiabText) balTypeLiabText.textContent = ' ' + t('liability');
-            const balLabelGroup = document.getElementById('balLabelGroup'); if (balLabelGroup) balLabelGroup.textContent = t('group');
-            const balLabelCat = document.getElementById('balLabelCategoryName'); if (balLabelCat) balLabelCat.textContent = t('categoryName');
-            const balLabelAmount = document.getElementById('balLabelAmount'); if (balLabelAmount) balLabelAmount.textContent = t('amount');
-            const balLabelCurrency = document.getElementById('balLabelCurrency'); if (balLabelCurrency) balLabelCurrency.textContent = t('currency');
-            const balSaveBtn = document.getElementById('balSaveBtn'); if (balSaveBtn) balSaveBtn.textContent = t('save');
-            const balSnapInfo = document.getElementById('balSnapshotInfo'); if (balSnapInfo) balSnapInfo.textContent = t('balanceSnapshotText');
-            const balNameInput = document.getElementById('balanceItemName'); if (balNameInput) balNameInput.placeholder = t('balanceItemNamePlaceholder');
-
-try{ renderBalanceChart(); }catch(e){}
+            try{ renderBalanceChart(); }catch(e){}
         }
 
         document.addEventListener('DOMContentLoaded', ()=>{
@@ -6552,41 +6205,41 @@ try{ renderBalanceChart(); }catch(e){}
     </div>
 
     <div class="form-group">
-      <label id="balLabelDate">Tarih</label>
+      <label data-i18n="date">Tarih</label>
       <input type="date" id="balanceItemDate" value="2026-02-19">
     </div>
 
     <div class="form-group">
-      <label id="balLabelType">Tip</label>
+      <label>Tip</label>
       <div class="type-toggle">
         <button id="balTypeAsset" class="type-btn income active" onclick="setBalanceType('asset')">
-          <i class="fas fa-gem"></i><span id="balTypeAssetText"> Varlık</span>
+          <i class="fas fa-gem"></i> Varlık
         </button>
         <button id="balTypeLiab" class="type-btn expense" onclick="setBalanceType('liability')">
-          <i class="fas fa-building-columns"></i><span id="balTypeLiabText"> Borç</span>
+          <i class="fas fa-building-columns"></i> Borç
         </button>
       </div>
     </div>
 
     <div class="form-group">
-      <label id="balLabelGroup">Grup</label>
+      <label data-i18n="group">Grup</label>
       <select id="balanceGroupSelect" class="select"></select>
     </div>
 
     <div class="form-group">
-      <label>Kategori Adı</label>
+      <label data-i18n="categoryName">Kategori Adı</label>
       <input id="balanceItemName" type="text" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
     </div>
 
     <div class="form-group">
-      <label id="balLabelAmount">Tutar</label>
+      <label data-i18n="amount">Tutar</label>
       <input id="balanceItemAmount" type="number" inputmode="decimal" step="0.01" placeholder="Örn: 10000" oninput="updateBalanceUsdPreview()">
       <div class="muted" id="balRateHint" style="margin-top:8px; display:none;"></div>
       <div class="muted" id="balUsdEq" style="margin-top:6px;"></div>
     </div>
 
     <div class="form-group">
-      <label id="balLabelCurrency">Para Birimi</label>
+      <label data-i18n="currency">Para Birimi</label>
       <div class="currency-toggle" id="balanceCurrencyToggle">
         <button id="balCurUSD" class="currency-btn active" onclick="setBalanceCurrency('USD')">$ USD</button>
         <button id="balCurTRY" class="currency-btn" onclick="setBalanceCurrency('TRY')">₺ TRY</button>
@@ -6594,10 +6247,10 @@ try{ renderBalanceChart(); }catch(e){}
       </div>
     </div>
 
-    <button class="submit-btn" id="balSaveBtn" onclick="saveBalanceItem()">Kaydet</button>
+    <button class="submit-btn" onclick="saveBalanceItem()"><span data-i18n="save">Kaydet</span></button>
 
-    <div class="muted" id="balSnapshotInfo" style="margin-top:10px; font-size:12px;">
-      Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.
+    <div class="muted" style="margin-top:10px; font-size:12px;">
+      <span id="balSnapshotNote">Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.</span>
     </div>
   </div>
 </div>
