@@ -2886,28 +2886,30 @@ function formatMoney(n){
             const projectedSavings = totalNetActual + (remainingMonths * monthlySavingsPlan);
 
             summary.innerHTML = `
-                <div class="cashflow-card savings">
-                    <div class="cashflow-card-title">📈 ${appSettings.lang==='en' ? 'Annual Savings Plan' : 'Yıllık Tasarruf Planı'}</div>
-                    <div class="cashflow-card-value">${yearlySavingsPlan >= 0 ? '+' : ''}$${yearlySavingsPlan.toFixed(0)}</div>
-                    <div class="cashflow-card-sub">₺${(yearlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(yearlySavingsPlan * avgRubRate).toFixed(0)}</div>
-                </div>
-                <div class="cashflow-card ${yearlySavingsActual >= 0 ? 'savings' : 'spending'}">
-                    <div class="cashflow-card-title">💰 Gerçekleşen Tasarruf</div>
-                    <div class="cashflow-card-value">${yearlySavingsActual >= 0 ? '+' : ''}$${yearlySavingsActual.toFixed(0)}</div>
-                    <div class="cashflow-card-sub">₺${(yearlySavingsActual * avgTryRate).toFixed(0)} / ₽${(yearlySavingsActual * avgRubRate).toFixed(0)}</div>
-                </div>
-                <div class="cashflow-card savings">
-                    <div class="cashflow-card-title">🎯 Aylık Tasarruf Hedefi</div>
-                    <div class="cashflow-card-value">${monthlySavingsPlan >= 0 ? '+' : ''}$${monthlySavingsPlan.toFixed(0)}</div>
-                    <div class="cashflow-card-sub">₺${(monthlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(monthlySavingsPlan * avgRubRate).toFixed(0)}</div>
-                </div>
-                <div class="cashflow-card ${projectedSavings >= 0 ? 'savings' : 'spending'}">
-                    <div class="cashflow-card-title">🔮 Yıl Sonu Tahmini</div>
-                    <div class="cashflow-card-value">${projectedSavings >= 0 ? '+' : ''}$${projectedSavings.toFixed(0)}</div>
-                    <div class="cashflow-card-sub">₺${(projectedSavings * avgTryRate).toFixed(0)} / ₽${(projectedSavings * avgRubRate).toFixed(0)}</div>
-                </div>
-            `;
-        }
+    <div class="cashflow-card savings">
+        <div class="cashflow-card-title">📈 Yıllık Tasarruf Planı</div>
+        <div class="cashflow-card-value">${yearlySavingsPlan >= 0 ? '+' : ''}$${yearlySavingsPlan.toFixed(0)}</div>
+        <div class="cashflow-card-sub">₺${(yearlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(yearlySavingsPlan * avgRubRate).toFixed(0)}</div>
+    </div>
+
+    <div class="cashflow-card ${yearlySavingsActual >= 0 ? 'savings' : 'spending'}">
+        <div class="cashflow-card-title">💰 Gerçekleşen Tasarruf</div>
+        <div class="cashflow-card-value">${yearlySavingsActual >= 0 ? '+' : ''}$${yearlySavingsActual.toFixed(0)}</div>
+        <div class="cashflow-card-sub">₺${(yearlySavingsActual * avgTryRate).toFixed(0)} / ₽${(yearlySavingsActual * avgRubRate).toFixed(0)}</div>
+    </div>
+
+    <div class="cashflow-card savings">
+        <div class="cashflow-card-title">🎯 Aylık Tasarruf Hedefi</div>
+        <div class="cashflow-card-value">${monthlySavingsPlan >= 0 ? '+' : ''}$${monthlySavingsPlan.toFixed(0)}</div>
+        <div class="cashflow-card-sub">₺${(monthlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(monthlySavingsPlan * avgRubRate).toFixed(0)}</div>
+    </div>
+
+    <div class="cashflow-card ${projectedSavings >= 0 ? 'savings' : 'spending'}">
+        <div class="cashflow-card-title">🔮 Yıl Sonu Tahmini</div>
+        <div class="cashflow-card-value">${projectedSavings >= 0 ? '+' : ''}$${projectedSavings.toFixed(0)}</div>
+        <div class="cashflow-card-sub">₺${(projectedSavings * avgTryRate).toFixed(0)} / ₽${(projectedSavings * avgRubRate).toFixed(0)}</div>
+    </div>
+`;
 
         function updateChart() {
             const ctx = document.getElementById('monthlyChart').getContext('2d');
