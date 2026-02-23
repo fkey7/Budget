@@ -2887,7 +2887,7 @@ function formatMoney(n){
 
             summary.innerHTML = `
                 <div class="cashflow-card savings">
-                    <div class="cashflow-card-title">📈 Yıllık Tasarruf Planı</div>
+                    <div class="cashflow-card-title">📈 ${appSettings.lang==='en' ? 'Annual Savings Plan' : 'Yıllık Tasarruf Planı'}</div>
                     <div class="cashflow-card-value">${yearlySavingsPlan >= 0 ? '+' : ''}$${yearlySavingsPlan.toFixed(0)}</div>
                     <div class="cashflow-card-sub">₺${(yearlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(yearlySavingsPlan * avgRubRate).toFixed(0)}</div>
                 </div>
