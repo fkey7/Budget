@@ -2125,6 +2125,32 @@
                 install: 'Yükle',
                 balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)',
                 addItem: 'Kalem Ekle'
+                budgetSummaryTitle: "Bütçe Özeti (Para Birimi Bazında)",
+                cashflowTitle: "Aylık Nakit Akışı",
+
+                plannedIncomeLabel: "Planlanan Gelir:",
+                actualIncomeLabel: "Gerçekleşen Gelir:",
+                plannedExpenseLabel: "Planlanan Gider:",
+                actualExpenseLabel: "Gerçekleşen Gider:",
+                netLabel: "Net:",
+                
+                annualSavingsPlan: "Yıllık tasarruf planı",
+                monthlySavingsTarget: "Aylık tasarruf hedefi",
+                yearEndForecast: "Yıl sonu tahmini",
+                actualSavings: "Gerçekleşen tasarruf",
+                categoryDistribution: "Kategori Dağılımı",
+                
+                newIncomeItemTitle: "Yeni gelir kalemi",
+                newExpenseItemTitle: "Yeni gider kalemi",
+                
+                cash: "Nakit",
+                receivables: "Alacaklar",
+                investments: "Yatırımlar",
+                loans: "Krediler",
+                cardDebt: "Kredi Kartı Borçları",
+                personalDebts: "Şahıslara Borçlar",
+                
+                balanceNote: "Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD’ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır."
             },
             en: {
                 appTitle: 'Budget Tracker',
@@ -2149,23 +2175,51 @@
                 install: 'Install',
                 balanceSectionTitle: 'Balance (Assets / Liabilities / Equity)',
                 addItem: 'Add Item'
+                budgetSummaryTitle: "Budget Summary (by Currency)",
+                cashflowTitle: "Monthly Cash Flow",
+                
+                plannedIncomeLabel: "Planned Income:",
+                actualIncomeLabel: "Actual Income:",
+                plannedExpenseLabel: "Planned Expense:",
+                actualExpenseLabel: "Actual Expense:",
+                netLabel: "Net:",
+                
+                annualSavingsPlan: "Annual Savings Plan",
+                monthlySavingsTarget: "Monthly Savings Target",
+                yearEndForecast: "Year-End Forecast",
+                actualSavings: "Actual Savings",
+                categoryDistribution: "Category Distribution",
+                
+                newIncomeItemTitle: "New Income Item",
+                newExpenseItemTitle: "New Expense Item",
+                
+                cash: "Cash",
+                receivables: "Receivables",
+                investments: "Investments",
+                loans: "Loans",
+                cardDebt: "Credit Card Debt",
+                personalDebts: "Personal Debts",
+                
+                balanceNote: "Note: Balance items are stored in USD. You can enter TL/RUB and convert to USD when saving. If the transaction category name matches a balance sub-item, expense transactions reduce the related liability; if an asset with the same name exists, it increases that asset."
             }
         };
 
-        function t(key){
-            const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
-            return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
-        }
+function t(key){
+  const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
 
-        function applyTheme(){
-            const dark = appSettings.theme === 'dark';
-            document.documentElement.classList.toggle('dark', dark);
-            const btn = document.getElementById('btnTheme');
-            if (btn){
-                btn.title = t('theme');
-                btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-            }
-        }
+  // 1) önce aktif dili dene
+  if (I18N[lang] && Object.prototype.hasOwnProperty.call(I18N[lang], key)) {
+    return I18N[lang][key];
+  }
+
+  // 2) sonra TR fallback
+  if (I18N.tr && Object.prototype.hasOwnProperty.call(I18N.tr, key)) {
+    return I18N.tr[key];
+  }
+
+  // 3) asla key’i ekrana basma
+  return '';
+}
 
         function applyLanguage(){
             document.title = t('appTitle');
@@ -2188,6 +2242,7 @@
                 if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
                 if (oc.startsWith('openRatesModal')) b.title = t('rates');
                 if (oc.startsWith('showInstallBanner')) b.title = t('install');
+            
             });
 
             const langBtn = document.getElementById('btnLang');
@@ -2253,6 +2308,16 @@
                     x.textContent = (appSettings.lang==='en'?'All':'Tümü');
                 }
             });
+            // --- Titles (fix key leaks + spacing) ---
+const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
+if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
+
+const cfTitle = document.querySelector('#cashflowSection .summary-title');
+if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
+
+// --- Balance note ---
+const note = document.querySelector('#balance-section .muted');
+if (note) note.textContent = t('balanceNote');
 
 try{ renderBalanceChart(); }catch(e){}
         }
@@ -5562,19 +5627,19 @@ function applyTransactionToBalance(tx){
         }
 
         function groupMeta(type){
-            if (type === 'asset') {
-                return [
-                    { key:'cash', label:'💵 Nakit' },
-                    { key:'receivables', label:'🧾 Alacaklar' },
-                    { key:'investments', label:'💎 Yatırımlar' }
-                ];
-            }
-            return [
-                { key:'loans', label:'🏦 Krediler' },
-                { key:'cards', label:'💳 Kredi Kartı Borçları' },
-                { key:'payables', label:'🤝 Şahıslara Borçlar' }
-            ];
-        }
+  if (type === 'asset') {
+    return [
+      { key:'cash',        label:'💵 ' + t('cash') },
+      { key:'receivables', label:'🧾 ' + t('receivables') },
+      { key:'investments', label:'💎 ' + t('investments') }
+    ];
+  }
+  return [
+    { key:'loans',    label:'🏦 ' + t('loans') },
+    { key:'cards',    label:'💳 ' + t('cardDebt') },
+    { key:'payables', label:'🤝 ' + t('personalDebts') }
+  ];
+}
 
         function sumItems(arr){
             return (arr||[]).reduce((a,b)=>a + (Number(b?.amountUSD)||0), 0);
@@ -6149,10 +6214,10 @@ function renderBalanceChart(){
     "Fark":"Difference",
 
     "📊 Bütçe Özeti (Para Birimi Bazında)":"📊 Budget Summary (by Currency)",
-    "Plan G:":"Planned Income:",
-    "Gerç. G:":"Actual Income:",
-    "Plan Gd:":"Planned Expense:",
-    "Gerç. Gd:":"Actual Expense:",
+    "Planlanan Gelir:":"Planned Income:",
+    "Gerçekleşen Gelir:":"Actual Income:",
+    "Plan Gider:":"Planned Expense:",
+    "Gerçekleşen Gider:":"Actual Expense:",
     "Net:":"Net:",
 
     "Planlanan Gelir":"Planned Income",
@@ -6498,44 +6563,7 @@ function renderBalanceChart(){
     }
   }
 
-  function applyAll(){
-    const lang = detectLang();
-    wrapReports();
-    translateDOM(lang);
-  }
-
-  // hook language button
-  function hookLangBtn(){
-    const btn = document.getElementById("btnLang");
-    if(!btn || btn.__i18nHooked) return;
-    btn.addEventListener("click", function(){
-      // allow existing handlers to run then translate
-      setTimeout(applyAll, 60);
-    }, true);
-    btn.__i18nHooked = true;
-  }
-
-  document.addEventListener("DOMContentLoaded", function(){
-    hookLangBtn();
-    applyAll();
-    // re-apply after render updates
-    setTimeout(applyAll, 300);
-    setTimeout(applyAll, 1200);
-  });
-
-  // also expose manual call
-  window.__applyI18NStrict = applyAll;
-})();
-</script>
-
-<script>
-/**
- * HARD I18N v2 (TR/EN) — fixes key-leaks (budgetSummaryTitle, cashflowTitle),
- * fixes TR abbreviations (Planlanan G:), and enforces zero Turkish in EN.
- * Paste at bottom before </body>. Replace previous hard i18n script.
- */
-(function () {
-  "use strict";
+  
 
   // =============== 1) Canonical phrase dictionaries ===============
   // Exact phrases + key-leaks
