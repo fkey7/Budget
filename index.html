@@ -6530,370 +6530,276 @@ function renderBalanceChart(){
 
 <script>
 /**
- * HARD ENFORCED I18N (TR/EN) — zero Turkish when EN is active.
- * Paste at the very bottom of index.html, just before </body>.
+ * HARD I18N v2 (TR/EN) — fixes key-leaks (budgetSummaryTitle, cashflowTitle),
+ * fixes TR abbreviations (Planlanan G:), and enforces zero Turkish in EN.
+ * Paste at bottom before </body>. Replace previous hard i18n script.
  */
 (function () {
   "use strict";
 
-  // ---------- 1) Canonical dictionary (TR -> EN) ----------
-  // Add anything you see in Turkish to the left side; EN on the right must be proper spelling/spacing.
-  const TR_TO_EN = {
-    // Tabs / sections
-    "Bütçe": "Budget",
-    "İşlemler": "Transactions",
-    "Bilanço": "Balance",
-
-    "Aylık": "Monthly",
-    "Yıllık": "Yearly",
-    "Tümü": "All",
-
-    // Top cards / labels
-    "Aylık Gelir Planı": "Monthly Income Plan",
-    "Aylık Gider Planı": "Monthly Expense Plan",
-    "Net Durum": "Net Position",
-    "Net Durum (Gerçekleşen)": "Net Position (Actual)",
-    "Gerçekleşen:": "Actual:",
-    "Planlanan:": "Planned:",
-    "Planlanan": "Planned",
-    "Gerçekleşen": "Actual",
-    "Fark": "Difference",
-
-    // Budget summary / cashflow
-    "📊 Bütçe Özeti (Para Birimi Bazında)": "📊 Budget Summary (by Currency)",
-    "💰 Aylık Nakit Akışı (Cash Flow)": "💰 Monthly Cash Flow",
-    "Aylık Nakit Akışı (Cash Flow)": "Monthly Cash Flow",
-
-    // CASHFLOW table headers (remove abbreviations)
-    "Ay": "Month",
-    "Gelir Plan": "Planned Income",
-    "Gelir Gerç.": "Actual Income",
-    "Gider Plan": "Planned Expense",
-    "Gider Gerç.": "Actual Expense",
-    "Net Plan": "Planned Net",
-    "Net Gerç.": "Actual Net",
-    "Kümülatif": "Cumulative",
-    "Toplam": "Total",
-
-    // Charts
-    "Aylık Bütçe vs Gerçekleşen": "Monthly Budget vs Actual",
-    "Kategori Dağılımı": "Category Distribution",
-    "Bilanço Trend": "Balance Trend",
-
-    // Budget lists
-    "Gelir Kalemleri": "Income Items",
-    "Gider Kalemleri": "Expense Items",
-    "Ekle": "Add",
-
-    // Empty states
-    "Bu dönemde işlem yok": "No transactions for this period",
-
-    // Balance section titles / cards
-    "Bilanço (Varlıklar / Borçlar / Öz Sermaye)": "Balance (Assets / Liabilities / Equity)",
-    "Kalem Ekle": "Add Item",
-
-    "💎 Varlıklar": "💎 Assets",
-    "🏦 Borçlar": "🏦 Liabilities",
-    "📈 Öz Sermaye": "📈 Equity",
-    "Varlıklar": "Assets",
-    "Borçlar": "Liabilities",
-    "Öz Sermaye": "Equity",
-    "Son Durum": "Net Position",
-
-    // Balance groups (examples)
-    "Nakit": "Cash",
-    "Bankalar": "Banks",
-    "Alacaklar": "Receivables",
-    "Yatırımlar": "Investments",
-    "Kredi Kartları": "Credit Cards",
-    "Krediler": "Loans",
-    "Şahıslara Borçlar": "Personal Debts",
-
-    // Modals - transactions
-    "Yeni İşlem": "New Transaction",
-    "Gelir": "Income",
-    "Gider": "Expense",
-    "Kategori": "Category",
-    "Para Birimi": "Currency",
-    "Tutar": "Amount",
-    "Not (Opsiyonel)": "Note (Optional)",
-    "Tarih": "Date",
-    "Kaydet": "Save",
-
-    // Modals - category
-    "Yeni Kategori": "New Category",
-    "Kategori Adı": "Category Name",
-    "Bütçe Para Birimi": "Budget Currency",
-    "Yıllık Bütçe ($)": "Annual Budget ($)",
-    "Aylık Bütçeler ($)": "Monthly Budgets ($)",
-    "Eşit Dağıt": "Distribute Evenly",
-    "İkon": "Icon",
-    "Güncelle": "Update",
-    "Düzenle": "Edit",
-    "Sil": "Delete",
-    "Kapalı": "Off",
-    "Açık": "On",
-
-    // Modals - balance item
-    "Yeni Bilanço Kalemi": "New Balance Item",
-    "Tip": "Type",
-    "Grup": "Group",
-
-    // Notes
-    "Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD’ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.":
-      "Note: Balance items are stored in USD. You can enter TL/RUB and convert to USD when saving. If the transaction category name matches a balance sub-item, expense transactions reduce the related liability; if an asset with the same name exists, it increases that asset.",
-
-    // Header buttons
-    "Tema": "Theme",
-    "Dil": "Language",
-    "PDF Rapor": "PDF Report",
-    "Excel Rapor": "Excel Report",
-    "Veri Yönetimi": "Data",
-    "Döviz Kurları": "FX Rates",
-    "Yükle": "Install"
+  // =============== 1) Canonical phrase dictionaries ===============
+  // Exact phrases + key-leaks
+  const KEY_LEAKS = {
+    budgetSummaryTitle: { tr: "📊 Bütçe Özeti (Para Birimi Bazında)", en: "📊 Budget Summary (by Currency)" },
+    cashflowTitle:      { tr: "💰 Aylık Nakit Akışı",                 en: "💰 Monthly Cash Flow" }
   };
 
-  // Month names — full + short
+  // UI phrases you reported (add more if needed)
+  const TR_TO_EN = {
+    // Savings area
+    "Yıllık tasarruf planı": "Annual Savings Plan",
+    "Aylık tasarruf hedefi": "Monthly Savings Target",
+    "Yıl sonu tahmini": "Year-End Forecast",
+    "Gerçekleşen tasarruf": "Actual Savings",
+    "Tasarruf": "Savings",
+
+    // Charts / donut
+    "Kategori Dağılımı": "Category Distribution",
+
+    // Add dialogs
+    "Yeni gelir kalemi": "New Income Item",
+    "Yeni gider kalemi": "New Expense Item",
+
+    // Balance groups / categories
+    "Varlıklar": "Assets",
+    "Yükümlülükler": "Liabilities",
+    "Borçlar": "Liabilities",
+    "Öz Sermaye": "Equity",
+
+    "Nakit": "Cash",
+    "Krediler": "Loans",
+    "Alacaklar": "Receivables",
+    "Kredi kartı borçları": "Credit Card Debt",
+    "Kredi kartı borclari": "Credit Card Debt",
+    "Yatırımlar": "Investments",
+    "Şahıslara borçlar": "Personal Debts",
+    "Şahıslara Borçlar": "Personal Debts",
+
+    // Balance note (typo fix USD)
+    "Not: Bilanço kalemleri USB olarak saklanır.": "Note: Balance items are stored in USD.",
+    "Not: Bilanço kalemleri USD olarak saklanır.": "Note: Balance items are stored in USD."
+  };
+
+  // Minimal EN->TR for the “key leak” situation + leftovers
+  const EN_TO_TR = {
+    "Annual Savings Plan": "Yıllık tasarruf planı",
+    "Monthly Savings Target": "Aylık tasarruf hedefi",
+    "Year-End Forecast": "Yıl sonu tahmini",
+    "Actual Savings": "Gerçekleşen tasarruf",
+    "Category Distribution": "Kategori Dağılımı",
+    "New Income Item": "Yeni gelir kalemi",
+    "New Expense Item": "Yeni gider kalemi",
+    "Assets": "Varlıklar",
+    "Liabilities": "Yükümlülükler",
+    "Equity": "Öz Sermaye",
+    "Cash": "Nakit",
+    "Loans": "Krediler",
+    "Receivables": "Alacaklar",
+    "Credit Card Debt": "Kredi kartı borçları",
+    "Investments": "Yatırımlar",
+    "Personal Debts": "Şahıslara borçlar",
+    "Note: Balance items are stored in USD.": "Not: Bilanço kalemleri USD olarak saklanır."
+  };
+
+  // Months (to kill TR month names when EN)
   const MONTHS_TR_FULL = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   const MONTHS_EN_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const MONTHS_TR_SHORT = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
   const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-  // Abbreviation cleanup (TR -> EN, and also "Plan G:" style)
-  const FRAGMENTS_TR_TO_EN = [
-    [/Gerçekleşen:/g, "Actual:"],
-    [/Planlanan:/g, "Planned:"],
-    [/Gerç\.\s*G:/g, "Actual Income:"],
-    [/Plan\s*G:/g, "Planned Income:"],
-    [/Gerç\.\s*Gd:/g, "Actual Expense:"],
-    [/Plan\s*Gd:/g, "Planned Expense:"]
+  // TR abbreviations -> full TR (your complaint)
+  const TR_ABBR_EXPAND = [
+    [/Plan\s*G:\s*/g, "Planlanan Gelir: "],
+    [/Gerç\.\s*G:\s*/g, "Gerçekleşen Gelir: "],
+    [/Plan\s*Gd:\s*/g, "Planlanan Gider: "],
+    [/Gerç\.\s*Gd:\s*/g, "Gerçekleşen Gider: "]
   ];
 
-  // ---------- 2) Helpers ----------
-  function normalize(s) {
-    return (s || "").replace(/\s+/g, " ").trim();
-  }
+  // =============== 2) Helpers ===============
+  function normalize(s) { return (s || "").replace(/\s+/g, " ").trim(); }
 
   function getActiveLang() {
-    // 1) appSettings.lang if exists
     try {
       if (window.appSettings && typeof window.appSettings.lang === "string") {
         const v = window.appSettings.lang.toLowerCase();
         if (v === "en" || v === "tr") return v;
       }
     } catch {}
-
-    // 2) localStorage keys
-    const keys = ["lang","appLang","budgetLang","language"];
-    for (const k of keys) {
-      const v = (localStorage.getItem(k) || "").toLowerCase();
-      if (v === "en" || v === "tr") return v;
-    }
-
-    // 3) lang button pill
     const pill = document.querySelector("#btnLang .lang-pill");
     if (pill) {
       const v = normalize(pill.textContent).toLowerCase();
       if (v === "en" || v === "tr") return v;
     }
-
-    // 4) html lang attr
     const htmlLang = (document.documentElement.getAttribute("lang") || "tr").toLowerCase();
     return htmlLang === "en" ? "en" : "tr";
   }
 
-  function translateLiteralTRtoEN(raw) {
-    if (!raw) return raw;
-    let out = raw;
-
-    // Exact match (after normalize) — preserve original surrounding spacing by replacing the normalized payload
-    const n = normalize(raw);
-    if (TR_TO_EN[n]) {
-      // Replace the normalized content inside original raw
-      out = raw.replace(n, TR_TO_EN[n]);
-      return out;
-    }
-
-    // Months inside string
+  function replaceMonthsTRtoEN(text) {
+    let out = text;
     for (let i = 0; i < 12; i++) {
       out = out.replace(new RegExp("\\b" + MONTHS_TR_FULL[i] + "\\b", "g"), MONTHS_EN_FULL[i]);
       out = out.replace(new RegExp("\\b" + MONTHS_TR_SHORT[i] + "\\b", "g"), MONTHS_EN_SHORT[i]);
     }
-
-    // Fragment replacements (abbreviations & prefixes)
-    for (const [rgx, repl] of FRAGMENTS_TR_TO_EN) out = out.replace(rgx, repl);
-
-    // Common exact words inside strings
-    out = out.replace(/\bToplam\b/g, "Total");
-    out = out.replace(/\bPlanlanan\b/g, "Planned");
-    out = out.replace(/\bGerçekleşen\b/g, "Actual");
-
     return out;
   }
 
-  function shouldSkipNode(node) {
-    if (!node) return true;
-    if (node.nodeType !== Node.TEXT_NODE) return true;
+  function translateText(text, lang) {
+    if (!text) return text;
+    let out = text;
+
+    // 1) Fix key leaks anywhere
+    // If the node equals budgetSummaryTitle, replace with correct language title.
+    for (const k of Object.keys(KEY_LEAKS)) {
+      const n = normalize(out);
+      if (n === k) return KEY_LEAKS[k][lang];
+      // Sometimes keys appear inside longer strings
+      out = out.replace(new RegExp("\\b" + k + "\\b", "g"), KEY_LEAKS[k][lang]);
+    }
+
+    // 2) Language-specific phrase translations
+    if (lang === "en") {
+      // exact phrase replacements
+      const n = normalize(out);
+      if (TR_TO_EN[n]) return TR_TO_EN[n];
+
+      // in-string replacements (for embedded parts)
+      for (const [tr, en] of Object.entries(TR_TO_EN)) {
+        out = out.replace(new RegExp(tr, "g"), en);
+      }
+
+      // months
+      out = replaceMonthsTRtoEN(out);
+
+      // also fix "USB" typo if it appears in the note
+      out = out.replace(/\bUSB\b/g, "USD");
+
+      return out;
+    } else {
+      // Expand abbreviations in TR mode (this is what you asked)
+      for (const [rgx, repl] of TR_ABBR_EXPAND) out = out.replace(rgx, repl);
+
+      // translate common EN leftovers back to TR
+      const n = normalize(out);
+      if (EN_TO_TR[n]) return EN_TO_TR[n];
+
+      for (const [en, tr] of Object.entries(EN_TO_TR)) {
+        out = out.replace(new RegExp(en, "g"), tr);
+      }
+
+      return out;
+    }
+  }
+
+  function shouldSkipTextNode(node) {
+    if (!node || node.nodeType !== Node.TEXT_NODE) return true;
     const v = node.nodeValue;
     if (!v || !v.trim()) return true;
 
-    // Do not touch number-only strings
+    // numbers/symbols only
     if (/^[\d\s\.\,\-\+\(\)\$₺₽€£%]+$/.test(v.trim())) return true;
 
-    // Skip script/style/textarea/code/pre
+    // skip script/style/textarea/code/pre
     const p = node.parentElement;
     if (!p) return false;
-    const tag = p.tagName ? p.tagName.toLowerCase() : "";
+    const tag = (p.tagName || "").toLowerCase();
     if (["script","style","textarea","code","pre"].includes(tag)) return true;
 
     return false;
   }
 
-  function translateTextNodeTRtoEN(node) {
-    if (shouldSkipNode(node)) return;
+  function translateTextNode(node, lang) {
+    if (shouldSkipTextNode(node)) return;
     const before = node.nodeValue;
-    const after = translateLiteralTRtoEN(before);
+    const after = translateText(before, lang);
     if (after !== before) node.nodeValue = after;
   }
 
-  function translateElementAttrsTRtoEN(el) {
+  function translateElementAttrs(el, lang) {
     if (!el || !el.getAttribute) return;
-    const attrs = ["placeholder", "title", "aria-label", "data-title"];
+    const attrs = ["placeholder", "title", "aria-label"];
     for (const a of attrs) {
       const v = el.getAttribute(a);
       if (!v) continue;
-      const after = translateLiteralTRtoEN(v);
+      const after = translateText(v, lang);
       if (after !== v) el.setAttribute(a, after);
     }
   }
 
-  function walkAndTranslateTRtoEN(root) {
+  function walk(root, lang) {
     if (!root) return;
 
-    // translate attributes on elements
-    if (root.nodeType === Node.ELEMENT_NODE) translateElementAttrsTRtoEN(root);
+    if (root.nodeType === Node.ELEMENT_NODE) translateElementAttrs(root, lang);
 
-    // translate all text nodes under root
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     let n;
-    while ((n = walker.nextNode())) translateTextNodeTRtoEN(n);
+    while ((n = walker.nextNode())) translateTextNode(n, lang);
 
-    // translate attributes for descendants quickly
-    if (root.querySelectorAll) {
-      root.querySelectorAll("*").forEach(translateElementAttrsTRtoEN);
-    }
+    if (root.querySelectorAll) root.querySelectorAll("*").forEach(el => translateElementAttrs(el, lang));
 
-    // enforce document title (optional)
-    const title = document.querySelector("title");
-    if (title) {
-      const t = normalize(title.textContent);
-      if (t === "Bütçe Takip") title.textContent = "Budget Tracker";
-    }
-
-    // enforce html lang attribute
-    document.documentElement.setAttribute("lang", "en");
+    document.documentElement.setAttribute("lang", lang);
   }
 
-  function enforceEnglishNow() {
-    walkAndTranslateTRtoEN(document.body);
+  // =============== 3) Enforce now + live via MutationObserver ===============
+  function enforceNow() {
+    const lang = getActiveLang();
+    walk(document.body, lang);
+
+    // Extra: titles if key leaks are in specific IDs (safe if missing)
+    const sumTitle = document.getElementById("sumTitle");
+    if (sumTitle && normalize(sumTitle.textContent) === "budgetSummaryTitle") sumTitle.textContent = KEY_LEAKS.budgetSummaryTitle[lang];
+
+    const cfTitle = document.getElementById("cfTitle");
+    if (cfTitle && normalize(cfTitle.textContent) === "cashflowTitle") cfTitle.textContent = KEY_LEAKS.cashflowTitle[lang];
   }
 
-  // ---------- 3) Live enforcement (MutationObserver) ----------
   let observer;
   function startObserver() {
     if (observer) return;
     observer = new MutationObserver((mutations) => {
-      if (getActiveLang() !== "en") return;
-
+      const lang = getActiveLang();
       for (const m of mutations) {
-        if (m.type === "characterData" && m.target) {
-          translateTextNodeTRtoEN(m.target);
-        }
-        if (m.type === "attributes" && m.target && m.target.nodeType === Node.ELEMENT_NODE) {
-          translateElementAttrsTRtoEN(m.target);
-        }
+        if (m.type === "characterData" && m.target) translateTextNode(m.target, lang);
+        if (m.type === "attributes" && m.target && m.target.nodeType === Node.ELEMENT_NODE) translateElementAttrs(m.target, lang);
         if (m.type === "childList") {
           m.addedNodes && m.addedNodes.forEach((node) => {
             if (!node) return;
-            if (node.nodeType === Node.TEXT_NODE) translateTextNodeTRtoEN(node);
-            if (node.nodeType === Node.ELEMENT_NODE) walkAndTranslateTRtoEN(node);
+            if (node.nodeType === Node.TEXT_NODE) translateTextNode(node, lang);
+            if (node.nodeType === Node.ELEMENT_NODE) walk(node, lang);
           });
         }
       }
     });
 
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-      characterData: true,
-      attributes: true
-    });
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
   }
 
-  // ---------- 4) Hook language changes ----------
   function hookLangButton() {
     const btn = document.getElementById("btnLang");
-    if (!btn || btn.__hardI18nHooked) return;
+    if (!btn || btn.__hardI18nV2Hooked) return;
 
-    btn.addEventListener(
-      "click",
-      function () {
-        // Let existing handlers run first (your app toggles lang)
-        setTimeout(() => {
-          if (getActiveLang() === "en") {
-            enforceEnglishNow();
-          }
-        }, 80);
-      },
-      true
-    );
+    btn.addEventListener("click", function () {
+      // let app toggle first then enforce
+      setTimeout(enforceNow, 90);
+      setTimeout(enforceNow, 300);
+      setTimeout(enforceNow, 900);
+    }, true);
 
-    btn.__hardI18nHooked = true;
+    btn.__hardI18nV2Hooked = true;
   }
 
-  // ---------- 5) Optional: Debug validator (find Turkish leftovers) ----------
-  function scanForTurkishText() {
-    const leftovers = [];
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-    let n;
-    while ((n = walker.nextNode())) {
-      if (shouldSkipNode(n)) continue;
-      const v = n.nodeValue || "";
-      // Turkish letters or common TR words patterns
-      if (/[çğıİöşüÇĞÖŞÜ]/.test(v) || /\b(Bütçe|İşlemler|Bilanço|Gelir|Gider|Aylık|Yıllık|Kalem)\b/.test(v)) {
-        leftovers.push(normalize(v).slice(0, 120));
-        if (leftovers.length >= 20) break;
-      }
-    }
-    if (leftovers.length) {
-      console.warn("[HardI18N] Turkish leftovers detected:", leftovers);
-    }
-    return leftovers;
-  }
-
-  // ---------- 6) Boot ----------
+  // =============== 4) Boot ===============
   document.addEventListener("DOMContentLoaded", function () {
     hookLangButton();
     startObserver();
 
-    // Initial enforcement if EN is active
-    if (getActiveLang() === "en") {
-      enforceEnglishNow();
-      // Re-apply after common delayed renders
-      setTimeout(enforceEnglishNow, 250);
-      setTimeout(enforceEnglishNow, 900);
-      setTimeout(() => { enforceEnglishNow(); scanForTurkishText(); }, 1600);
-    }
+    // initial
+    enforceNow();
+    setTimeout(enforceNow, 250);
+    setTimeout(enforceNow, 900);
   });
 
-  // Expose manual call if you ever want to force it from console
-  window.__HARD_ENFORCE_ENGLISH = function () {
-    // Force appSettings + localStorage if you want stronger effect:
-    try { if (window.appSettings) window.appSettings.lang = "en"; } catch {}
-    try { localStorage.setItem("lang", "en"); } catch {}
-    enforceEnglishNow();
-    scanForTurkishText();
-  };
+  // manual (debug)
+  window.__HARD_I18N_V2_ENFORCE = enforceNow;
 })();
 </script>
 </body>
