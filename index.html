@@ -2116,6 +2116,8 @@
                 yearly: 'Yıllık',
                 monthsShort: ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],
                 monthsFull: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
+                budgetSummaryTitle: 'Bütçe Özeti (Para Birimi Bazında)',
+                cashflowTitle: 'Aylık Nakit Akışı',
                 theme: 'Tema',
                 lang: 'Dil',
                 pdfReport: 'PDF Rapor',
@@ -2140,6 +2142,8 @@
                 yearly: 'Yearly',
                 monthsShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
                 monthsFull: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+                budgetSummaryTitle: 'Budget Summary (By Currency)',
+                cashflowTitle: 'Monthly Cashflow',
                 theme: 'Theme',
                 lang: 'Language',
                 pdfReport: 'PDF Report',
@@ -2227,12 +2231,10 @@
 
             // Budget Summary title
             const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
-            if (sumTitle) sumTitle.textContent = '📊 ' + (t('budgetSummaryTitle') || (appSettings.lang==='en'?'Budget Summary (By Currency)':'Bütçe Özeti (Para Birimi Bazında)'));
-
+            if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
             // Cashflow section title
             const cfTitle = document.querySelector('#cashflowSection .summary-title');
-            if (cfTitle) cfTitle.textContent = '💰 ' + (t('cashflowTitle') || (appSettings.lang==='en'?'Monthly Cashflow':'Aylık Nakit Akışı'));
-
+            if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
             // Cashflow table headers
             const cfTable = document.getElementById('cashflowTable');
             if (cfTable){
@@ -2908,43 +2910,48 @@ html += '</div>';
 
 summary.innerHTML = html;
 
+// Yeni basılan cashflow içeriğini seçili dile çevir (EN/TR)
 if (window.translateDOM) {
   window.translateDOM(appSettings.lang || 'tr');
 }
 
-        function updateChart() {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-            const yearTx = getYearTransactions();
+// Buradaki "}" updateCashflow/updateCashFlow fonksiyonunu kapatmak içindir.
+// Eğer zaten kapanmışsa bu satırı çıkarma; senin verdiğin akışta updateChart buradan sonra başlıyor.
+}
 
-            // Prepare data for each month
-            const incomeData = [];
-            const expenseData = [];
-            const incomePlanData = [];
-            const expensePlanData = [];
+function updateChart() {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const yearTx = getYearTransactions();
 
-            for (let i = 0; i < 12; i++) {
-                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+    // Prepare data for each month
+    const incomeData = [];
+    const expenseData = [];
+    const incomePlanData = [];
+    const expensePlanData = [];
 
-                incomeData.push(monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0));
-                expenseData.push(monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0));
-                incomePlanData.push(categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
-                expensePlanData.push(categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
-            }
+    for (let i = 0; i < 12; i++) {
+        const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
 
-            // Destroy existing chart if any
-            if (monthlyChart) {
-                monthlyChart.destroy();
-            }
+        incomeData.push(monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0));
+        expenseData.push(monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0));
+        incomePlanData.push(categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
+        expensePlanData.push(categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
+    }
 
-            // Chart title based on view mode
-            const chartTitle = document.querySelector('.chart-title');
-            chartTitle.textContent = viewMode === 'monthly' ?
-                `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
-                'Aylık Bütçe vs Gerçekleşen';
+    // Destroy existing chart if any
+    if (monthlyChart) {
+        monthlyChart.destroy();
+    }
 
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#a0aec0' : '#636e72';
-            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    // Chart title based on view mode
+    const chartTitle = document.querySelector('.chart-title');
+    chartTitle.textContent = viewMode === 'monthly' ?
+        `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
+        'Aylık Bütçe vs Gerçekleşen';
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#a0aec0' : '#636e72';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
             if (viewMode === 'yearly') {
                 // Bar chart for yearly view - showing monthly breakdown
