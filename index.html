@@ -6333,14 +6333,22 @@ function renderBalanceChart(){
       }
     }
 
-    // month names inside strings (rare)
-    for(let i=0;i<12;i++){
-      if(lang==="en"){
-        out = out.replace(new RegExp("\\b"+MONTHS_TR[i]+"\\b","g"), MONTHS_EN[i]);
-      } else {
-        out = out.replace(new RegExp("\\b"+MONTHS_EN[i]+"\\b","g"), MONTHS_TR[i]);
-      }
-    }
+    // month names inside strings (safe: no May -> Mayıs loop)
+const LETTERS = "A-Za-zÇĞİÖŞÜçğıöşüİı";
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+for (let i = 0; i < 12; i++) {
+  if (lang === "en") {
+    const tr = esc(MONTHS_TR[i]);
+    // match only if surrounded by non-letters (including Turkish letters)
+    const re = new RegExp(`(^|[^${LETTERS}])(${tr})(?=[^${LETTERS}]|$)`, "g");
+    out = out.replace(re, `$1${MONTHS_EN[i]}`);
+  } else {
+    const en = esc(MONTHS_EN[i]);
+    const re = new RegExp(`(^|[^${LETTERS}])(${en})(?=[^${LETTERS}]|$)`, "g");
+    out = out.replace(re, `$1${MONTHS_TR[i]}`);
+  }
+}
 
     if(out !== v) node.nodeValue = out;
   }
