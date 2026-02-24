@@ -2907,6 +2907,9 @@ html +=   '<div class="cashflow-card-sub">₺' + (projectedSavings * avgTryRate)
 html += '</div>';
 
 summary.innerHTML = html;
+if (typeof translateDOM === 'function') {
+    translateDOM(appSettings.lang || 'tr');
+}
 
         function updateChart() {
             const ctx = document.getElementById('monthlyChart').getContext('2d');
