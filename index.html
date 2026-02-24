@@ -2275,6 +2275,11 @@ try{ renderBalanceChart(); }catch(e){}
                     appSettings.lang = (appSettings.lang === 'tr') ? 'en' : 'tr';
                     saveAppSettings();
                     applyLanguage();
+            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
+                    // re-render dynamic sections in the new language
+                    try{ updateAll(); }catch(e){}
+                    // strict i18n overlay for remaining UI literals
+                    try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
                 });
             }
         }
@@ -4100,6 +4105,7 @@ function importData(event) {
                         saveAppSettings();
                         applyTheme();
                         applyLanguage();
+            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
                     }
 
                     saveData();
@@ -6039,6 +6045,7 @@ function renderBalanceChart(){
             wireHeaderToggles();
             applyTheme();
             applyLanguage();
+            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
 
             const bM = document.getElementById('btnBalTrendMonthly');
             const bY = document.getElementById('btnBalTrendYearly');
@@ -6056,7 +6063,10 @@ function renderBalanceChart(){
                 const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
                 const fab = document.querySelector('.fab');
                 if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
-            }
+            
+                // strict i18n overlay after each render
+                try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
+}
         }
 
 </script>
@@ -6262,24 +6272,17 @@ function renderBalanceChart(){
   function normalize(s){ return (s||"").replace(/\s+/g," ").trim(); }
 
   function detectLang(){
-    // 1) source of truth: appSettings.lang (app uses this)
-    try{
-      const al = (window.appSettings && window.appSettings.lang) ? String(window.appSettings.lang).toLowerCase() : "";
-      if(al==="en" || al==="tr") return al;
-    }catch(e){}
-    // 2) then localStorage (legacy)
+    // prefer localStorage if used
     const keys = ["lang","appLang","budgetLang","language"];
     for(const k of keys){
       const v = localStorage.getItem(k);
       if(v && (v.toLowerCase()==="en" || v.toLowerCase()==="tr")) return v.toLowerCase();
     }
-    // 3) then the UI pill
     const pill = document.querySelector("#btnLang .lang-pill");
     if(pill){
       const v = normalize(pill.textContent).toLowerCase();
       if(v==="en"||v==="tr") return v;
     }
-    // 4) finally html[lang]
     const h = (document.documentElement.getAttribute("lang")||"tr").toLowerCase();
     return (h==="en") ? "en" : "tr";
   }
@@ -6525,7 +6528,6 @@ window.translateDOM = translateDOM;
 
   function applyAll(){
     const lang = detectLang();
-    try{ localStorage.setItem("lang", lang); }catch(e){}
     wrapReports();
     translateDOM(lang);
   }
