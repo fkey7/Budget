@@ -2634,9 +2634,12 @@ function formatMoney(n){
 
             // USD values
             document.getElementById('planIncome').textContent = formatCurrency(planIncome);
-            document.getElementById('factIncome').textContent = `Gerçekleşen: ${formatCurrency(factIncome)}`;
-            document.getElementById('planExpense').textContent = formatCurrency(planExpense);
-            document.getElementById('factExpense').textContent = `Gerçekleşen: ${formatCurrency(factExpense)}`;
+document.getElementById('factIncome').textContent =
+  `${(appSettings.lang === 'en') ? 'Actual:' : 'Gerçekleşen:'} ${formatCurrency(factIncome)}`;
+
+document.getElementById('planExpense').textContent = formatCurrency(planExpense);
+document.getElementById('factExpense').textContent =
+  `${(appSettings.lang === 'en') ? 'Actual:' : 'Gerçekleşen:'} ${formatCurrency(factExpense)}`;
 
             // TRY ve RUB values
             document.getElementById('planIncomeSub').textContent = `${formatCurrency(planIncome * avgTryRate, 'TRY')} / ${formatCurrency(planIncome * avgRubRate, 'RUB')}`;
@@ -2874,8 +2877,7 @@ function formatMoney(n){
 
             tfoot.innerHTML = `
                 <tr>
-                    <td>TOPLAM</td>
-                    <td>$${yearlyIncomePlan.toFixed(0)}</td>
+                    <td>${appSettings.lang === 'en' ? 'TOTAL' : 'TOPLAM'}</td>                    <td>$${yearlyIncomePlan.toFixed(0)}</td>
                     <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
                     <td>$${yearlyExpensePlan.toFixed(0)}</td>
                     <td class="negative">$${totalExpenseActual.toFixed(0)}</td>
@@ -3388,8 +3390,10 @@ function updateChart() {
         // ==================== TRANSACTIONS ====================
         function renderMonthFilter() {
             const container = document.getElementById('monthFilter');
-            let html = `<div class="month-chip ${selectedMonth === 'all' ? 'active' : ''}" onclick="filterMonth('all')">Tümü</div>`;
-            for (let i = 0; i < 12; i++) {
+let html =
+  `<div class="month-chip ${selectedMonth === 'all' ? 'active' : ''}" onclick="filterMonth('all')">` +
+  `${(appSettings.lang === 'en') ? 'All' : 'Tümü'}` +
+  `</div>`;            for (let i = 0; i < 12; i++) {
                 html += `<div class="month-chip ${selectedMonth === i ? 'active' : ''}" onclick="filterMonth(${i})">${monthNames[i]}</div>`;
             }
             container.innerHTML = html;
@@ -3470,6 +3474,7 @@ function updateChart() {
             updateCurrencyButtons();
             updateCurrentRatesDisplay();
             updateLiveRateDisplay();
+            if (typeof translateDOM === 'function') translateDOM(appSettings.lang || 'tr');
         }
 
         function openModal(id) {
