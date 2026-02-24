@@ -1748,14 +1748,14 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 </div>
 <div class="type-toggle">
 <button class="type-btn income active" onclick="setTransactionType('income')">
-<i class="fas fa-arrow-down"></i> Gelir
+  <i class="fas fa-arrow-down"></i> <span data-i18n="incomeType">Gelir</span>
 </button>
 <button class="type-btn expense" onclick="setTransactionType('expense')">
-<i class="fas fa-arrow-up"></i> Gider
+  <i class="fas fa-arrow-up"></i> <span data-i18n="expenseType">Gider</span>
 </button>
 </div>
 <div class="form-group">
-<label>Kategori</label>
+<label data-i18n="category">Kategori</label>
 <div class="category-select-grid" id="categorySelectGrid"></div>
 </div>
 <div class="form-group">
@@ -1785,14 +1785,14 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
 </div>
 <div class="form-group">
-<label>Not (Opsiyonel)</label>
-<input type="text" id="transactionNote" placeholder="Açıklama...">
+<label data-i18n="noteOptional">Not (Opsiyonel)</label>
+<input type="text" id="transactionNote" data-i18n-placeholder="description" placeholder="Açıklama...">
 </div>
 <div class="form-group">
-<label>Tarih</label>
+<label data-i18n=<label data-i18n="date">Tarih</label>"noteOptional">Not (Opsiyonel)</label>
 <input type="date" id="transactionDate">
 </div>
-<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Kaydet</button></div>
+<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Save</button>
 </div>
 
 <!-- Category Modal -->
@@ -2169,6 +2169,8 @@ const I18N = {
     incomeItems: 'Gelir Kalemleri',
     expenseItems: 'Gider Kalemleri',
     add: 'Ekle',
+    category: 'Kategori',
+    description: 'Açıklama',
     
   },
   en: {
@@ -2238,6 +2240,8 @@ const I18N = {
     incomeItems: 'Income Items',
     expenseItems: 'Expense Items',
     add: 'Add',
+    category: 'Category',
+    description: 'Description',
 
   }
 };
