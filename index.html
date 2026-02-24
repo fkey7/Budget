@@ -6381,7 +6381,8 @@ function renderBalanceChart(){
       else eqCardTitle.textContent = "⚖️ Öz Sermaye";
     }
   }
-
+window.translateDOM = translateDOM;
+    
   // ===== PDF patch: translate strings printed by jsPDF
   function patchJsPDF(){
     try{
