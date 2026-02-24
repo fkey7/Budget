@@ -2257,6 +2257,16 @@
             });
 
 try{ renderBalanceChart(); }catch(e){}
+            // ✅ month arrays must follow active language
+try{
+  const L = (I18N[appSettings.lang || 'tr'] || I18N.tr);
+  if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort;
+  if (Array.isArray(L.monthsFull))  monthNamesFull = L.monthsFull;
+
+  // month selector text refresh
+  const md = document.getElementById('monthDisplay');
+  if (md) md.textContent = monthNamesFull[currentMonth];
+}catch(e){}
         }
 
         function wireHeaderToggles(){
@@ -6333,14 +6343,17 @@ function renderBalanceChart(){
       }
     }
 
-    // month names inside strings (rare)
-    for(let i=0;i<12;i++){
-      if(lang==="en"){
-        out = out.replace(new RegExp("\\b"+MONTHS_TR[i]+"\\b","g"), MONTHS_EN[i]);
-      } else {
-        out = out.replace(new RegExp("\\b"+MONTHS_EN[i]+"\\b","g"), MONTHS_TR[i]);
-      }
-    }
+    // month names inside strings (Unicode-safe)
+function _escRE(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+for(let i=0;i<12;i++){
+  if(lang==="en"){
+    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_TR[i])}(?!\\p{L})`, "gu");
+    out = out.replace(re, MONTHS_EN[i]);
+  } else {
+    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_EN[i])}(?!\\p{L})`, "gu");
+    out = out.replace(re, MONTHS_TR[i]);
+  }
+}
 
     if(out !== v) node.nodeValue = out;
   }
