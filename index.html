@@ -6137,9 +6137,8 @@ function renderBalanceChart(){
    Goal: EN mode => no Turkish UI strings; TR mode => no English UI strings.
    Safe approach: do NOT touch business logic. Only translate known UI literals.
 */
-(function(){
-  const MONTHS_TR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-  const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+(function(){const MONTHS_TR_SHORT = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   const trToEn = {
     "Bütçe Takip":"Budget Tracker",
@@ -6343,15 +6342,29 @@ function renderBalanceChart(){
       }
     }
 
-    // month names inside strings (Unicode-safe)
+      // month names inside strings (full + short, Unicode-safe, no lookbehind)
 function _escRE(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+function _replaceWord(out, from, to){
+  const re = new RegExp(`(^|[^\\p{L}])(${_escRE(from)})(?=[^\\p{L}]|$)`, "gu");
+  return out.replace(re, `$1${to}`);
+}
+
+// full months
 for(let i=0;i<12;i++){
   if(lang==="en"){
-    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_TR[i])}(?!\\p{L})`, "gu");
-    out = out.replace(re, MONTHS_EN[i]);
+    out = _replaceWord(out, MONTHS_TR[i], MONTHS_EN[i]);
   } else {
-    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_EN[i])}(?!\\p{L})`, "gu");
-    out = out.replace(re, MONTHS_TR[i]);
+    out = _replaceWord(out, MONTHS_EN[i], MONTHS_TR[i]);
+  }
+}
+
+// short months
+for(let i=0;i<12;i++){
+  if(lang==="en"){
+    out = _replaceWord(out, MONTHS_TR_SHORT[i], MONTHS_EN_SHORT[i]);
+  } else {
+    out = _replaceWord(out, MONTHS_EN_SHORT[i], MONTHS_TR_SHORT[i]);
   }
 }
 
