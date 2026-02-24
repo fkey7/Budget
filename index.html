@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -2118,6 +2119,8 @@
                 monthsFull: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
                 budgetSummaryTitle: 'Bütçe Özeti (Para Birimi Bazında)',
                 cashflowTitle: 'Aylık Nakit Akışı',
+                categoryDistribution: 'Kategori Dağılımı',
+                monthlyBudgetVsActual: 'Aylık Bütçe vs Gerçekleşen',
                 theme: 'Tema',
                 lang: 'Dil',
                 pdfReport: 'PDF Rapor',
@@ -2144,6 +2147,8 @@
                 monthsFull: ['January','February','March','April','May','June','July','August','September','October','November','December'],
                 budgetSummaryTitle: 'Budget Summary (By Currency)',
                 cashflowTitle: 'Monthly Cashflow',
+                categoryDistribution: 'Category Distribution',
+                monthlyBudgetVsActual: 'Monthly Budget vs Actual',
                 theme: 'Theme',
                 lang: 'Language',
                 pdfReport: 'PDF Report',
@@ -2229,7 +2234,12 @@
                 if (Array.isArray(L.monthsFull)) monthNamesFull = L.monthsFull.slice();
             }catch(e){}
 
-            // Budget Summary title
+            
+
+            // refresh month display text
+            const md = document.getElementById('monthDisplay');
+            if (md && Array.isArray(monthNamesFull)) md.textContent = monthNamesFull[currentMonth];
+// Budget Summary title
             const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
             if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
             // Cashflow section title
@@ -2257,16 +2267,6 @@
             });
 
 try{ renderBalanceChart(); }catch(e){}
-            // ✅ month arrays must follow active language
-try{
-  const L = (I18N[appSettings.lang || 'tr'] || I18N.tr);
-  if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort;
-  if (Array.isArray(L.monthsFull))  monthNamesFull = L.monthsFull;
-
-  // month selector text refresh
-  const md = document.getElementById('monthDisplay');
-  if (md) md.textContent = monthNamesFull[currentMonth];
-}catch(e){}
         }
 
         function wireHeaderToggles(){
@@ -2286,6 +2286,9 @@ try{
                     applyLanguage();
                 });
             }
+
+            // Apply strict overlay translations for remaining literals
+            if (window.translateDOM) window.translateDOM(appSettings.lang || 'tr');
         }
 
 // ==================== FIREBASE SYNC (single user via Google Login) ====================
@@ -2955,9 +2958,7 @@ function updateChart() {
 
     // Chart title based on view mode
     const chartTitle = document.querySelector('.chart-title');
-    chartTitle.textContent = viewMode === 'monthly' ?
-        `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
-        'Aylık Bütçe vs Gerçekleşen';
+    chartTitle.textContent = viewMode === 'monthly' ? `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}` : t('monthlyBudgetVsActual');
 
     const isDark = document.documentElement.classList.contains('dark');
     const textColor = isDark ? '#a0aec0' : '#636e72';
@@ -6137,9 +6138,14 @@ function renderBalanceChart(){
    Goal: EN mode => no Turkish UI strings; TR mode => no English UI strings.
    Safe approach: do NOT touch business logic. Only translate known UI literals.
 */
-(function(){const MONTHS_TR_SHORT = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
-const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+(function(){
+  // Strict literal-only translator. No partial/word replacements => avoids "Actual Tasarruf" etc.
+  const MONTHS_TR_FULL = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  const MONTHS_EN_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const MONTHS_TR_SHORT = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+  const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+  // Base mapping (TR -> EN). Keep business logic untouched: only translate known UI literals.
   const trToEn = {
     "Bütçe Takip":"Budget Tracker",
     "Bütçe":"Budget",
@@ -6183,25 +6189,32 @@ const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","
     "Planlanan Gider":"Planned Expense",
     "Gerçekleşen Gider":"Actual Expense",
 
-    "💰 Aylık Nakit Akışı (Cash Flow)":"💰 Monthly Cash Flow",
-    "Aylık Nakit Akışı (Cash Flow)":"Monthly Cash Flow",
+    "💰 Aylık Nakit Akışı (Cash Flow)":"💰 Monthly Cashflow",
+    "Aylık Nakit Akışı (Cash Flow)":"Monthly Cashflow",
     "Ay":"Month",
     "Gelir Plan":"Income Plan",
     "Gelir Gerç.":"Income Actual",
+    "Gelir Gerçek":"Income Actual",
     "Gider Plan":"Expense Plan",
     "Gider Gerç.":"Expense Actual",
+    "Gider Gerçek":"Expense Actual",
     "Net Plan":"Net Plan",
     "Net Gerç.":"Net Actual",
     "Kümülatif":"Cumulative",
     "Toplam":"Total",
 
-    "📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
-"💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
-"🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
-"🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
+    "Yıllık Tasarruf Planı":"Annual Savings Plan",
+    "Gerçekleşen Tasarruf":"Actual Savings",
+    "Aylık Tasarruf Hedefi":"Monthly Savings Target",
+    "Ay Sonu Tasarruf Hedefi":"Monthly Savings Target",
+    "Yıl Sonu Tahmini":"Year-End Forecast",
 
-"Actual Tasarruf":"Actual Savings",
-"Tasarruf":"Savings",
+    "📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
+    "💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
+    "🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
+    "🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
+    "Actual Tasarruf":"Actual Savings",
+    "Tasarruf":"Savings",
 
     "Aylık Bütçe vs Gerçekleşen":"Monthly Budget vs Actual",
     "Kategori Dağılımı":"Category Distribution",
@@ -6210,6 +6223,7 @@ const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","
     "Gelir Kalemleri":"Income Items",
     "Gider Kalemleri":"Expense Items",
     "Ekle":"Add",
+    "Kalem Ekle":"Add Item",
 
     "Tümü":"All",
     "Bu dönemde işlem yok":"No transactions for this period",
@@ -6228,11 +6242,8 @@ const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","
     "Yatırımlar":"Investments",
     "Kredi Kartları":"Credit Cards",
     "Krediler":"Loans",
-    "Borçlar ":"Debts ",
     "Borçlar":"Debts",
     "Şahıslara Borçlar":"Personal Debts",
-
-    "Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD’ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.":"Note: Balance items are stored in USD. You can enter TL/RUB and convert to USD when saving. If the transaction category name matches a balance sub-item, expense transactions reduce the related liability; if an asset with the same name exists, it increases that asset.",
 
     "Yeni İşlem":"New Transaction",
     "Gelir":"Income",
@@ -6257,319 +6268,116 @@ const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","
     "Kapalı":"Off",
     "Açık":"On",
 
-    "Yeni Bilanço Kalemi":"New Balance Item",
-    "Tip":"Type",
-    "Grup":"Group",
-    "Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.":"This entry is recorded in the selected month's snapshot. Previous months do not change.",
-    "Bu kayıt seçtiğin ayın snapshot’ına işlenir. Geçmiş aylar değişmez.":"This entry is recorded in the selected month's snapshot. Previous months do not change."
+    // Install banner
+    "📱 iPhone'a Yükle":"📱 Install on iPhone",
+    "Bu uygulamayı ana ekranınıza ekleyebilirsiniz:":"You can add this app to your Home Screen:",
+    "Safari'de":"In Safari,",
+    "Paylaş":"Share",
+    "butonuna tıklayın":"tap the button",
+    "\"Ana Ekrana Ekle\"":"\"Add to Home Screen\"",
+    "seçin":"select",
+    "\"Ekle\"":"\"Add\"",
+    "Anladım":"Got it",
+
+    // Placeholders / misc
+    "Açıklama...":"Description...",
+    "Örn: Maaş, Kira...":"e.g., Salary, Rent..."
   };
 
+  // Add months
+  for (let i=0;i<12;i++){
+    trToEn[MONTHS_TR_FULL[i]] = MONTHS_EN_FULL[i];
+    trToEn[MONTHS_TR_SHORT[i]] = MONTHS_EN_SHORT[i];
+  }
+
+  // Build EN -> TR mapping
   const enToTr = {};
-  Object.keys(trToEn).forEach(k => { enToTr[trToEn[k]] = k; });
-
-  function normalize(s){ return (s||"").replace(/\s+/g," ").trim(); }
-
-  function detectLang(){
-    // prefer localStorage if used
-    const keys = ["lang","appLang","budgetLang","language"];
-    for(const k of keys){
-      const v = localStorage.getItem(k);
-      if(v && (v.toLowerCase()==="en" || v.toLowerCase()==="tr")) return v.toLowerCase();
-    }
-    const pill = document.querySelector("#btnLang .lang-pill");
-    if(pill){
-      const v = normalize(pill.textContent).toLowerCase();
-      if(v==="en"||v==="tr") return v;
-    }
-    const h = (document.documentElement.getAttribute("lang")||"tr").toLowerCase();
-    return (h==="en") ? "en" : "tr";
+  Object.keys(trToEn).forEach(k=>{
+    const v = trToEn[k];
+    // Keep first mapping only to avoid collisions
+    if (enToTr[v] === undefined) enToTr[v] = k;
+  });
+  // Ensure months invert too
+  for (let i=0;i<12;i++){
+    enToTr[MONTHS_EN_FULL[i]] = MONTHS_TR_FULL[i];
+    enToTr[MONTHS_EN_SHORT[i]] = MONTHS_TR_SHORT[i];
   }
 
-  function translateLiteral(s, lang){
-    if(!s) return s;
-    const raw = s;
-    const n = normalize(raw);
-    // exact match
-    if(lang==="en"){
-      if(trToEn[n]) return raw.replace(n, trToEn[n]);
-      // prefixes
-      if(n.startsWith("Gerçekleşen:")) return raw.replace("Gerçekleşen:", "Actual:");
-      if(n.startsWith("Planlanan:")) return raw.replace("Planlanan:", "Planned:");
-    } else {
-      if(enToTr[n]) return raw.replace(n, enToTr[n]);
-      if(n.startsWith("Actual:")) return raw.replace("Actual:", "Gerçekleşen:");
-      if(n.startsWith("Planned:")) return raw.replace("Planned:", "Planlanan:");
-    }
-    // month exact
-    if(lang==="en"){
-      const mi = MONTHS_TR.indexOf(n);
-      if(mi>=0) return raw.replace(n, MONTHS_EN[mi]);
-    } else {
-      const mi = MONTHS_EN.indexOf(n);
-      if(mi>=0) return raw.replace(n, MONTHS_TR[mi]);
-    }
-    return s;
+  function replacePreserveWS(original, replacement){
+    const m = String(original).match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if(!m) return replacement;
+    const lead = m[1] || "";
+    const core = m[2] || "";
+    const trail = m[3] || "";
+    return lead + replacement + trail;
   }
 
-  function translateTextNode(node, lang){
-    const v = node.nodeValue;
-    if(!v) return;
-    // skip pure whitespace
-    if(!v.trim()) return;
-    // do not touch numbers-only
-    if(/^[\d\s\.\,\-\+\(\)\$₺₽%]+$/.test(v.trim())) return;
+  function translateString(str, lang){
+    const core = String(str).trim();
+    if(!core) return str;
+    const map = (lang === "en") ? trToEn : enToTr;
+    const hit = map[core];
+    if(hit !== undefined) return replacePreserveWS(str, hit);
+    return str;
+  }
 
-    // exact replacements and known prefixes in-line
-    let out = v;
-    const n = normalize(v);
-
-    // Replace in full node when it matches
-    const replaced = translateLiteral(n, lang);
-    if(replaced !== n) {
-      out = v.replace(n, replaced);
-    } else {
-      // replace some known fragments inside strings
-      if(lang==="en"){
-        out = out.replace(/\bGerçekleşen:\b/g, "Actual:");
-        out = out.replace(/\bPlanlanan\b/g, "Planned");
-        out = out.replace(/\bGerçekleşen\b/g, "Actual");
-        out = out.replace(/\bToplam\b/g, "Total");
-      } else {
-        out = out.replace(/\bActual:\b/g, "Gerçekleşen:");
-        out = out.replace(/\bPlanned\b/g, "Planlanan");
-        out = out.replace(/\bActual\b/g, "Gerçekleşen");
-        out = out.replace(/\bTotal\b/g, "Toplam");
+  function translateAttrs(el, lang){
+    const attrs = ["title","placeholder","aria-label"];
+    for (const a of attrs){
+      if(el.hasAttribute && el.hasAttribute(a)){
+        const v = el.getAttribute(a);
+        const nv = translateString(v, lang);
+        if(nv !== v) el.setAttribute(a, nv);
       }
     }
-
-      // month names inside strings (full + short, Unicode-safe, no lookbehind)
-function _escRE(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-function _replaceWord(out, from, to){
-  const re = new RegExp(`(^|[^\\p{L}])(${_escRE(from)})(?=[^\\p{L}]|$)`, "gu");
-  return out.replace(re, `$1${to}`);
-}
-
-// full months
-for(let i=0;i<12;i++){
-  if(lang==="en"){
-    out = _replaceWord(out, MONTHS_TR[i], MONTHS_EN[i]);
-  } else {
-    out = _replaceWord(out, MONTHS_EN[i], MONTHS_TR[i]);
-  }
-}
-
-// short months
-for(let i=0;i<12;i++){
-  if(lang==="en"){
-    out = _replaceWord(out, MONTHS_TR_SHORT[i], MONTHS_EN_SHORT[i]);
-  } else {
-    out = _replaceWord(out, MONTHS_EN_SHORT[i], MONTHS_TR_SHORT[i]);
-  }
-}
-
-    if(out !== v) node.nodeValue = out;
-  }
-
-  function translateElementAttributes(el, lang){
-    const attrs = ["placeholder","title","aria-label","data-title"];
-    attrs.forEach(a=>{
-      const v = el.getAttribute && el.getAttribute(a);
-      if(v){
-        const t = translateLiteral(v, lang);
-        if(t!==v) el.setAttribute(a,t);
+    // For <input type="button|submit"> value text
+    if (el.tagName === "INPUT"){
+      const type = (el.getAttribute("type")||"").toLowerCase();
+      if (type === "button" || type === "submit"){
+        const v = el.value;
+        const nv = translateString(v, lang);
+        if(nv !== v) el.value = nv;
       }
-    });
+    }
   }
 
   function translateDOM(lang){
-    // update html lang + title
-    document.documentElement.setAttribute("lang", lang);
-    const title = document.querySelector("title");
-    if(title){
-      title.textContent = (lang==="en") ? "Budget Tracker" : "Bütçe Takip";
-    } else {
-      document.title = (lang==="en") ? "Budget Tracker" : "Bütçe Takip";
-    }
-
-    // walk text nodes
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-    const textNodes = [];
-    let n;
-    while((n=walker.nextNode())) textNodes.push(n);
-    textNodes.forEach(tn => translateTextNode(tn, lang));
-
-    // translate attributes
-    document.querySelectorAll("button, input, select, [title], [placeholder], [aria-label]").forEach(el=>translateElementAttributes(el, lang));
-
-    // fix the liabilities icon uniqueness (card title)
-    const liabCardTitle = Array.from(document.querySelectorAll(".balance-card-title")).find(x=>/Borçlar|Liabilities/.test(x.textContent));
-    if(liabCardTitle){
-      const txt = normalize(liabCardTitle.textContent);
-      if(lang==="en") liabCardTitle.textContent = "🧱 Liabilities";
-      else liabCardTitle.textContent = "🧱 Borçlar";
-    }
-    const eqCardTitle = Array.from(document.querySelectorAll(".balance-card-title")).find(x=>/Öz Sermaye|Equity/.test(x.textContent));
-    if(eqCardTitle){
-      const txt = normalize(eqCardTitle.textContent);
-      if(lang==="en") eqCardTitle.textContent = "⚖️ Equity";
-      else eqCardTitle.textContent = "⚖️ Öz Sermaye";
-    }
-  }
-window.translateDOM = translateDOM;
-    
-  // ===== PDF patch: translate strings printed by jsPDF
-  function patchJsPDF(){
     try{
-      if(!window.jspdf || !window.jspdf.jsPDF) return;
-      const proto = window.jspdf.jsPDF.prototype;
-      if(proto.__i18nPatched) return;
-      const _text = proto.text;
-      proto.text = function(text, x, y, options, transform){
-        const lang = window.__I18N_ACTIVE_LANG || detectLang();
-        const tr = (typeof text === "string") ? translateLiteral(text, lang) : text;
-        // also translate arrays
-        if(Array.isArray(text)){
-          const arr = text.map(s => (typeof s==="string") ? translateLiteral(s, lang) : s);
-          return _text.call(this, arr, x, y, options, transform);
-        }
-        return _text.call(this, tr, x, y, options, transform);
-      };
-      proto.__i18nPatched = true;
-    }catch(e){}
-  }
+      document.documentElement.lang = lang === "en" ? "en" : "tr";
+      const root = document.body || document.documentElement;
+      if(!root) return;
 
-  // ===== Excel patch: translate workbook before writeFile
-  function translateWorkbook(wb, lang){
-    if(!wb || !wb.SheetNames || !wb.Sheets) return wb;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
+      const nodes = [];
+      while(walker.nextNode()) nodes.push(walker.currentNode);
 
-    // rename sheets
-    const nameMap = {
-      "Özet": "Overview",
-      "Bütçe": "Budget",
-      "Nakit Akışı": "Cash Flow",
-      "Bilanço": "Balance",
-      "Overview": "Özet",
-      "Budget": "Bütçe",
-      "Cash Flow": "Nakit Akışı",
-      "Balance": "Bilanço"
-    };
-    const newSheetNames = [];
-    const newSheets = {};
-
-    wb.SheetNames.forEach(oldName=>{
-      const mapped = nameMap[oldName] ? (lang==="en" ? nameMap[oldName] : (enToTr[oldName] || oldName)) : oldName;
-      // if oldName is Turkish and lang en -> map; if oldName is English and lang tr -> reverse map via nameMap
-      let newName = oldName;
-      if(lang==="en" && nameMap[oldName]) newName = nameMap[oldName];
-      if(lang==="tr"){
-        // reverse
-        const rev = Object.keys(nameMap).find(k=>nameMap[k]===oldName);
-        if(rev) newName = rev;
-      }
-      newSheetNames.push(newName);
-      newSheets[newName] = wb.Sheets[oldName];
-    });
-
-    wb.SheetNames = newSheetNames;
-    wb.Sheets = newSheets;
-
-    // translate strings in cells (exact/known only)
-    wb.SheetNames.forEach(sn=>{
-      const sh = wb.Sheets[sn];
-      if(!sh) return;
-      Object.keys(sh).forEach(addr=>{
-        if(addr[0]==="!") return;
-        const cell = sh[addr];
-        if(cell && cell.t==="s" && typeof cell.v==="string"){
-          const nv = translateLiteral(cell.v, lang);
-          // also handle common fragments
-          let out = nv;
-          if(lang==="en"){
-            out = out.replace(/\bGerçekleşen:\b/g,"Actual:");
-            out = out.replace(/\bToplam\b/g,"Total");
-          } else {
-            out = out.replace(/\bActual:\b/g,"Gerçekleşen:");
-            out = out.replace(/\bTotal\b/g,"Toplam");
+      for (const n of nodes){
+        if(n.nodeType === Node.TEXT_NODE){
+          const v = n.nodeValue;
+          const nv = translateString(v, lang);
+          if(nv !== v) n.nodeValue = nv;
+        } else if (n.nodeType === Node.ELEMENT_NODE){
+          translateAttrs(n, lang);
+          // Option text
+          if(n.tagName === "OPTION"){
+            const v = n.textContent;
+            const nv = translateString(v, lang);
+            if(nv !== v) n.textContent = nv;
           }
-          if(out !== cell.v) cell.v = out;
         }
-      });
-    });
-
-    return wb;
-  }
-
-  function patchXLSX(){
-    try{
-      if(!window.XLSX) return;
-      if(window.XLSX.__i18nPatched) return;
-      const _writeFile = window.XLSX.writeFile;
-      window.XLSX.writeFile = function(wb, filename, opts){
-        const lang = window.__I18N_ACTIVE_LANG || detectLang();
-        translateWorkbook(wb, lang);
-        // translate filename if you want
-        return _writeFile.call(this, wb, filename, opts);
-      };
-      window.XLSX.__i18nPatched = true;
+      }
     }catch(e){}
   }
 
-  // wrap report functions safely (do NOT change internals)
-  function wrapReports(){
-    patchJsPDF();
-    patchXLSX();
+  // Expose for dynamic sections
+  window.translateDOM = translateDOM;
 
-    if(typeof window.generatePDFReport === "function" && !window.generatePDFReport.__i18nWrapped){
-      const orig = window.generatePDFReport;
-      window.generatePDFReport = function(){
-        window.__I18N_ACTIVE_LANG = detectLang();
-        try{ return orig.apply(this, arguments); }
-        finally{ window.__I18N_ACTIVE_LANG = null; }
-      };
-      window.generatePDFReport.__i18nWrapped = true;
-    }
-
-    if(typeof window.generateExcelReport === "function" && !window.generateExcelReport.__i18nWrapped){
-      const orig = window.generateExcelReport;
-      window.generateExcelReport = function(){
-        window.__I18N_ACTIVE_LANG = detectLang();
-        try{ return orig.apply(this, arguments); }
-        finally{ window.__I18N_ACTIVE_LANG = null; }
-      };
-      window.generateExcelReport.__i18nWrapped = true;
-    }
-  }
-
-  function applyAll(){
-    const lang = detectLang();
-    wrapReports();
-    translateDOM(lang);
-  }
-
-  // hook language button
-  function hookLangBtn(){
-    const btn = document.getElementById("btnLang");
-    if(!btn || btn.__i18nHooked) return;
-    btn.addEventListener("click", function(){
-      // allow existing handlers to run then translate
-      setTimeout(applyAll, 60);
-    }, true);
-    btn.__i18nHooked = true;
-  }
-
+  // Run once after load
   document.addEventListener("DOMContentLoaded", function(){
-    hookLangBtn();
-    applyAll();
-    // re-apply after render updates
-    setTimeout(applyAll, 300);
-    setTimeout(applyAll, 1200);
+    const lang = (window.appSettings && window.appSettings.lang) ? window.appSettings.lang : "tr";
+    translateDOM(lang);
   });
-
-  // also expose manual call
-  window.__applyI18NStrict = applyAll;
-})();
+})();;
 </script>
 </body>
 </html>
-
