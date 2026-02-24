@@ -2257,16 +2257,6 @@
             });
 
 try{ renderBalanceChart(); }catch(e){}
-            // ✅ month arrays must follow active language
-try{
-  const L = (I18N[appSettings.lang || 'tr'] || I18N.tr);
-  if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort;
-  if (Array.isArray(L.monthsFull))  monthNamesFull = L.monthsFull;
-
-  // month selector text refresh
-  const md = document.getElementById('monthDisplay');
-  if (md) md.textContent = monthNamesFull[currentMonth];
-}catch(e){}
         }
 
         function wireHeaderToggles(){
@@ -2920,48 +2910,43 @@ html += '</div>';
 
 summary.innerHTML = html;
 
-// Yeni basılan cashflow içeriğini seçili dile çevir (EN/TR)
 if (window.translateDOM) {
   window.translateDOM(appSettings.lang || 'tr');
 }
-
-// Buradaki "}" updateCashflow/updateCashFlow fonksiyonunu kapatmak içindir.
-// Eğer zaten kapanmışsa bu satırı çıkarma; senin verdiğin akışta updateChart buradan sonra başlıyor.
 }
+        function updateChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            const yearTx = getYearTransactions();
 
-function updateChart() {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
-    const yearTx = getYearTransactions();
+            // Prepare data for each month
+            const incomeData = [];
+            const expenseData = [];
+            const incomePlanData = [];
+            const expensePlanData = [];
 
-    // Prepare data for each month
-    const incomeData = [];
-    const expenseData = [];
-    const incomePlanData = [];
-    const expensePlanData = [];
+            for (let i = 0; i < 12; i++) {
+                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
 
-    for (let i = 0; i < 12; i++) {
-        const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+                incomeData.push(monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0));
+                expenseData.push(monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0));
+                incomePlanData.push(categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
+                expensePlanData.push(categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
+            }
 
-        incomeData.push(monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0));
-        expenseData.push(monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0));
-        incomePlanData.push(categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
-        expensePlanData.push(categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0));
-    }
+            // Destroy existing chart if any
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
 
-    // Destroy existing chart if any
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
+            // Chart title based on view mode
+            const chartTitle = document.querySelector('.chart-title');
+            chartTitle.textContent = viewMode === 'monthly' ?
+                `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
+                'Aylık Bütçe vs Gerçekleşen';
 
-    // Chart title based on view mode
-    const chartTitle = document.querySelector('.chart-title');
-    chartTitle.textContent = viewMode === 'monthly' ?
-        `${monthNamesFull[currentMonth]} - Kategori Dağılımı` :
-        'Aylık Bütçe vs Gerçekleşen';
-
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#a0aec0' : '#636e72';
-    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#a0aec0' : '#636e72';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
             if (viewMode === 'yearly') {
                 // Bar chart for yearly view - showing monthly breakdown
@@ -6196,13 +6181,11 @@ function renderBalanceChart(){
     "Kümülatif":"Cumulative",
     "Toplam":"Total",
 
-    "📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
-"💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
-"🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
-"🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
-
-"Actual Tasarruf":"Actual Savings",
-"Tasarruf":"Savings",
+    "Yıllık Tasarruf Planı":"Annual Savings Plan",
+    "Gerçekleşen Tasarruf":"Actual Savings",
+    "Aylık Tasarruf Hedefi":"Monthly Savings Target",
+    "Ay Sonu Tasarruf Hedefi":"Monthly Savings Target",
+    "Yıl Sonu Tahmini":"Year-End Forecast",
 
     "Aylık Bütçe vs Gerçekleşen":"Monthly Budget vs Actual",
     "Kategori Dağılımı":"Category Distribution",
@@ -6343,17 +6326,14 @@ function renderBalanceChart(){
       }
     }
 
-    // month names inside strings (Unicode-safe)
-function _escRE(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-for(let i=0;i<12;i++){
-  if(lang==="en"){
-    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_TR[i])}(?!\\p{L})`, "gu");
-    out = out.replace(re, MONTHS_EN[i]);
-  } else {
-    const re = new RegExp(`(?<!\\p{L})${_escRE(MONTHS_EN[i])}(?!\\p{L})`, "gu");
-    out = out.replace(re, MONTHS_TR[i]);
-  }
-}
+    // month names inside strings (rare)
+    for(let i=0;i<12;i++){
+      if(lang==="en"){
+        out = out.replace(new RegExp("\\b"+MONTHS_TR[i]+"\\b","g"), MONTHS_EN[i]);
+      } else {
+        out = out.replace(new RegExp("\\b"+MONTHS_EN[i]+"\\b","g"), MONTHS_TR[i]);
+      }
+    }
 
     if(out !== v) node.nodeValue = out;
   }
