@@ -6262,31 +6262,24 @@ function renderBalanceChart(){
   function normalize(s){ return (s||"").replace(/\s+/g," ").trim(); }
 
   function detectLang(){
-    // 1) strongest source: appSettings.lang (your app state)
+    // 1) source of truth: appSettings.lang (app uses this)
     try{
-      if(window.appSettings && (appSettings.lang==="en" || appSettings.lang==="tr")) return appSettings.lang;
+      const al = (window.appSettings && window.appSettings.lang) ? String(window.appSettings.lang).toLowerCase() : "";
+      if(al==="en" || al==="tr") return al;
     }catch(e){}
-    // 2) localStorage keys (legacy)
+    // 2) then localStorage (legacy)
     const keys = ["lang","appLang","budgetLang","language"];
     for(const k of keys){
       const v = localStorage.getItem(k);
       if(v && (v.toLowerCase()==="en" || v.toLowerCase()==="tr")) return v.toLowerCase();
     }
-    // 3) UI pill
+    // 3) then the UI pill
     const pill = document.querySelector("#btnLang .lang-pill");
     if(pill){
       const v = normalize(pill.textContent).toLowerCase();
       if(v==="en"||v==="tr") return v;
     }
-    // 4) html lang attribute
-    const h = (document.documentElement.getAttribute("lang")||"tr").toLowerCase();
-    return (h==="en") ? "en" : "tr";
-  }
-    const pill = document.querySelector("#btnLang .lang-pill");
-    if(pill){
-      const v = normalize(pill.textContent).toLowerCase();
-      if(v==="en"||v==="tr") return v;
-    }
+    // 4) finally html[lang]
     const h = (document.documentElement.getAttribute("lang")||"tr").toLowerCase();
     return (h==="en") ? "en" : "tr";
   }
@@ -6531,12 +6524,8 @@ window.translateDOM = translateDOM;
   }
 
   function applyAll(){
-    const lang = (function(){
-      try{
-        if(window.appSettings && (appSettings.lang==="en" || appSettings.lang==="tr")) return appSettings.lang;
-      }catch(e){}
-      return detectLang();
-    })();
+    const lang = detectLang();
+    try{ localStorage.setItem("lang", lang); }catch(e){}
     wrapReports();
     translateDOM(lang);
   }
@@ -6547,7 +6536,7 @@ window.translateDOM = translateDOM;
     if(!btn || btn.__i18nHooked) return;
     btn.addEventListener("click", function(){
       // allow existing handlers to run then translate
-      setTimeout(applyAll, 120);
+      setTimeout(applyAll, 60);
     }, true);
     btn.__i18nHooked = true;
   }
