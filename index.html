@@ -1506,7 +1506,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <header class="header">
 <div class="header-top">
 <div class="header-brand">
-<h1><i class="fas fa-wallet"></i> <span data-i18n="appTitle">Bütçe Takip</span></h1>
+<h1><i class="fas fa-wallet"></i> <span data-="appTitle">Bütçe Takip</span></h1>
 <span class="header-credit">made by ARIK</span>
 </div>
 <div class="header-actions">
@@ -1541,7 +1541,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 </div>
 <div class="auth-right">
 <button class="auth-btn" id="btnLogin" type="button"><i class="fab fa-google"></i> Google ile Giriş</button>
-<button class="auth-btn" id="btnLogout" type="button" style="display:none;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Çıkış</span></button></div>
+<button class="auth-btn" id="btnLogout" type="button" style="display:none;"><i class="fas fa-sign-out-alt"></i> <span data-="logout">Çıkış</span></button></div>
 </div>
 </header>
 <!-- App Lock Overlay (requires Google login for sync) -->
@@ -1652,18 +1652,18 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <section class="section active" id="budget-section">
 <div class="section-title">
 <div class="section-title">
-  <span data-i18n="incomeItems">Gelir Kalemleri</span>
+  <span data-="incomeItems">Gelir Kalemleri</span>
   <button class="add-btn" onclick="openCategoryModal('income')">
-    <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
+    <i class="fas fa-plus"></i> <span data-="add">Ekle</span>
   </button>
 </div>
 <div id="incomeBudgets"></div>
 
 <div class="section-title" style="margin-top: 24px;">
 <div class="section-title">
-  <span data-i18n="expenseItems">Gider Kalemleri</span>
+  <span data-="expenseItems">Gider Kalemleri</span>
   <button class="add-btn" onclick="openCategoryModal('expense')">
-    <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
+    <i class="fas fa-plus"></i> <span data-="add">Ekle</span>
   </button>
 </div>
 <div id="expenseBudgets"></div>
@@ -1716,7 +1716,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <canvas id="balanceChart"></canvas>
 </div>
 
-<div class="muted" style="margin-top:10px;" data-i18n="balanceNote">
+<div class="muted" style="margin-top:10px;" data-="balanceNote">
 Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD'ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle <b>aynıysa</b>,
 gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.
 </div>
@@ -1748,18 +1748,18 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 </div>
 <div class="type-toggle">
 <button class="type-btn income active" onclick="setTransactionType('income')">
-  <i class="fas fa-arrow-down"></i> <span data-i18n="incomeType">Gelir</span>
+  <i class="fas fa-arrow-down"></i> <span data-="incomeType">Gelir</span>
 </button>
 <button class="type-btn expense" onclick="setTransactionType('expense')">
-  <i class="fas fa-arrow-up"></i> <span data-i18n="expenseType">Gider</span>
+  <i class="fas fa-arrow-up"></i> <span data-="expenseType">Gider</span>
 </button>
 </div>
 <div class="form-group">
-<label data-i18n="category">Kategori</label>
+<label data-="category">Kategori</label>
 <div class="category-select-grid" id="categorySelectGrid"></div>
 </div>
 <div class="form-group">
-<label data-i18n="currency">Para Birimi</label>
+<label data-="currency">Para Birimi</label>
 <div class="currency-toggle" id="currencyToggle">
 <button class="currency-btn active" data-currency="USD" onclick="selectTransactionCurrency('USD')">$ USD</button>
 <button class="currency-btn" data-currency="TRY" onclick="selectTransactionCurrency('TRY')">₺ TRY</button>
@@ -1781,18 +1781,18 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="rates-display" id="currentRates"></div>
 </div>
 <div class="form-group">
-<label data-i18n="amount">Tutar</label>
+<label data-="amount">Tutar</label>
 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
 </div>
 <div class="form-group">
-<label data-i18n="noteOptional">Not (Opsiyonel)</label>
-<input type="text" id="transactionNote" data-i18n-placeholder="description" placeholder="Açıklama...">
+<label data-="noteOptional">Not (Opsiyonel)</label>
+<input type="text" id="transactionNote" data--placeholder="description" placeholder="Açıklama...">
 </div>
 <div class="form-group">
-<label data-i18n=<label data-i18n="date">Tarih</label>"noteOptional">Not (Opsiyonel)</label>
+<label data-=<label data-="date">Tarih</label>"noteOptional">Not (Opsiyonel)</label>
 <input type="date" id="transactionDate">
 </div>
-<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Save</button>
+<button class="submit-btn" onclick="saveTransaction()" data-="save">Save</button>
 </div>
 
 <!-- Category Modal -->
@@ -1803,11 +1803,11 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
 </div>
 <div class="form-group">
-<label data-i18n="categoryName">Kategori Adı</label>
+<label data-="categoryName">Kategori Adı</label>
 <input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
 </div>
 <div class="form-group">
-<label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
+<label data-="budgetCurrency">Bütçe Para Birimi</label>
 <div class="currency-toggle" id="categoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setCategoryCurrency('TRY')">₺ TRY</button>
@@ -1824,10 +1824,10 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="monthly-grid" id="monthlyBudgetGrid"></div>
 </div>
 <div class="form-group">
-<label data-i18n="icon">İkon</label>
+<label data-="icon">İkon</label>
 <div class="icon-grid" id="iconGrid"></div>
 </div>
-<button class="submit-btn" onclick="saveCategory()" data-i18n="save">Kaydet</button>
+<button class="submit-btn" onclick="saveCategory()" data-="save">Kaydet</button>
 </div>
 </div>
 
@@ -1839,11 +1839,11 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <button class="modal-close" onclick="closeModal('editBudgetModal')">×</button>
 </div>
 <div class="form-group">
-<label data-i18n="categoryName">Kategori Adı</label>
+<label data-="categoryName">Kategori Adı</label>
 <input type="text" id="editCategoryName">
 </div>
 <div class="form-group">
-<label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
+<label data-="budgetCurrency">Bütçe Para Birimi</label>
 <div class="currency-toggle" id="editCategoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setEditCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setEditCategoryCurrency('TRY')">₺ TRY</button>
@@ -2104,7 +2104,7 @@ function saveAppSettings(){
 try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
 }
 
-const I18N = {
+const  = {
   tr: {
     appTitle: 'Bütçe Takip', budget: 'Bütçe', transactions: 'İşlemler', balance: 'Bilanço',
     assets: 'Varlıklar', liabilities: 'Borçlar', equity: 'Öz Sermaye',
@@ -6230,7 +6230,7 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 <div class="modal-overlay" id="balanceItemModal">
 <div class="modal">
 <div class="modal-header">
-<div class="modal-title" id="balanceItemModalTitle">Yeni Bilanço Kalemi</div>
+<div class="modal-title" id="balanceItemModalTitle" data-i18n="newBalanceItem">Yeni Bilanço Kalemi</div>
 <button class="close-btn" onclick="closeModal('balanceItemModal')">×</button>
 </div>
 
@@ -6243,13 +6243,11 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 <label data-i18n="type">Tip</label>
 <div class="type-toggle">
 <button id="balTypeAsset" class="type-btn income active" onclick="setBalanceType('asset')">
-<i class="fas fa-gem"></i> Varlık
+  <i class="fas fa-gem"></i> <span data-i18n="asset">Varlık</span>
 </button>
 <button id="balTypeLiab" class="type-btn expense" onclick="setBalanceType('liability')">
-<i class="fas fa-building-columns"></i> Borç
+  <i class="fas fa-building-columns"></i> <span data-i18n="liability">Borç</span>
 </button>
-</div>
-</div>
 
 <div class="form-group">
 <label data-i18n="group">Grup</label>
@@ -6258,8 +6256,7 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 
 <div class="form-group">
 <label data-i18n="categoryName">Kategori Adı</label>
-<input id="balanceItemName" type="text" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
-</div>
+<input id="balanceItemName" type="text" data-i18n-placeholder="categoryNamePlaceholder" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
 
 <div class="form-group">
 <label data-i18n="amount">Tutar</label>
