@@ -2424,8 +2424,14 @@ const I18N = {
 };
 
 function t(key){
-const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
-return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
+  const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
+  if (I18N[lang] && I18N[lang][key]) {
+    return I18N[lang][key];
+  }
+  if (I18N.tr && I18N.tr[key]) {
+    return I18N.tr[key];
+  }
+  return key;
 }
 
 function applyTheme(){
@@ -2439,130 +2445,121 @@ btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></
 }
 
 function applyLanguage(){
-document.title = t('appTitle');
-const h1 = document.querySelector('.header-title h1');
-if (h1) h1.textContent = t('appTitle');
-
-// Tabs
-const tabBudget = document.querySelector('.tab[data-tab="budget"]');
-const tabTx = document.querySelector('.tab[data-tab="transactions"]');
-const tabBal = document.querySelector('.tab[data-tab="balance"]');
-if (tabBudget) tabBudget.textContent = t('budget');
-if (tabTx) tabTx.textContent = t('transactions');
-if (tabBal) tabBal.textContent = t('balance');
-
-// Header button titles (existing)
-document.querySelectorAll('.header-actions .header-btn').forEach(b=>{
-const oc = (b.getAttribute('onclick')||'').trim();
-if (oc.startsWith('generatePDFReport')) b.title = t('pdfReport');
-if (oc.startsWith('generateExcelReport')) b.title = t('excelReport');
-if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
-if (oc.startsWith('openRatesModal')) b.title = t('rates');
-if (oc.startsWith('showInstallBanner')) b.title = t('install');
-});
-
-const langBtn = document.getElementById('btnLang');
-if (langBtn){
-langBtn.title = t('lang');
-const pill = langBtn.querySelector('.lang-pill');
-if (pill) pill.textContent = (appSettings.lang || 'tr').toUpperCase();
-}
-
-// Balance section title + add button
-const balTitleSpan = document.querySelector('#balance-section .section-title span');
-if (balTitleSpan) balTitleSpan.textContent = t('balanceSectionTitle');
-const balAddBtn = document.querySelector('#balance-section .section-title button.add-btn');
-if (balAddBtn) balAddBtn.innerHTML = '<i class="fas fa-plus"></i> ' + t('addItem');
-
-// Balance card titles (keep emojis)
-const aT = document.querySelector('#assetsTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-const lT = document.querySelector('#liabilitiesTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-const eT = document.querySelector('#equityTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
-if (aT) aT.textContent = '💎 ' + t('assets');
-if (lT) lT.textContent = '🏦 ' + t('liabilities');
-if (eT) eT.textContent = '📈 ' + t('equity');
-
-// Balance trend toggle labels
-const bm = document.getElementById('btnBalTrendMonthly');
-const by = document.getElementById('btnBalTrendYearly');
-if (bm) bm.textContent = t('monthly');
-if (by) by.textContent = t('yearly');
-
-
-// Month names (used in filters, charts)
-try{
-const L = I18N[appSettings.lang] || I18N.tr;
-if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort.slice();
-if (Array.isArray(L.monthsFull)) monthNamesFull = L.monthsFull.slice();
-}catch(e){}
-
-
-
-// refresh month display text
-const md = document.getElementById('monthDisplay');
-if (md && Array.isArray(monthNamesFull)) md.textContent = monthNamesFull[currentMonth];
-// Budget Summary title
-const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
-if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
-// Cashflow section title
-const cfTitle = document.querySelector('#cashflowSection .summary-title');
-if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
-// Cashflow table headers
-const cfTable = document.getElementById('cashflowTable');
-if (cfTable){
-  const th = cfTable.querySelectorAll('thead th');
-  if (th && th.length>=8){
-    th[0].textContent = t('month');
-    th[1].textContent = t('incomePlan');
-    th[2].textContent = t('incomeActual');
-    th[3].textContent = t('expensePlan');
-    th[4].textContent = t('expenseActual');
-    th[5].textContent = t('netPlan');
-    th[6].textContent = t('netActual');
-    th[7].textContent = t('cumulative');
-  }
-}
-
-// Generic labels used around summaries
-document.querySelectorAll('.chip.all').forEach(x=>{
-if (x.textContent.trim().toLowerCase()==='tümü' || x.textContent.trim().toLowerCase()==='all'){
-x.textContent = (appSettings.lang==='en'?'All':'Tümü');
-}
-});
-
-// Summary kartlarının alt metinlerini güncelle
-const factIncomeRow = document.getElementById('factIncomeRow');
-const factExpenseRow = document.getElementById('factExpenseRow');
-if (factIncomeRow) {
-  const span = factIncomeRow.querySelector('span:first-child');
-  if (span) span.textContent = t('actualColon').replace(':', '') + ':';
-}
-if (factExpenseRow) {
-  const span = factExpenseRow.querySelector('span:first-child');
-  if (span) span.textContent = t('actualColon').replace(':', '') + ':';
-}
-
-// View toggle butonlarını güncelle
-document.querySelectorAll('.view-btn').forEach(btn => {
-  if (btn.dataset.view === 'monthly') btn.textContent = t('monthly');
-  if (btn.dataset.view === 'yearly') btn.textContent = t('yearly');
-});
-
-// Chart başlığını güncelle
-const chartTitle = document.querySelector('.chart-title');
-if (chartTitle) {
-  chartTitle.textContent = viewMode === 'monthly' 
-    ? `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}`
-    : t('monthlyBudgetVsActual');
-}
-
-// translateDOM'u çalıştır (data-i18n attribute'lu elementler için)
-if (window.translateDOM) window.translateDOM(appSettings.lang);
-
-try{ renderBalanceChart(); }catch(e){}
+  document.title = t('appTitle');
   
-translateDOM(appSettings.lang);
+  // Header title
+  const h1 = document.querySelector('.header h1 span');
+  if (h1) h1.textContent = t('appTitle');
 
+  // Tabs
+  const tabBudget = document.querySelector('.tab[data-tab="budget"]');
+  const tabTx = document.querySelector('.tab[data-tab="transactions"]');
+  const tabBal = document.querySelector('.tab[data-tab="balance"]');
+  if (tabBudget) tabBudget.textContent = t('budget');
+  if (tabTx) tabTx.textContent = t('transactions');
+  if (tabBal) tabBal.textContent = t('balance');
+
+  // Header buttons
+  document.querySelectorAll('.header-actions .header-btn').forEach(b => {
+    const oc = (b.getAttribute('onclick') || '').trim();
+    if (oc.startsWith('generatePDFReport')) b.title = t('pdfReport');
+    if (oc.startsWith('generateExcelReport')) b.title = t('excelReport');
+    if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
+    if (oc.startsWith('openRatesModal')) b.title = t('rates');
+    if (oc.startsWith('showInstallBanner')) b.title = t('install');
+  });
+
+  const langBtn = document.getElementById('btnLang');
+  if (langBtn){
+    langBtn.title = t('lang');
+    const pill = langBtn.querySelector('.lang-pill');
+    if (pill) pill.textContent = (appSettings.lang || 'tr').toUpperCase();
+  }
+
+  // Balance section
+  const balTitleSpan = document.querySelector('#balance-section .section-title span');
+  if (balTitleSpan) balTitleSpan.textContent = t('balanceSectionTitle');
+  
+  const balAddBtn = document.querySelector('#balance-section .section-title button.add-btn');
+  if (balAddBtn) balAddBtn.innerHTML = '<i class="fas fa-plus"></i> ' + t('addItem');
+
+  // Balance cards
+  const aT = document.querySelector('#assetsTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+  const lT = document.querySelector('#liabilitiesTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+  const eT = document.querySelector('#equityTotal')?.closest('.balance-card')?.querySelector('.balance-card-title');
+  if (aT) aT.textContent = '💎 ' + t('assets');
+  if (lT) lT.textContent = '🏦 ' + t('liabilities');
+  if (eT) eT.textContent = '📈 ' + t('equity');
+
+  // Trend toggle
+  const bm = document.getElementById('btnBalTrendMonthly');
+  const by = document.getElementById('btnBalTrendYearly');
+  if (bm) bm.textContent = t('monthly');
+  if (by) by.textContent = t('yearly');
+
+  // Month names
+  try {
+    const L = I18N[appSettings.lang] || I18N.tr;
+    if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort.slice();
+    if (Array.isArray(L.monthsFull)) monthNamesFull = L.monthsFull.slice();
+  } catch(e) {}
+
+  // Refresh displays
+  const md = document.getElementById('monthDisplay');
+  if (md && Array.isArray(monthNamesFull)) md.textContent = monthNamesFull[currentMonth];
+  
+  const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
+  if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
+  
+  const cfTitle = document.querySelector('#cashflowSection .summary-title');
+  if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
+
+  // Cashflow table headers
+  const cfTable = document.getElementById('cashflowTable');
+  if (cfTable){
+    const th = cfTable.querySelectorAll('thead th');
+    if (th && th.length >= 8){
+      th[0].textContent = t('month');
+      th[1].textContent = t('incomePlan');
+      th[2].textContent = t('incomeActual');
+      th[3].textContent = t('expensePlan');
+      th[4].textContent = t('expenseActual');
+      th[5].textContent = t('netPlan');
+      th[6].textContent = t('netActual');
+      th[7].textContent = t('cumulative');
+    }
+  }
+
+  // Summary cards
+  const factIncomeRow = document.getElementById('factIncomeRow');
+  const factExpenseRow = document.getElementById('factExpenseRow');
+  if (factIncomeRow) {
+    const span = factIncomeRow.querySelector('span:first-child');
+    if (span) span.textContent = t('actualColon').replace(':', '') + ':';
+  }
+  if (factExpenseRow) {
+    const span = factExpenseRow.querySelector('span:first-child');
+    if (span) span.textContent = t('actualColon').replace(':', '') + ':';
+  }
+
+  // View toggle
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    if (btn.dataset.view === 'monthly') btn.textContent = t('monthly');
+    if (btn.dataset.view === 'yearly') btn.textContent = t('yearly');
+  });
+
+  // Chart title
+  const chartTitle = document.querySelector('.chart-title');
+  if (chartTitle) {
+    chartTitle.textContent = viewMode === 'monthly'
+      ? `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}`
+      : t('monthlyBudgetVsActual');
+  }
+
+  // Call translateDOM for data-i18n elements
+  translateDOM(appSettings.lang);
+
+  try { renderBalanceChart(); } catch(e) {}
 }
 
 function wireHeaderToggles(){
@@ -6715,25 +6712,24 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
   try {
     document.documentElement.lang = lang === "en" ? "en" : "tr";
     
-    // 1. data-i18n attribute'lu elementleri çevir
+    // data-i18n attribute'lu elementleri çevir
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
-      const translation = I18N[lang]?.[key];
-      if (translation) {
-        el.textContent = translation;
+      if (I18N[lang] && I18N[lang][key]) {
+        el.textContent = I18N[lang][key];
       }
     });
-    
-    // 2. data-i18n-placeholder attribute'lu elementleri çevir
+
+    // data-i18n-placeholder attribute'lu elementleri çevir
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.getAttribute('data-i18n-placeholder');
-      const translation = I18N[lang]?.[key];
-      if (translation) {
-        el.placeholder = translation;
+      if (I18N[lang] && I18N[lang][key]) {
+        el.placeholder = I18N[lang][key];
       }
     });
-    
-  } catch(e) { console.error('translateDOM error:', e); }
+  } catch(e) { 
+    console.error('translateDOM error:', e); 
+  }
 }
 
       // Title
