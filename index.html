@@ -2318,6 +2318,35 @@ x.textContent = (appSettings.lang==='en'?'All':'Tümü');
 }
 });
 
+// Summary kartlarının alt metinlerini güncelle
+const factIncomeRow = document.getElementById('factIncomeRow');
+const factExpenseRow = document.getElementById('factExpenseRow');
+if (factIncomeRow) {
+  const span = factIncomeRow.querySelector('span:first-child');
+  if (span) span.textContent = t('actualColon').replace(':', '') + ':';
+}
+if (factExpenseRow) {
+  const span = factExpenseRow.querySelector('span:first-child');
+  if (span) span.textContent = t('actualColon').replace(':', '') + ':';
+}
+
+// View toggle butonlarını güncelle
+document.querySelectorAll('.view-btn').forEach(btn => {
+  if (btn.dataset.view === 'monthly') btn.textContent = t('monthly');
+  if (btn.dataset.view === 'yearly') btn.textContent = t('yearly');
+});
+
+// Chart başlığını güncelle
+const chartTitle = document.querySelector('.chart-title');
+if (chartTitle) {
+  chartTitle.textContent = viewMode === 'monthly' 
+    ? `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}`
+    : t('monthlyBudgetVsActual');
+}
+
+// translateDOM'u çalıştır (data-i18n attribute'lu elementler için)
+if (window.translateDOM) window.translateDOM(appSettings.lang);
+
 try{ renderBalanceChart(); }catch(e){}
 }
 
@@ -2332,11 +2361,12 @@ applyTheme();
 }
 const btnLang = document.getElementById('btnLang');
 if (btnLang){
-btnLang.addEventListener('click', ()=>{
-appSettings.lang = (appSettings.lang === 'tr') ? 'en' : 'tr';
-saveAppSettings();
-applyLanguage();
-});
+  btnLang.addEventListener('click', ()=>{
+    appSettings.lang = (appSettings.lang === 'tr') ? 'en' : 'tr';
+    saveAppSettings();
+    // Tüm UI'ı yeniden render et ki yeni dil uygulansın
+    updateAll();
+  });
 }
 
 // Apply strict overlay translations for remaining literals
@@ -5545,10 +5575,17 @@ setTimeout(() => toast.remove(), 300);
 
 // ==================== UPDATE ALL ====================
 function updateAll() {
-updateSummary();
-renderBudgets();
-renderMonthFilter();
-renderTransactions();
+  // Önce dili uygula ki tüm render fonksiyonları doğru dili kullansın
+  applyLanguage();
+  updateSummary();
+  renderBudgets();
+  renderMonthFilter();
+  renderTransactions();
+  // Bilanço sekmesi aktifse onu da güncelle
+  const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+  if (activeTab === 'balance') {
+    renderBalance();
+  }
 }
 
 // ==================== INIT ====================
