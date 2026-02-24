@@ -2116,8 +2116,6 @@
                 yearly: 'Yıllık',
                 monthsShort: ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],
                 monthsFull: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
-                budgetSummaryTitle: 'Bütçe Özeti (Para Birimi Bazında)',
-                cashflowTitle: 'Aylık Nakit Akışı',
                 theme: 'Tema',
                 lang: 'Dil',
                 pdfReport: 'PDF Rapor',
@@ -2142,8 +2140,6 @@
                 yearly: 'Yearly',
                 monthsShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
                 monthsFull: ['January','February','March','April','May','June','July','August','September','October','November','December'],
-                budgetSummaryTitle: 'Budget Summary (By Currency)',
-                cashflowTitle: 'Monthly Cashflow',
                 theme: 'Theme',
                 lang: 'Language',
                 pdfReport: 'PDF Report',
@@ -2231,10 +2227,12 @@
 
             // Budget Summary title
             const sumTitle = document.querySelector('#budgetSummarySection .summary-title');
-            if (sumTitle) sumTitle.textContent = '📊 ' + t('budgetSummaryTitle');
+            if (sumTitle) sumTitle.textContent = '📊 ' + (t('budgetSummaryTitle') || (appSettings.lang==='en'?'Budget Summary (By Currency)':'Bütçe Özeti (Para Birimi Bazında)'));
+
             // Cashflow section title
             const cfTitle = document.querySelector('#cashflowSection .summary-title');
-            if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
+            if (cfTitle) cfTitle.textContent = '💰 ' + (t('cashflowTitle') || (appSettings.lang==='en'?'Monthly Cashflow':'Aylık Nakit Akışı'));
+
             // Cashflow table headers
             const cfTable = document.getElementById('cashflowTable');
             if (cfTable){
