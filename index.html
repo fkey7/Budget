@@ -1789,8 +1789,12 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <input type="text" id="transactionNote" data--placeholder="description" placeholder="Açıklama...">
 </div>
 <div class="form-group">
-<label data-=<label data-="date">Tarih</label>"noteOptional">Not (Opsiyonel)</label>
-<input type="date" id="transactionDate">
+  <label data-="date">Tarih</label>
+  <input type="date" id="transactionDate">
+</div>
+<div class="form-group">
+  <label data-="noteOptional">Not (Opsiyonel)</label>
+  <input type="text" id="transactionNote" data-i18n-placeholder="description" placeholder="Açıklama...">
 </div>
 <button class="submit-btn" onclick="saveTransaction()" data-="save">Save</button>
 </div>
@@ -6706,7 +6710,7 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
     }
   }
 
-  function translateDOM(lang){function translateDOM(lang){
+  function translateDOM(lang){
   try {
     document.documentElement.lang = lang === "en" ? "en" : "tr";
     
