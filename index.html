@@ -1506,7 +1506,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <header class="header">
 <div class="header-top">
 <div class="header-brand">
-<h1><i class="fas fa-wallet"></i> Bütçe Takip</h1>
+<h1><i class="fas fa-wallet"></i> <span data-i18n="appTitle">Bütçe Takip</span></h1>
 <span class="header-credit">made by ARIK</span>
 </div>
 <div class="header-actions">
@@ -1541,8 +1541,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 </div>
 <div class="auth-right">
 <button class="auth-btn" id="btnLogin" type="button"><i class="fab fa-google"></i> Google ile Giriş</button>
-<button class="auth-btn" id="btnLogout" type="button" style="display:none;"><i class="fas fa-sign-out-alt"></i> Çıkış</button>
-</div>
+<button class="auth-btn" id="btnLogout" type="button" style="display:none;"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Çıkış</span></button></div>
 </div>
 </header>
 <!-- App Lock Overlay (requires Google login for sync) -->
@@ -1652,18 +1651,20 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 
 <section class="section active" id="budget-section">
 <div class="section-title">
-<span>Gelir Kalemleri</span>
-<button class="add-btn" onclick="openCategoryModal('income')">
-<i class="fas fa-plus"></i> Ekle
-</button>
+<div class="section-title">
+  <span data-i18n="incomeItems">Gelir Kalemleri</span>
+  <button class="add-btn" onclick="openCategoryModal('income')">
+    <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
+  </button>
 </div>
 <div id="incomeBudgets"></div>
 
 <div class="section-title" style="margin-top: 24px;">
-<span>Gider Kalemleri</span>
-<button class="add-btn" onclick="openCategoryModal('expense')">
-<i class="fas fa-plus"></i> Ekle
-</button>
+<div class="section-title">
+  <span data-i18n="expenseItems">Gider Kalemleri</span>
+  <button class="add-btn" onclick="openCategoryModal('expense')">
+    <i class="fas fa-plus"></i> <span data-i18n="add">Ekle</span>
+  </button>
 </div>
 <div id="expenseBudgets"></div>
 </section>
@@ -1791,8 +1792,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <label>Tarih</label>
 <input type="date" id="transactionDate">
 </div>
-<button class="submit-btn<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Kaydet</button> onclick="saveTransaction()">Kaydet</button>
-</div>
+<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Kaydet</button></div>
 </div>
 
 <!-- Category Modal -->
@@ -1803,11 +1803,11 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
 </div>
 <div class="form-group">
-<label>Kategori Adı</label>
+<label data-i18n="categoryName">Kategori Adı</label>
 <input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
 </div>
 <div class="form-group">
-<label>Bütçe Para Birimi</label>
+<label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
 <div class="currency-toggle" id="categoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setCategoryCurrency('TRY')">₺ TRY</button>
@@ -1824,10 +1824,10 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="monthly-grid" id="monthlyBudgetGrid"></div>
 </div>
 <div class="form-group">
-<label>İkon</label>
+<label data-i18n="icon">İkon</label>
 <div class="icon-grid" id="iconGrid"></div>
 </div>
-<button class="submit-btn" onclick="saveCategory()">Kaydet</button>
+<button class="submit-btn" onclick="saveCategory()" data-i18n="save">Kaydet</button>
 </div>
 </div>
 
@@ -1839,11 +1839,11 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <button class="modal-close" onclick="closeModal('editBudgetModal')">×</button>
 </div>
 <div class="form-group">
-<label>Kategori Adı</label>
+<label data-i18n="categoryName">Kategori Adı</label>
 <input type="text" id="editCategoryName">
 </div>
 <div class="form-group">
-<label>Bütçe Para Birimi</label>
+<label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
 <div class="currency-toggle" id="editCategoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setEditCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setEditCategoryCurrency('TRY')">₺ TRY</button>
@@ -2160,6 +2160,16 @@ const I18N = {
     avg: 'Ort',
     balanceSnapshotInfo: 'Bu kayıt seçtiğin ayın snapshot\'ına işlenir. Geçmiş aylar değişmez.',
     amount: 'Tutar',
+    plannedIncome: 'Planlanan Gelir',
+    actualIncome: 'Gerçekleşen Gelir',
+    plannedExpense: 'Planlanan Gider',
+    actualExpense: 'Gerçekleşen Gider',
+    logout: 'Çıkış',
+    month: 'Ay',
+    incomeItems: 'Gelir Kalemleri',
+    expenseItems: 'Gider Kalemleri',
+    add: 'Ekle',
+    
   },
   en: {
     appTitle: 'Budget Tracker', budget: 'Budget', transactions: 'Transactions', balance: 'Balance',
@@ -2216,6 +2226,18 @@ const I18N = {
     avg: 'Avg',
     balanceSnapshotInfo: 'This record will be saved to the selected month\'s snapshot. Past months will not change.',
     amount: 'Amount',
+    plannedIncome: 'Planned Income',
+    actualIncome: 'Actual Income',
+    plannedExpense: 'Planned Expense',
+    actualExpense: 'Actual Expense',
+    logout: 'Logout',
+    month: 'Month',
+    netPlan: 'Net Plan',
+    netActual: 'Net Actual',
+    cumulative: 'Cumulative',
+    incomeItems: 'Income Items',
+    expenseItems: 'Expense Items',
+    add: 'Add',
 
   }
 };
@@ -2307,15 +2329,17 @@ if (cfTitle) cfTitle.textContent = '💰 ' + t('cashflowTitle');
 // Cashflow table headers
 const cfTable = document.getElementById('cashflowTable');
 if (cfTable){
-const th = cfTable.querySelectorAll('thead th');
-if (th && th.length>=5){
-th[0].textContent = (appSettings.lang==='en'?'Month':'Ay');
-th[1].textContent = (appSettings.lang==='en'?'Income Plan':'Gelir Plan');
-th[2].textContent = (appSettings.lang==='en'?'Income Actual':'Gelir Gerçek');
-th[3].textContent = (appSettings.lang==='en'?'Expense Plan':'Gider Plan');
-th[4].textContent = (appSettings.lang==='en'?'Expense Actual':'Gider Gerçek');
-if (th.length>5) th[5].textContent = (appSettings.lang==='en'?'Net':'Net');
-}
+  const th = cfTable.querySelectorAll('thead th');
+  if (th && th.length>=8){
+    th[0].textContent = t('month');
+    th[1].textContent = t('incomePlan');
+    th[2].textContent = t('incomeActual');
+    th[3].textContent = t('expensePlan');
+    th[4].textContent = t('expenseActual');
+    th[5].textContent = t('netPlan');
+    th[6].textContent = t('netActual');
+    th[7].textContent = t('cumulative');
+  }
 }
 
 // Generic labels used around summaries
@@ -2830,19 +2854,19 @@ container.innerHTML = `
 <div class="currency-symbol">$</div>
 <div class="currency-label">Dolar (USD)</div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan G:</span>
+<span>${t('plannedIncome')}:</span>
 <span>$${fmt(planByCurrency.USD.income)}</span>
 </div>
 <div class="currency-row income">
-<span>Gerç. G:</span>
+<span>${t('actualIncome')}:</span>
 <span>$${fmt(factByCurrency.USD.income)}</span>
 </div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan Gd:</span>
+<span>${t('plannedExpense')}:</span>
 <span>$${fmt(planByCurrency.USD.expense)}</span>
 </div>
 <div class="currency-row expense">
-<span>Gerç. Gd:</span>
+<span>${t('actualExpense')}:</span>
 <span>$${fmt(factByCurrency.USD.expense)}</span>
 </div>
 <div class="currency-row net ${netUSD >= 0 ? 'positive' : 'negative'}">
@@ -2854,19 +2878,19 @@ container.innerHTML = `
 <div class="currency-symbol">₺</div>
 <div class="currency-label">Türk Lirası (TRY)</div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan G:</span>
+<span>${t('plannedIncome')}:</span>
 <span>₺${fmt(planByCurrency.TRY.income)}</span>
 </div>
 <div class="currency-row income">
-<span>Gerç. G:</span>
+<span>${t('actualIncome')}:</span>
 <span>₺${fmt(factByCurrency.TRY.income)}</span>
 </div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan Gd:</span>
+<span>${t('plannedExpense')}:</span>
 <span>₺${fmt(planByCurrency.TRY.expense)}</span>
 </div>
 <div class="currency-row expense">
-<span>Gerç. Gd:</span>
+<span>${t('actualExpense')}:</span>
 <span>₺${fmt(factByCurrency.TRY.expense)}</span>
 </div>
 <div class="currency-row net ${netTRY >= 0 ? 'positive' : 'negative'}">
@@ -2878,19 +2902,19 @@ container.innerHTML = `
 <div class="currency-symbol">₽</div>
 <div class="currency-label">Ruble (RUB)</div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan G:</span>
+<span>${t('plannedIncome')}:</span>
 <span>₽${fmt(planByCurrency.RUB.income)}</span>
 </div>
 <div class="currency-row income">
-<span>Gerç. G:</span>
+<span>${t('actualIncome')}:</span>
 <span>₽${fmt(factByCurrency.RUB.income)}</span>
 </div>
 <div class="currency-row" style="color: var(--text-secondary);">
-<span>Plan Gd:</span>
+<span>${t('plannedExpense')}:</span>
 <span>₽${fmt(planByCurrency.RUB.expense)}</span>
 </div>
 <div class="currency-row expense">
-<span>Gerç. Gd:</span>
+<span>${t('actualExpense')}:</span>
 <span>₽${fmt(factByCurrency.RUB.expense)}</span>
 </div>
 <div class="currency-row net ${netRUB >= 0 ? 'positive' : 'negative'}">
@@ -3016,7 +3040,9 @@ summary.innerHTML = html;
 if (window.translateDOM) {
 window.translateDOM(appSettings.lang || 'tr');
 }
-
+// translateDOM'u çalıştır (dinamik içerikler için)
+if (window.translateDOM) window.translateDOM(appSettings.lang);
+  
 // Buradaki "}" updateCashflow/updateCashFlow fonksiyonunu kapatmak içindir.
 // Eğer zaten kapanmışsa bu satırı çıkarma; senin verdiğin akışta updateChart buradan sonra başlıyor.
 }
@@ -3846,7 +3872,7 @@ if (input) input.value = monthly.toFixed(2);
 
 function openCategoryModal(type) {
 currentCategoryType = type;
-document.getElementById('categoryModalTitle').textContent =
+document.getElementById('categoryModalTitle').textContent = t('newIncomeCategory');
   type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
 document.getElementById('categoryName').value = '';
 document.getElementById('categoryYearlyBudget').value = '';
@@ -5840,7 +5866,14 @@ function openBalanceItemModal(){
 balanceEditPtr = null;
 document.getElementById('balanceItemModalTitle').textContent = 'Yeni Bilanço Kalemi';
 const _bd = document.getElementById('balanceItemDate');
-if (_bd) { _bd.value = new Date().toISOString().slice(0,10); }
+if (_bd) { 
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  _bd.value = `${yyyy}-${mm}-${dd}`;
+}
+
 
 selectedBalanceCurrency = 'USD';
 setBalanceCurrency('USD');
@@ -5873,8 +5906,22 @@ sel.innerHTML = groups.map(g=>`<option value="${g.key}">${g.label}</option>`).jo
 
 
 async function saveBalanceItem(){
-const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
-const bm = ensureBalanceMonth(ym);
+  // Tarih kontrolü - boş veya geçersizse bugünü kullan
+  let _d = document.getElementById('balanceItemDate')?.value;
+  
+  // Tarih yoksa veya geçersizse bugünü kullan
+  if (!_d || !/^\d{4}-\d{2}-\d{2}$/.test(_d)) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    _d = `${yyyy}-${mm}-${dd}`;
+    // Input'u da güncelle
+    document.getElementById('balanceItemDate').value = _d;
+  }
+  
+  const ym = _d.slice(0,7);
+  const bm = ensureBalanceMonth(ym);
 
 const group = document.getElementById('balanceGroupSelect')?.value;
 const name = (document.getElementById('balanceItemName')?.value || '').trim();
@@ -6206,7 +6253,7 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 
 <div class="form-group">
-<label>Kategori Adı</label>
+<label data-i18n="categoryName">Kategori Adı</label>
 <input id="balanceItemName" type="text" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
 </div>
 
