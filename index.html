@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -2275,11 +2274,6 @@ try{ renderBalanceChart(); }catch(e){}
                     appSettings.lang = (appSettings.lang === 'tr') ? 'en' : 'tr';
                     saveAppSettings();
                     applyLanguage();
-            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
-                    // re-render dynamic sections in the new language
-                    try{ updateAll(); }catch(e){}
-                    // strict i18n overlay for remaining UI literals
-                    try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
                 });
             }
         }
@@ -4105,7 +4099,6 @@ function importData(event) {
                         saveAppSettings();
                         applyTheme();
                         applyLanguage();
-            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
                     }
 
                     saveData();
@@ -6045,7 +6038,6 @@ function renderBalanceChart(){
             wireHeaderToggles();
             applyTheme();
             applyLanguage();
-            try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
 
             const bM = document.getElementById('btnBalTrendMonthly');
             const bY = document.getElementById('btnBalTrendYearly');
@@ -6063,10 +6055,7 @@ function renderBalanceChart(){
                 const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
                 const fab = document.querySelector('.fab');
                 if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
-            
-                // strict i18n overlay after each render
-                try{ if (window.translateDOM) window.translateDOM(appSettings.lang); }catch(e){}
-}
+            }
         }
 
 </script>
@@ -6557,3 +6546,4 @@ window.translateDOM = translateDOM;
 </script>
 </body>
 </html>
+
