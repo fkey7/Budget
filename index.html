@@ -2383,6 +2383,9 @@ if (chartTitle) {
 if (window.translateDOM) window.translateDOM(appSettings.lang);
 
 try{ renderBalanceChart(); }catch(e){}
+  
+translateDOM(appSettings.lang);
+
 }
 
 function wireHeaderToggles(){
@@ -6530,19 +6533,30 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
     }
   }
 
-  function translateDOM(lang){
-    try{
+  function translateDOM(lang){function translateDOM(lang){
+  try {
     document.documentElement.lang = lang === "en" ? "en" : "tr";
     
     // 1. data-i18n attribute'lu elementleri çevir
-    const i18nElements = document.querySelectorAll('[data-i18n]');
-    i18nElements.forEach(el => {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       const translation = I18N[lang]?.[key];
       if (translation) {
         el.textContent = translation;
       }
     });
+    
+    // 2. data-i18n-placeholder attribute'lu elementleri çevir
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      const translation = I18N[lang]?.[key];
+      if (translation) {
+        el.placeholder = translation;
+      }
+    });
+    
+  } catch(e) { console.error('translateDOM error:', e); }
+}
 
       // Title
       const title = document.querySelector('title');
