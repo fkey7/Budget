@@ -2908,8 +2908,8 @@ html += '</div>';
 
 summary.innerHTML = html;
 
-if (typeof translateDOM === 'function') {
-    translateDOM(appSettings.lang || 'tr');
+if (window.translateDOM) {
+  window.translateDOM(appSettings.lang || 'tr');
 }
 
         function updateChart() {
