@@ -1758,7 +1758,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="category-select-grid" id="categorySelectGrid"></div>
 </div>
 <div class="form-group">
-<label>Para Birimi</label>
+<label data-i18n="currency">Para Birimi</label>
 <div class="currency-toggle" id="currencyToggle">
 <button class="currency-btn active" data-currency="USD" onclick="selectTransactionCurrency('USD')">$ USD</button>
 <button class="currency-btn" data-currency="TRY" onclick="selectTransactionCurrency('TRY')">₺ TRY</button>
@@ -1780,7 +1780,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="rates-display" id="currentRates"></div>
 </div>
 <div class="form-group">
-<label>Tutar</label>
+<label data-i18n="amount">Tutar</label>
 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
 </div>
 <div class="form-group">
@@ -1791,7 +1791,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <label>Tarih</label>
 <input type="date" id="transactionDate">
 </div>
-<button class="submit-btn" onclick="saveTransaction()">Kaydet</button>
+<button class="submit-btn<button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Kaydet</button> onclick="saveTransaction()">Kaydet</button>
 </div>
 </div>
 
@@ -2157,6 +2157,9 @@ const I18N = {
     newExpenseCategory: 'Yeni Gider Kalemi',
     newTransaction: 'Yeni İşlem',
     editBudget: 'Bütçe Düzenle',
+    avg: 'Ort',
+    balanceSnapshotInfo: 'Bu kayıt seçtiğin ayın snapshot\'ına işlenir. Geçmiş aylar değişmez.',
+    amount: 'Tutar',
   },
   en: {
     appTitle: 'Budget Tracker', budget: 'Budget', transactions: 'Transactions', balance: 'Balance',
@@ -2210,6 +2213,10 @@ const I18N = {
     newExpenseCategory: 'New Expense Category',
     newTransaction: 'New Transaction',
     editBudget: 'Edit Budget',
+    avg: 'Avg',
+    balanceSnapshotInfo: 'This record will be saved to the selected month\'s snapshot. Past months will not change.',
+    amount: 'Amount',
+
   }
 };
 
@@ -2980,7 +2987,7 @@ const projectedSavings = totalNetActual + (remainingMonths * monthlySavingsPlan)
 
 var html = '';
 html += '<div class="cashflow-card savings">';
-html += '<div class="cashflow-card-title">📈 Yıllık Tasarruf Planı</div>';
+html += `<div class="cashflow-card-title">📈 ${t('annualSavingsPlan')}</div>`;
 html += '<div class="cashflow-card-value">' + (yearlySavingsPlan >= 0 ? '+' : '') + '$' + yearlySavingsPlan.toFixed(0) + '</div>';
 html += '<div class="cashflow-card-sub">₺' + (yearlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
 html += '</div>';
@@ -3545,6 +3552,7 @@ document.getElementById('transactionModal').classList.add('active');
 document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
 document.getElementById('transactionAmount').value = '';
 document.getElementById('transactionNote').value = '';
+document.getElementById('transactionModalTitle').textContent = t('newTransaction');
 selectedCategoryId = null;
 selectedCurrency = 'USD';
 setTransactionType('income');
@@ -3856,14 +3864,20 @@ updateCategoryCurrencyUI();
 }
 
 function updateCategoryCurrencyUI() {
-const symbol = currencySymbols[selectedCategoryCurrency];
-document.getElementById('yearlyBudgetLabel').textContent = `Yıllık Bütçe (${symbol})`;
+  const symbol = currencySymbols[selectedCategoryCurrency];
+  document.getElementById('yearlyBudgetLabel').textContent = `${t('yearlyBudget')} (${symbol})`;
 
 // Update monthly budget label (keep button)
 const monthlyLabel = document.getElementById('monthlyBudgetLabel');
-const btn = monthlyLabel.querySelector('button');
-monthlyLabel.innerHTML = `Aylık Bütçeler (${symbol}) `;
-monthlyLabel.appendChild(btn);
+  const btn = monthlyLabel.querySelector('button');
+  monthlyLabel.innerHTML = `${t('monthlyBudgets')} (${symbol}) `;
+  if (btn) {
+    btn.textContent = t('distributeEvenly');
+    monthlyLabel.appendChild(btn);
+  }
+  
+  const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+  const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
 // Update currency buttons
 document.querySelectorAll('#categoryCurrencyToggle .currency-btn').forEach(btn => {
@@ -3879,9 +3893,9 @@ const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
 document.getElementById('categoryRatesDisplay').innerHTML = `
-<span class="rate-chip">Ort: 1$ = ${avgTryRate.toFixed(2)}₺</span>
-<span class="rate-chip">Ort: 1$ = ${avgRubRate.toFixed(2)}₽</span>
-`;
+    <span class="rate-chip">${t('avg') || 'Avg'}: 1$ = ${avgTryRate.toFixed(2)}₺</span>
+    <span class="rate-chip">${t('avg') || 'Avg'}: 1$ = ${avgRubRate.toFixed(2)}₽</span>
+  `;
 }
 
 function renderIconGrid() {
@@ -6170,12 +6184,12 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 
 <div class="form-group">
-<label>Tarih</label>
-<input type="date" id="balanceItemDate" value="2026-02-19">
+ <label data-i18n="date">Tarih</label>
+  <input type="date" id="transactionDate">
 </div>
 
 <div class="form-group">
-<label>Tip</label>
+<label data-i18n="type">Tip</label>
 <div class="type-toggle">
 <button id="balTypeAsset" class="type-btn income active" onclick="setBalanceType('asset')">
 <i class="fas fa-gem"></i> Varlık
@@ -6187,7 +6201,7 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 
 <div class="form-group">
-<label>Grup</label>
+<label data-i18n="group">Grup</label>
 <select id="balanceGroupSelect" class="select"></select>
 </div>
 
@@ -6197,14 +6211,14 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 
 <div class="form-group">
-<label>Tutar</label>
+<label data-i18n="amount">Tutar</label>
 <input id="balanceItemAmount" type="number" inputmode="decimal" step="0.01" placeholder="Örn: 10000" oninput="updateBalanceUsdPreview()">
 <div class="muted" id="balRateHint" style="margin-top:8px; display:none;"></div>
 <div class="muted" id="balUsdEq" style="margin-top:6px;"></div>
 </div>
 
 <div class="form-group">
-<label>Para Birimi</label>
+<label data-i18n="currency">Para Birimi</label>
 <div class="currency-toggle" id="balanceCurrencyToggle">
 <button id="balCurUSD" class="currency-btn active" onclick="setBalanceCurrency('USD')">$ USD</button>
 <button id="balCurTRY" class="currency-btn" onclick="setBalanceCurrency('TRY')">₺ TRY</button>
@@ -6212,10 +6226,11 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 </div>
 
-<button class="submit-btn" onclick="saveBalanceItem()">Kaydet</button>
+<button class="submit-btn" onclick="saveBalanceItem()" data-i18n="save">Kaydet</button>
 
-<div class="muted" style="margin-top:10px; font-size:12px;">
-Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.
+<div class="muted" style="margin-top:10px; font-size:12px;" data-i18n="balanceSnapshotInfo">
+  Bu kayıt seçtiğin ayın snapshot'ına işlenir. Geçmiş aylar değişmez.
+</div>
 </div>
 </div>
 </div>
@@ -6469,8 +6484,17 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
 
   function translateDOM(lang){
     try{
-      const L = (lang === 'en') ? 'en' : 'tr';
-      document.documentElement.lang = L;
+    document.documentElement.lang = lang === "en" ? "en" : "tr";
+    
+    // 1. data-i18n attribute'lu elementleri çevir
+    const i18nElements = document.querySelectorAll('[data-i18n]');
+    i18nElements.forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = I18N[lang]?.[key];
+      if (translation) {
+        el.textContent = translation;
+      }
+    });
 
       // Title
       const title = document.querySelector('title');
