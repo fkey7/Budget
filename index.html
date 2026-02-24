@@ -2257,6 +2257,16 @@
             });
 
 try{ renderBalanceChart(); }catch(e){}
+            // ✅ month arrays must follow active language
+try{
+  const L = (I18N[appSettings.lang || 'tr'] || I18N.tr);
+  if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort;
+  if (Array.isArray(L.monthsFull))  monthNamesFull = L.monthsFull;
+
+  // month selector text refresh
+  const md = document.getElementById('monthDisplay');
+  if (md) md.textContent = monthNamesFull[currentMonth];
+}catch(e){}
         }
 
         function wireHeaderToggles(){
@@ -6127,9 +6137,8 @@ function renderBalanceChart(){
    Goal: EN mode => no Turkish UI strings; TR mode => no English UI strings.
    Safe approach: do NOT touch business logic. Only translate known UI literals.
 */
-(function(){
-  const MONTHS_TR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-  const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+(function(){const MONTHS_TR_SHORT = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   const trToEn = {
     "Bütçe Takip":"Budget Tracker",
@@ -6186,11 +6195,13 @@ function renderBalanceChart(){
     "Kümülatif":"Cumulative",
     "Toplam":"Total",
 
-    "Yıllık Tasarruf Planı":"Annual Savings Plan",
-    "Gerçekleşen Tasarruf":"Actual Savings",
-    "Aylık Tasarruf Hedefi":"Monthly Savings Target",
-    "Ay Sonu Tasarruf Hedefi":"Monthly Savings Target",
-    "Yıl Sonu Tahmini":"Year-End Forecast",
+    "📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
+"💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
+"🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
+"🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
+
+"Actual Tasarruf":"Actual Savings",
+"Tasarruf":"Savings",
 
     "Aylık Bütçe vs Gerçekleşen":"Monthly Budget vs Actual",
     "Kategori Dağılımı":"Category Distribution",
@@ -6331,14 +6342,31 @@ function renderBalanceChart(){
       }
     }
 
-    // month names inside strings (rare)
-    for(let i=0;i<12;i++){
-      if(lang==="en"){
-        out = out.replace(new RegExp("\\b"+MONTHS_TR[i]+"\\b","g"), MONTHS_EN[i]);
-      } else {
-        out = out.replace(new RegExp("\\b"+MONTHS_EN[i]+"\\b","g"), MONTHS_TR[i]);
-      }
-    }
+      // month names inside strings (full + short, Unicode-safe, no lookbehind)
+function _escRE(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+function _replaceWord(out, from, to){
+  const re = new RegExp(`(^|[^\\p{L}])(${_escRE(from)})(?=[^\\p{L}]|$)`, "gu");
+  return out.replace(re, `$1${to}`);
+}
+
+// full months
+for(let i=0;i<12;i++){
+  if(lang==="en"){
+    out = _replaceWord(out, MONTHS_TR[i], MONTHS_EN[i]);
+  } else {
+    out = _replaceWord(out, MONTHS_EN[i], MONTHS_TR[i]);
+  }
+}
+
+// short months
+for(let i=0;i<12;i++){
+  if(lang==="en"){
+    out = _replaceWord(out, MONTHS_TR_SHORT[i], MONTHS_EN_SHORT[i]);
+  } else {
+    out = _replaceWord(out, MONTHS_EN_SHORT[i], MONTHS_TR_SHORT[i]);
+  }
+}
 
     if(out !== v) node.nodeValue = out;
   }
