@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -5737,23 +5738,18 @@ function updateAll() {
         });
     });
     
-    // KESİN ÇÖZÜM - Interval ile sürekli kontrol (3 saniye boyunca)
-    let fixCount = 0;
-    const fixInterval = setInterval(() => {
+    // KESİN ÇÖZÜM - En son çalışır, her şeyi ezer
+    setTimeout(() => {
         const isEn2 = appSettings.lang === 'en';
-        if (!isEn2) {
-            clearInterval(fixInterval);
-            return;
-        }
+        if (!isEn2) return;
         
-        // Cash Flow tablosu başlıkları
+        // Cash Flow tablosu başlıkları - tekrar kontrol
         const cfTable2 = document.getElementById('cashflowTable');
         if (cfTable2) {
             const headers = cfTable2.querySelectorAll('thead th');
             if (headers.length >= 8) {
-                // Direkt I harfi kullanarak ata
-                headers[6].innerHTML = 'Net Actual';
-                headers[7].innerHTML = 'Cumulative';
+                headers[6].textContent = 'Net Actual';
+                headers[7].textContent = 'Cumulative';
             }
         }
         
@@ -5762,99 +5758,26 @@ function updateAll() {
             const label = card.querySelector('.label');
             if (label) {
                 const txt = label.textContent;
-                // Türkçe İ harfi içeren versiyonu da kontrol et
-                if (txt.indexOf('NET POSİTİON') !== -1 || txt.indexOf('NET POSITION') !== -1) {
-                    label.innerHTML = 'Net Position (Actual)';
+                if (txt.toLowerCase().includes('net') && txt.toLowerCase().includes('position')) {
+                    label.textContent = 'Net Position (Actual)';
                 }
             }
         });
         
-        // Budget item labelleri
+        // Budget item labelleri - son kontrol
         document.querySelectorAll('.stat-label').forEach(el => {
-            const txt = el.textContent.trim();
-            // Büyük harfli versiyonları da kontrol et
-            if (txt === 'ACTUAL' || txt === 'GERÇEKLEŞEN' || txt === 'GERCEKLESEN') {
-                el.innerHTML = 'Actual';
+            const txt = el.textContent.trim().toLowerCase();
+            if (txt === 'actual' || txt === 'gerçekleşen' || txt === 'gerçeklesen') {
+                el.textContent = 'Actual';
             }
-            if (txt === 'PLAN' || txt === 'PLANLANAN' || txt === 'AYLIK PLAN' || txt === 'YILLIK PLAN') {
-                el.innerHTML = 'Plan';
+            if (txt === 'plan' || txt === 'planlanan' || txt === 'monthly plan' || txt === 'yearly plan') {
+                el.textContent = 'Plan';
             }
-            if (txt === 'DIFFERENCE' || txt === 'FARK') {
-                el.innerHTML = 'Difference';
+            if (txt === 'difference' || txt === 'fark') {
+                el.textContent = 'Difference';
             }
         });
         
-        // Tüm text node'ları tara (en derin çözüm)
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-        let node;
-        while (node = walker.nextNode()) {
-            const val = node.nodeValue;
-            if (!val) continue;
-            
-            // Türkçe İ harfini I yap
-            if (val.indexOf('İ') !== -1) {
-                node.nodeValue = val.replace(/İ/g, 'I');
-            }
-            // CUMULATİVE -> Cumulative
-            if (val === 'CUMULATİVE' || val === 'CUMULATIVE') {
-                node.nodeValue = 'Cumulative';
-            }
-            // NET POSİTİON -> Net Position
-            if (val === 'NET POSİTİON (ACTUAL)' || val === 'NET POSITION (ACTUAL)') {
-                node.nodeValue = 'Net Position (Actual)';
-            }
-            // DIFFERENCE -> Difference
-            if (val === 'DIFFERENCE') {
-                node.nodeValue = 'Difference';
-            }
-            // ACTUAL -> Actual
-            if (val === 'ACTUAL' || val === 'ACTUAL:') {
-                node.nodeValue = val === 'ACTUAL:' ? 'Actual:' : 'Actual';
-            }
-              // EN KESİN ÇÖZÜM - Net Position için
-    setTimeout(function() {
-        var isEn = appSettings.lang === 'en';
-        if (!isEn) return;
-        
-        // 1. Summary card label
-        var summaryCards = document.querySelectorAll('.summary-card.full, .summary-card');
-        for (var i = 0; i < summaryCards.length; i++) {
-            var label = summaryCards[i].querySelector('.label');
-            if (label) {
-                var txt = label.textContent;
-                if (txt.indexOf('İ') !== -1 || txt.indexOf('NET POS') !== -1 || txt === 'NET POSITION (ACTUAL)' || txt === 'Net Position (Actual)'.toUpperCase()) {
-                    label.innerHTML = 'Net Position (Actual)';
-                }
-            }
-        }
-        
-        // 2. Tüm text node'ları tara
-        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-        var node;
-        while (node = walker.nextNode()) {
-            var val = node.nodeValue;
-            if (!val) continue;
-            
-            // Net Position düzelt
-            if (val.indexOf('Net Position') !== -1 && val.indexOf('İ') !== -1) {
-                node.nodeValue = val.replace(/İ/g, 'I');
-            }
-            if (val === 'NET POSİTİON (ACTUAL)' || val === 'NET POSITION (ACTUAL)' || val === 'NET POSITION') {
-                node.nodeValue = 'Net Position (Actual)';
-            }
-        }
-        
-        // 3. InnerHTML düzelt
-        document.body.innerHTML = document.body.innerHTML.replace(/NET POSİTİON/g, 'Net Position').replace(/\(ACTUAL\)/g, '(Actual)');
-        
-    }, 100);
-}
-        }
-        
-        fixCount++;
-        if (fixCount >= 10) { // 10 x 100ms = 1 saniye sonra dur
-            clearInterval(fixInterval);
-        }
     }, 100);
 }
 // ==================== INIT ====================
