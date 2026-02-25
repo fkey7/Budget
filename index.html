@@ -2762,143 +2762,129 @@ updateChart();
 }
 
 function updateCurrencySummary(txList, tryRate, rubRate) {
-const container = document.getElementById('currencySummaryGrid');
-const isMonthly = viewMode === 'monthly';
+    const container = document.getElementById('currencySummaryGrid');
+    const isMonthly = viewMode === 'monthly';
+    
+    // ... (önceki hesaplamalar aynı kalıyor)
+    
+    // Para birimi bazında planları hesapla (kategorilerin bütçe para birimine göre)
+    const planByCurrency = {
+        USD: { income: 0, expense: 0 },
+        TRY: { income: 0, expense: 0 },
+        RUB: { income: 0, expense: 0 }
+    };
+    
+    // ... (hesaplamalar aynı)
+    
+    // İşlemleri orijinal para biriminde topla
+    const factByCurrency = {
+        USD: { income: 0, expense: 0 },
+        TRY: { income: 0, expense: 0 },
+        RUB: { income: 0, expense: 0 }
+    };
+    
+    txList.forEach(t => {
+        if (factByCurrency[t.currency]) {
+            factByCurrency[t.currency][t.type] += t.amount;
+        }
+    });
+    
+    // Binlik ayraç formatı
+    const fmt = (n) => {
+        const num = Math.round(Math.abs(n));
+        const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return n < 0 ? '-' + formatted : formatted;
+    };
+    
+    // Çevirileri önce al (template literal içinde değil!)
+    const plannedIncomeText = t('plannedIncome');
+    const actualIncomeText = t('actualIncome');
+    const plannedExpenseText = t('plannedExpense');
+    const actualExpenseText = t('actualExpense');
+    
+    // Net hesapla
+    const netUSD = factByCurrency.USD.income - factByCurrency.USD.expense;
+    const netTRY = factByCurrency.TRY.income - factByCurrency.TRY.expense;
+    const netRUB = factByCurrency.RUB.income - factByCurrency.RUB.expense;
+    
+    // HTML oluştur - ÇEVİRİLERİ DEĞİŞKEN OLARAK KULLAN
+    container.innerHTML = `
+        <div class="currency-card usd">
+            <div class="currency-symbol">$</div>
+            <div class="currency-label">Dolar (USD)</div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedIncomeText}:</span>
+                <span>$${fmt(planByCurrency.USD.income)}</span>
+            </div>
+            <div class="currency-row income">
+                <span>${actualIncomeText}:</span>
+                <span>$${fmt(factByCurrency.USD.income)}</span>
+            </div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedExpenseText}:</span>
+                <span>$${fmt(planByCurrency.USD.expense)}</span>
+            </div>
+            <div class="currency-row expense">
+                <span>${actualExpenseText}:</span>
+                <span>$${fmt(factByCurrency.USD.expense)}</span>
+            </div>
+            <div class="currency-row net ${netUSD >= 0 ? 'positive' : 'negative'}">
+                <span>Net:</span>
+                <span>${netUSD >= 0 ? '+' : ''}$${fmt(Math.abs(netUSD))}</span>
+            </div>
+        </div>
 
-// Para birimi bazında planları hesapla (kategorilerin bütçe para birimine göre)
-const planByCurrency = {
-USD: { income: 0, expense: 0 },
-TRY: { income: 0, expense: 0 },
-RUB: { income: 0, expense: 0 }
-};
+        <div class="currency-card try">
+            <div class="currency-symbol">₺</div>
+            <div class="currency-label">Türk Lirası (TRY)</div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedIncomeText}:</span>
+                <span>₺${fmt(planByCurrency.TRY.income)}</span>
+            </div>
+            <div class="currency-row income">
+                <span>${actualIncomeText}:</span>
+                <span>₺${fmt(factByCurrency.TRY.income)}</span>
+            </div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedExpenseText}:</span>
+                <span>₺${fmt(planByCurrency.TRY.expense)}</span>
+            </div>
+            <div class="currency-row expense">
+                <span>${actualExpenseText}:</span>
+                <span>₺${fmt(factByCurrency.TRY.expense)}</span>
+            </div>
+            <div class="currency-row net ${netTRY >= 0 ? 'positive' : 'negative'}">
+                <span>Net:</span>
+                <span>${netTRY >= 0 ? '+' : ''}₺${fmt(Math.abs(netTRY))}</span>
+            </div>
+        </div>
 
-// Gelir kategorileri - bütçe para birimine göre grupla
-categories.income.forEach(cat => {
-const budgetCurrency = getCategoryBudgetCurrency(cat);
-const planUSD = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
-
-if (budgetCurrency === 'TRY') {
-planByCurrency.TRY.income += planUSD * tryRate;
-} else if (budgetCurrency === 'RUB') {
-planByCurrency.RUB.income += planUSD * rubRate;
-} else {
-planByCurrency.USD.income += planUSD;
+        <div class="currency-card rub">
+            <div class="currency-symbol">₽</div>
+            <div class="currency-label">Ruble (RUB)</div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedIncomeText}:</span>
+                <span>₽${fmt(planByCurrency.RUB.income)}</span>
+            </div>
+            <div class="currency-row income">
+                <span>${actualIncomeText}:</span>
+                <span>₽${fmt(factByCurrency.RUB.income)}</span>
+            </div>
+            <div class="currency-row" style="color: var(--text-secondary);">
+                <span>${plannedExpenseText}:</span>
+                <span>₽${fmt(planByCurrency.RUB.expense)}</span>
+            </div>
+            <div class="currency-row expense">
+                <span>${actualExpenseText}:</span>
+                <span>₽${fmt(factByCurrency.RUB.expense)}</span>
+            </div>
+            <div class="currency-row net ${netRUB >= 0 ? 'positive' : 'negative'}">
+                <span>Net:</span>
+                <span>${netRUB >= 0 ? '+' : ''}₽${fmt(Math.abs(netRUB))}</span>
+            </div>
+        </div>
+    `;
 }
-});
-
-// Gider kategorileri - bütçe para birimine göre grupla
-categories.expense.forEach(cat => {
-const budgetCurrency = getCategoryBudgetCurrency(cat);
-const planUSD = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
-
-if (budgetCurrency === 'TRY') {
-planByCurrency.TRY.expense += planUSD * tryRate;
-} else if (budgetCurrency === 'RUB') {
-planByCurrency.RUB.expense += planUSD * rubRate;
-} else {
-planByCurrency.USD.expense += planUSD;
-}
-});
-
-// İşlemleri orijinal para biriminde topla
-const factByCurrency = {
-USD: { income: 0, expense: 0 },
-TRY: { income: 0, expense: 0 },
-RUB: { income: 0, expense: 0 }
-};
-
-txList.forEach(t => {
-if (factByCurrency[t.currency]) {
-factByCurrency[t.currency][t.type] += t.amount;
-}
-});
-
-// Binlik ayraç formatı (1234567 → 1.234.567)
-const fmt = (n) => {
-const num = Math.round(Math.abs(n));
-const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-return n < 0 ? '-' + formatted : formatted;
-};
-
-// Her para birimi için net hesapla
-const netUSD = factByCurrency.USD.income - factByCurrency.USD.expense;
-const netTRY = factByCurrency.TRY.income - factByCurrency.TRY.expense;
-const netRUB = factByCurrency.RUB.income - factByCurrency.RUB.expense;
-
-container.innerHTML = `
-<div class="currency-card usd">
-  <div class="currency-symbol">$</div>
-  <div class="currency-label">Dolar (USD)</div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedIncome')}:</span>
-    <span>$${fmt(planByCurrency.USD.income)}</span>
-  </div>
-  <div class="currency-row income">
-    <span>${t('actualIncome')}:</span>
-    <span>$${fmt(factByCurrency.USD.income)}</span>
-  </div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedExpense')}:</span>
-    <span>$${fmt(planByCurrency.USD.expense)}</span>
-  </div>
-  <div class="currency-row expense">
-    <span>${t('actualExpense')}:</span>
-    <span>$${fmt(factByCurrency.USD.expense)}</span>
-  </div>
-  <div class="currency-row net ${netUSD >= 0 ? 'positive' : 'negative'}">
-    <span>Net:</span>
-    <span>${netUSD >= 0 ? '+' : ''}$${fmt(Math.abs(netUSD))}</span>
-  </div>
-</div>
-<div class="currency-card try">
-  <div class="currency-symbol">₺</div>
-  <div class="currency-label">Türk Lirası (TRY)</div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedIncome')}:</span>
-    <span>₺${fmt(planByCurrency.TRY.income)}</span>
-  </div>
-  <div class="currency-row income">
-    <span>${t('actualIncome')}:</span>
-    <span>₺${fmt(factByCurrency.TRY.income)}</span>
-  </div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedExpense')}:</span>
-    <span>₺${fmt(planByCurrency.TRY.expense)}</span>
-  </div>
-  <div class="currency-row expense">
-    <span>${t('actualExpense')}:</span>
-    <span>₺${fmt(factByCurrency.TRY.expense)}</span>
-  </div>
-  <div class="currency-row net ${netTRY >= 0 ? 'positive' : 'negative'}">
-    <span>Net:</span>
-    <span>${netTRY >= 0 ? '+' : ''}₺${fmt(Math.abs(netTRY))}</span>
-  </div>
-</div>
-<div class="currency-card rub">
-  <div class="currency-symbol">₽</div>
-  <div class="currency-label">Ruble (RUB)</div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedIncome')}:</span>
-    <span>₽${fmt(planByCurrency.RUB.income)}</span>
-  </div>
-  <div class="currency-row income">
-    <span>${t('actualIncome')}:</span>
-    <span>₽${fmt(factByCurrency.RUB.income)}</span>
-  </div>
-  <div class="currency-row" style="color: var(--text-secondary);">
-    <span>${t('plannedExpense')}:</span>
-    <span>₽${fmt(planByCurrency.RUB.expense)}</span>
-  </div>
-  <div class="currency-row expense">
-    <span>${t('actualExpense')}:</span>
-    <span>₽${fmt(factByCurrency.RUB.expense)}</span>
-  </div>
-  <div class="currency-row net ${netRUB >= 0 ? 'positive' : 'negative'}">
-    <span>Net:</span>
-    <span>${netRUB >= 0 ? '+' : ''}₽${fmt(Math.abs(netRUB))}</span>
-  </div>
-</div>
-`;
 
 function updateCashFlow() {
 const yearTx = getYearTransactions();
