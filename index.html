@@ -1806,7 +1806,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
 </div>
 <div class="form-group">
-<label>Bütçe Para Birimi</label>
+    <label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
 <div class="currency-toggle" id="categoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setCategoryCurrency('TRY')">₺ TRY</button>
@@ -1823,10 +1823,10 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="monthly-grid" id="monthlyBudgetGrid"></div>
 </div>
 <div class="form-group">
-<label>İkon</label>
+    <label data-i18n="icon">İkon</label>
 <div class="icon-grid" id="iconGrid"></div>
 </div>
-<button class="submit-btn" onclick="saveCategory()">Kaydet</button>
+<button class="submit-btn" onclick="saveCategory()" data-i18n="save">Kaydet</button>
 </div>
 </div>
 
@@ -2173,6 +2173,11 @@ gelirPlan: 'Gelir Plan',
 gelirGerç: 'Gelir Gerçek.',
 giderPlan: 'Gider Plan',
 giderGerç: 'Gider Gerçek.'
+categoryName: 'Kategori Adı',
+categoryNamePlaceholder: 'Örn: Maaş, Kira...',
+budgetCurrency: 'Bütçe Para Birimi',
+icon: 'İkon',
+save: 'Kaydet',
 },
 en: {
 appTitle: 'Budget Tracker',
@@ -2320,6 +2325,11 @@ gelirPlan: 'Income Plan',
 gelirGerç: 'Income Actual',
 giderPlan: 'Expense Plan',
 giderGerç: 'Expense Actual'
+categoryName: 'Category Name',
+categoryNamePlaceholder: 'e.g., Salary, Rent...',
+budgetCurrency: 'Budget Currency',
+icon: 'Icon',
+save: 'Save',
 }
 };
 function t(key){
@@ -3919,17 +3929,22 @@ if (input) input.value = monthly.toFixed(2);
 }
 
 function openCategoryModal(type) {
-currentCategoryType = type;
-document.getElementById('categoryModalTitle').textContent =
-type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
-document.getElementById('categoryName').value = '';
-document.getElementById('categoryYearlyBudget').value = '';
-selectedIcon = 'fa-tag';
-selectedCategoryCurrency = 'USD';
-updateCategoryCurrencyUI();
-renderMonthlyBudgetGrid('monthlyBudgetGrid');
-renderIconGrid();
-document.getElementById('categoryModal').classList.add('active');
+    currentCategoryType = type;
+    document.getElementById('categoryModalTitle').textContent =
+        type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryYearlyBudget').value = '';
+    selectedIcon = 'fa-tag';
+    selectedCategoryCurrency = 'USD';
+    
+    // Input placeholder'ları güncelle
+    const nameInput = document.getElementById('categoryName');
+    if (nameInput) nameInput.placeholder = t('categoryNamePlaceholder');
+    
+    updateCategoryCurrencyUI();
+    renderMonthlyBudgetGrid('monthlyBudgetGrid');
+    renderIconGrid();
+    document.getElementById('categoryModal').classList.add('active');
 }
 
 function setCategoryCurrency(currency) {
@@ -3987,11 +4002,11 @@ renderIconGrid();
 }
 
 function saveCategory() {
-const name = document.getElementById('categoryName').value.trim();
-let yearlyBudget = parseFloat(document.getElementById('categoryYearlyBudget').value) || 0;
-let monthlyBudgets = getMonthlyBudgets('monthlyBudgetGrid');
+    const name = document.getElementById('categoryName').value.trim();
+    let yearlyBudget = parseFloat(document.getElementById('categoryYearlyBudget').value) || 0;
+    let monthlyBudgets = getMonthlyBudgets('monthlyBudgetGrid');
 
-if (!name) { showToast('İsim girin'); return; }
+    if (!name) { showToast(t('categoryName') + ' ' + (appSettings.lang === 'en' ? 'required' : 'gerekli')); return; }
 
 // Convert to USD if entered in different currency
 if (selectedCategoryCurrency !== 'USD') {
@@ -6408,8 +6423,8 @@ if (fab) fab.style.display = (activeTab === 'transactions') ? '' : 'none';
 </div>
 
 <div class="form-group">
-<label>Kategori Adı</label>
-<input id="balanceItemName" type="text" placeholder="Örn: Akbank / İş Bankası / Ahmet / Akbank Ev Kredisi">
+    <label data-i18n="categoryName">Kategori Adı</label>
+    <input type="text" id="categoryName" placeholder="Örn: Maaş, Kira…" data-i18n-placeholder="categoryNamePlaceholder">
 </div>
 
 <div class="form-group">
