@@ -2391,7 +2391,8 @@ function applyLanguage(){
     }
     
     document.querySelectorAll('.chip.all').forEach(x=>{
-        if (x.textContent.trim().toLowerCase()==='tümü' || x.textContent.trim().toLowerCase()==='all'){
+        const txt = x.textContent.trim().toLowerCase();
+        if (txt==='tümü' || txt==='all'){
             x.textContent = (appSettings.lang==='en'?'All':'Tümü');
         }
     });
@@ -2415,7 +2416,7 @@ function applyLanguage(){
     const chartTitle = document.querySelector('.chart-title');
     if (chartTitle) {
         chartTitle.textContent = viewMode === 'monthly'
-            ? `${monthNamesFull[currentMonth]} - ${t('categoryDistribution')}`
+            ? monthNamesFull[currentMonth] + ' - ' + t('categoryDistribution')
             : t('monthlyBudgetVsActual');
     }
     
@@ -3369,15 +3370,13 @@ function renderBudgets() {
     const isEn = appSettings.lang === 'en';
     
     ['income', 'expense'].forEach(type => {
-        const container = document.getElementById(`${type}Budgets`);
+        const container = document.getElementById(type + 'Budgets');
         const cats = categories[type];
         if (cats.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-folder-plus"></i>
-                    <p>${isEn ? (type === 'income' ? 'Add income items' : 'Add expense items') : (type === 'income' ? 'Gelir kalemi ekleyin' : 'Gider kalemi ekleyin')}</p>
-                </div>
-            `;
+            const emptyMsg = isEn 
+                ? (type === 'income' ? 'Add income items' : 'Add expense items')
+                : (type === 'income' ? 'Gelir kalemi ekleyin' : 'Gider kalemi ekleyin');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-plus"></i><p>' + emptyMsg + '</p></div>';
             return;
         }
         
@@ -3389,7 +3388,8 @@ function renderBudgets() {
             ? getRateForMonth('RUB', currentMonth)
             : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
         
-        container.innerHTML = cats.map(cat => {
+        let html = '';
+        cats.forEach(cat => {
             const plan = isMonthly
                 ? getCategoryMonthlyPlan(cat, currentMonth)
                 : getCategoryYearlyPlan(cat);
@@ -3411,11 +3411,11 @@ function renderBudgets() {
             
             let originalCurrencyHtml = '';
             const parts = [];
-            if (factByCurrency.USD > 0) parts.push(`$${factByCurrency.USD.toFixed(0)}`);
-            if (factByCurrency.TRY > 0) parts.push(`₺${factByCurrency.TRY.toFixed(0)}`);
-            if (factByCurrency.RUB > 0) parts.push(`₽${factByCurrency.RUB.toFixed(0)}`);
+            if (factByCurrency.USD > 0) parts.push('$' + factByCurrency.USD.toFixed(0));
+            if (factByCurrency.TRY > 0) parts.push('₺' + factByCurrency.TRY.toFixed(0));
+            if (factByCurrency.RUB > 0) parts.push('₽' + factByCurrency.RUB.toFixed(0));
             if (parts.length > 0) {
-                originalCurrencyHtml = `<div class="original-currency">📌 ${parts.join(' + ')}</div>`;
+                originalCurrencyHtml = '<div class="original-currency">📌 ' + parts.join(' + ') + '</div>';
             }
             
             let planOriginalHtml = '';
@@ -3433,7 +3433,7 @@ function renderBudgets() {
                     }
                 }
                 const symbol = currencySymbols[budgetCurrency];
-                planOriginalHtml = `<div class="original-currency">📌 ${symbol}${planInOriginal.toFixed(0)}</div>`;
+                planOriginalHtml = '<div class="original-currency">📌 ' + symbol + planInOriginal.toFixed(0) + '</div>';
             }
             
             let barClass = type === 'expense'
@@ -3443,7 +3443,9 @@ function renderBudgets() {
             const planLabel = isMonthly ? (isEn ? 'Monthly Plan' : 'Aylık Plan') : (isEn ? 'Yearly Plan' : 'Yıllık Plan');
             const actualLabel = isEn ? 'Actual' : 'Gerçekleşen';
             const diffLabel = isEn ? 'Difference' : 'Fark';
-            const subtitle = isEn ? `${txList.length} transaction${txList.length !== 1 ? 's' : ''}` : `${txList.length} işlem`;
+            const subtitle = isEn 
+                ? txList.length + ' transaction' + (txList.length !== 1 ? 's' : '')
+                : txList.length + ' işlem';
             
             let dailySection = '';
             if (isMonthly && type === 'expense' && plan > 0 && cat.dailyTracking) {
@@ -3472,84 +3474,52 @@ function renderBudgets() {
                 const origSymbol = currencySymbols[budgetCurrency] || '$';
                 
                 if (budgetCurrency === 'TRY') {
-                    dailyLimitDisplay = `${origSymbol}${dailyLimitOriginal.toFixed(0)} <small>(${formatCurrency(dailyLimit)} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small>`;
-                    dailyAvgDisplay = `${origSymbol}${dailyAvgSpentOriginal.toFixed(0)} <small>(${formatCurrency(dailyAvgSpent)} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small>`;
-                    dailyDiffDisplay = `${dailyDiffOriginal >= 0 ? '+' : ''}${origSymbol}${dailyDiffOriginal.toFixed(0)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * rubRate, 'RUB')})</small>`;
+                    dailyLimitDisplay = origSymbol + dailyLimitOriginal.toFixed(0) + ' <small>(' + formatCurrency(dailyLimit) + ' / ' + formatCurrency(dailyLimitRUB, 'RUB') + ')</small>';
+                    dailyAvgDisplay = origSymbol + dailyAvgSpentOriginal.toFixed(0) + ' <small>(' + formatCurrency(dailyAvgSpent) + ' / ' + formatCurrency(dailyAvgSpentRUB, 'RUB') + ')</small>';
+                    dailyDiffDisplay = (dailyDiffOriginal >= 0 ? '+' : '') + origSymbol + dailyDiffOriginal.toFixed(0) + ' <small>(' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff) + ' / ' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff * rubRate, 'RUB') + ')</small>';
                 } else if (budgetCurrency === 'RUB') {
-                    dailyLimitDisplay = `${origSymbol}${dailyLimitOriginal.toFixed(0)} <small>(${formatCurrency(dailyLimit)} / ${formatCurrency(dailyLimitTRY, 'TRY')})</small>`;
-                    dailyAvgDisplay = `${origSymbol}${dailyAvgSpentOriginal.toFixed(0)} <small>(${formatCurrency(dailyAvgSpent)} / ${formatCurrency(dailyAvgSpentTRY, 'TRY')})</small>`;
-                    dailyDiffDisplay = `${dailyDiffOriginal >= 0 ? '+' : ''}${origSymbol}${dailyDiffOriginal.toFixed(0)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')})</small>`;
+                    dailyLimitDisplay = origSymbol + dailyLimitOriginal.toFixed(0) + ' <small>(' + formatCurrency(dailyLimit) + ' / ' + formatCurrency(dailyLimitTRY, 'TRY') + ')</small>';
+                    dailyAvgDisplay = origSymbol + dailyAvgSpentOriginal.toFixed(0) + ' <small>(' + formatCurrency(dailyAvgSpent) + ' / ' + formatCurrency(dailyAvgSpentTRY, 'TRY') + ')</small>';
+                    dailyDiffDisplay = (dailyDiffOriginal >= 0 ? '+' : '') + origSymbol + dailyDiffOriginal.toFixed(0) + ' <small>(' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff) + ' / ' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff * tryRate, 'TRY') + ')</small>';
                 } else {
-                    dailyLimitDisplay = `${formatCurrency(dailyLimit)} <small>(${formatCurrency(dailyLimitTRY, 'TRY')} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small>`;
-                    dailyAvgDisplay = `${formatCurrency(dailyAvgSpent)} <small>(${formatCurrency(dailyAvgSpentTRY, 'TRY')} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small>`;
-                    dailyDiffDisplay = `${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * rubRate, 'RUB')})</small>`;
+                    dailyLimitDisplay = formatCurrency(dailyLimit) + ' <small>(' + formatCurrency(dailyLimitTRY, 'TRY') + ' / ' + formatCurrency(dailyLimitRUB, 'RUB') + ')</small>';
+                    dailyAvgDisplay = formatCurrency(dailyAvgSpent) + ' <small>(' + formatCurrency(dailyAvgSpentTRY, 'TRY') + ' / ' + formatCurrency(dailyAvgSpentRUB, 'RUB') + ')</small>';
+                    dailyDiffDisplay = (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff) + ' <small>(' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff * tryRate, 'TRY') + ' / ' + (dailyDiff >= 0 ? '+' : '') + formatCurrency(dailyDiff * rubRate, 'RUB') + ')</small>';
                 }
                 
-                dailySection = `
-                    <div class="daily-budget-info">
-                        <div class="daily-item">
-                            <span class="daily-label">📅 ${isEn ? 'Daily Limit:' : 'Günlük Limit:'}</span>
-                            <span class="daily-value">${dailyLimitDisplay}</span>
-                        </div>
-                        <div class="daily-item">
-                            <span class="daily-label">📊 ${isEn ? 'Daily Average:' : 'Günlük Ortalama:'}</span>
-                            <span class="daily-value ${dailyStatus}">${dailyAvgDisplay}</span>
-                        </div>
-                        <div class="daily-item">
-                            <span class="daily-label">📈 ${isEn ? 'Daily Diff:' : 'Günlük Fark:'}</span>
-                            <span class="daily-value ${dailyStatus}">${dailyDiffDisplay}</span>
-                        </div>
-                    </div>
-                `;
+                const dailyLimitText = isEn ? 'Daily Limit:' : 'Günlük Limit:';
+                const dailyAvgText = isEn ? 'Daily Average:' : 'Günlük Ortalama:';
+                const dailyDiffText = isEn ? 'Daily Diff:' : 'Günlük Fark:';
+                
+                dailySection = '<div class="daily-budget-info">' +
+                    '<div class="daily-item"><span class="daily-label">📅 ' + dailyLimitText + '</span><span class="daily-value">' + dailyLimitDisplay + '</span></div>' +
+                    '<div class="daily-item"><span class="daily-label">📊 ' + dailyAvgText + '</span><span class="daily-value ' + dailyStatus + '">' + dailyAvgDisplay + '</span></div>' +
+                    '<div class="daily-item"><span class="daily-label">📈 ' + dailyDiffText + '</span><span class="daily-value ' + dailyStatus + '">' + dailyDiffDisplay + '</span></div>' +
+                '</div>';
             }
             
-            return `
-                <div class="budget-item">
-                    <div class="budget-header">
-                        <div class="budget-left">
-                            <div class="budget-icon ${type}">
-                                <i class="fas ${cat.icon}"></i>
-                            </div>
-                            <div class="budget-info">
-                                <h3>${cat.name}</h3>
-                                <span>${subtitle}</span>
-                            </div>
-                        </div>
-                        <div class="budget-actions">
-                            <button class="action-btn edit" onclick="openEditBudgetModal(${cat.id})">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button class="action-btn delete" onclick="confirmDelete('category', ${cat.id}, '${type}', '${cat.name}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="budget-stats">
-                        <div class="stat-box">
-                            <div class="stat-label">${planLabel}</div>
-                            <div class="stat-value plan">${formatCurrency(plan)}</div>
-                            <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')} / ${formatCurrency(plan * rubRate, 'RUB')}</div>
-                            ${planOriginalHtml}
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">${actualLabel}</div>
-                            <div class="stat-value fact">${formatCurrency(fact)}</div>
-                            <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')} / ${formatCurrency(fact * rubRate, 'RUB')}</div>
-                            ${originalCurrencyHtml}
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">${diffLabel}</div>
-                            <div class="stat-value diff ${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatCurrency(diff)}</div>
-                            <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')} / ${diff >= 0 ? '+' : ''}${formatCurrency(diff * rubRate, 'RUB')}</div>
-                        </div>
-                    </div>
-                    ${dailySection}
-                    <div class="plan-fact-bar">
-                        <div class="plan-fact-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+            html += '<div class="budget-item">' +
+                '<div class="budget-header">' +
+                    '<div class="budget-left">' +
+                        '<div class="budget-icon ' + type + '"><i class="fas ' + cat.icon + '"></i></div>' +
+                        '<div class="budget-info"><h3>' + cat.name + '</h3><span>' + subtitle + '</span></div>' +
+                    '</div>' +
+                    '<div class="budget-actions">' +
+                        '<button class="action-btn edit" onclick="openEditBudgetModal(' + cat.id + ')"><i class="fas fa-pen"></i></button>' +
+                        '<button class="action-btn delete" onclick="confirmDelete(\'category\', ' + cat.id + ', \'' + type + '\', \'' + cat.name + '\')"><i class="fas fa-trash"></i></button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="budget-stats">' +
+                    '<div class="stat-box"><div class="stat-label">' + planLabel + '</div><div class="stat-value plan">' + formatCurrency(plan) + '</div><div class="stat-sub">' + formatCurrency(plan * tryRate, 'TRY') + ' / ' + formatCurrency(plan * rubRate, 'RUB') + '</div>' + planOriginalHtml + '</div>' +
+                    '<div class="stat-box"><div class="stat-label">' + actualLabel + '</div><div class="stat-value fact">' + formatCurrency(fact) + '</div><div class="stat-sub">' + formatCurrency(fact * tryRate, 'TRY') + ' / ' + formatCurrency(fact * rubRate, 'RUB') + '</div>' + originalCurrencyHtml + '</div>' +
+                    '<div class="stat-box"><div class="stat-label">' + diffLabel + '</div><div class="stat-value diff ' + (diff >= 0 ? 'positive' : 'negative') + '">' + (diff >= 0 ? '+' : '') + formatCurrency(diff) + '</div><div class="stat-sub">' + (diff >= 0 ? '+' : '') + formatCurrency(diff * tryRate, 'TRY') + ' / ' + (diff >= 0 ? '+' : '') + formatCurrency(diff * rubRate, 'RUB') + '</div></div>' +
+                '</div>' +
+                dailySection +
+                '<div class="plan-fact-bar"><div class="plan-fact-fill ' + barClass + '" style="width: ' + Math.min(percent, 100) + '%"></div></div>' +
+            '</div>';
+        });
+        
+        container.innerHTML = html;
     });
 }
 
@@ -5674,8 +5644,8 @@ function updateAll() {
     renderMonthFilter();
     renderTransactions();
     
-    const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
-    if (activeTab === 'balance') {
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab && activeTab.dataset.tab === 'balance') {
         renderBalance();
     }
     
@@ -5691,18 +5661,18 @@ function updateAll() {
         
         const addButtons = budgetSection.querySelectorAll('.section-title button');
         addButtons.forEach(btn => {
-            btn.innerHTML = `<i class="fas fa-plus"></i> ${isEn ? 'Add' : 'Ekle'}`;
+            btn.innerHTML = '<i class="fas fa-plus"></i> ' + (isEn ? 'Add' : 'Ekle');
         });
     }
     
     const logoutBtn = document.getElementById('btnLogout');
     if (logoutBtn) {
-        logoutBtn.innerHTML = `<i class="fas fa-sign-out-alt"></i> ${isEn ? 'Sign out' : 'Çıkış'}`;
+        logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> ' + (isEn ? 'Sign out' : 'Çıkış');
     }
     
     const headerTitle = document.querySelector('.header h1');
     if (headerTitle) {
-        headerTitle.innerHTML = `<i class="fas fa-wallet"></i> ${isEn ? 'Budget Tracker' : 'Bütçe Takip'}`;
+        headerTitle.innerHTML = '<i class="fas fa-wallet"></i> ' + (isEn ? 'Budget Tracker' : 'Bütçe Takip');
     }
     
     const netLabel = document.querySelector('.summary-card.full .label');
@@ -5723,29 +5693,28 @@ function updateAll() {
     }
     
     const cfTable = document.getElementById('cashflowTable');
-    if (cfTable && isEn) {
+    if (cfTable) {
         const th = cfTable.querySelectorAll('thead th');
         if (th && th.length >= 8) {
-            th[0].textContent = 'Month';
-            th[1].textContent = 'Income Plan';
-            th[2].textContent = 'Income Actual';
-            th[3].textContent = 'Expense Plan';
-            th[4].textContent = 'Expense Actual';
-            th[5].textContent = 'Net Plan';
-            th[6].textContent = 'Net Actual';
-            th[7].textContent = 'Cumulative';
-        }
-    } else if (cfTable && !isEn) {
-        const th = cfTable.querySelectorAll('thead th');
-        if (th && th.length >= 8) {
-            th[0].textContent = 'Ay';
-            th[1].textContent = 'Gelir Plan';
-            th[2].textContent = 'Gelir Gerç.';
-            th[3].textContent = 'Gider Plan';
-            th[4].textContent = 'Gider Gerç.';
-            th[5].textContent = 'Net Plan';
-            th[6].textContent = 'Net Gerç.';
-            th[7].textContent = 'Kümülatif';
+            if (isEn) {
+                th[0].textContent = 'Month';
+                th[1].textContent = 'Income Plan';
+                th[2].textContent = 'Income Actual';
+                th[3].textContent = 'Expense Plan';
+                th[4].textContent = 'Expense Actual';
+                th[5].textContent = 'Net Plan';
+                th[6].textContent = 'Net Actual';
+                th[7].textContent = 'Cumulative';
+            } else {
+                th[0].textContent = 'Ay';
+                th[1].textContent = 'Gelir Plan';
+                th[2].textContent = 'Gelir Gerç.';
+                th[3].textContent = 'Gider Plan';
+                th[4].textContent = 'Gider Gerç.';
+                th[5].textContent = 'Net Plan';
+                th[6].textContent = 'Net Gerç.';
+                th[7].textContent = 'Kümülatif';
+            }
         }
     }
     
@@ -5766,7 +5735,7 @@ function updateAll() {
                 }
             }
         });
-    }
+    });
 }
 // ==================== INIT ====================
 loadData();
