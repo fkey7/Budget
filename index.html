@@ -2395,6 +2395,9 @@ const by = document.getElementById('btnBalTrendYearly');
 if (bm) bm.textContent = t('monthly');
 if (by) by.textContent = t('yearly');
 
+const balanceNoteEl = document.querySelector('#balance-section [data-i18n="balanceNote"]');
+if (balanceNoteEl) balanceNoteEl.textContent = t('balanceNote');
+
 try{
 const L = I18N[appSettings.lang] || I18N.tr;
 if (Array.isArray(L.monthsShort)) monthNames = L.monthsShort.slice();
