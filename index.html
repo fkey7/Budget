@@ -2159,6 +2159,7 @@ dailyTracking: 'Günlük Takip', dailyTrackingDesc: 'Yemek, ulaşım gibi günl�
 type: 'Tip', selectCategory: 'Kategori Seçin', enterAmount: 'Tutar girin', noteOptional: 'Not (Opsiyonel)', description: 'Açıklama', date: 'Tarih', save: 'Kaydet', select: 'Seçin',
 category: 'Kategori', descriptionPlaceholder: 'Açıklama...',
 categoryNamePlaceholder: 'Örn: Maaş, Kira...', amountPlaceholder: 'Örn: 10000', asset: 'Varlık', liability: 'Borç', group: 'Grup', currency: 'Para Birimi',
+currencyAbbr: 'P.B.',
 balanceNote: 'Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD\'ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.',
 noTransactions: 'Bu dönemde işlem yok', noIncomeItems: 'Gelir kalemi ekleyin', noExpenseItems: 'Gider kalemi ekleyin',
 edit: 'Düzenle', delete: 'Sil', cancel: 'İptal', confirmDelete: 'Silmek istediğinize emin misiniz?', thisActionCannotBeUndone: 'Bu işlem geri alınamaz.', yesDelete: 'Sil', added: 'Eklendi', updated: 'Güncellendi', saved: 'Kaydedildi', deleted: 'Silindi', loading: 'Yükleniyor...', error: 'Hata', success: 'Başarılı', warning: 'Uyarı', info: 'Bilgi', close: 'Kapat',
@@ -2209,6 +2210,8 @@ install: 'Install',
 balanceSectionTitle: 'Balance Sheet (Assets / Liabilities / Equity)',
 addItem: 'Add Item',
 actual: 'Actual',
+diff: 'Diff',
+rate: 'Rate',
 actualColon: 'Actual:',
 planned: 'Planned',
 difference: 'Difference',
@@ -2270,6 +2273,7 @@ asset: 'Asset',
 liability: 'Liability',
 group: 'Group',
 currency: 'Currency',
+currencyAbbr: 'Curr.',
 balanceNote: 'Note: Balance items are stored in USD. You can enter in TL/RUB and it will be converted to USD when saved. When adding a transaction, if the category name matches a balance sub-item, expense transactions will reduce the corresponding debt; if an asset item with the same name exists, it will be increased.',
 noTransactions: 'No transactions for this period',
 noIncomeItems: 'Add income items',
@@ -4375,6 +4379,7 @@ document.getElementById('confirmModal').classList.add('active');
 function generatePDFReport() {
 const { jsPDF } = window.jspdf;
 const doc = new jsPDF();
+const isEn = appSettings.lang === 'en';
 
 const isMonthly = viewMode === 'monthly';
 const yearTx = getYearTransactions();
@@ -4397,8 +4402,80 @@ bgLight: [248, 249, 250]
 };
 
 // Ay isimleri ASCII uyumlu
-const monthNamesASCII = ['Oca', 'Sub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Agu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-const monthNamesFullASCII = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'];
+const monthNamesASCII = isEn
+? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+: ['Oca', 'Sub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Agu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+const monthNamesFullASCII = isEn
+? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+: ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'];
+
+const pdfText = isEn ? {
+titleMonthly: `${monthNamesFullASCII[currentMonth]} ${currentYear} Budget Report`,
+titleYearly: `${currentYear} Annual Budget Report`,
+createdAt: 'Created:',
+generalSummary: 'GENERAL SUMMARY',
+incomePlan: 'INCOME PLAN',
+expensePlan: 'EXPENSE PLAN',
+netPlan: 'NET PLAN',
+actualIncome: 'ACTUAL INCOME',
+actualExpense: 'ACTUAL EXPENSE',
+netStatus: 'NET STATUS',
+incomeProgress: 'Income Progress:',
+expenseProgress: 'Expense Progress:',
+monthlyBudgetByCurrency: 'MONTHLY BUDGET BY CURRENCY (Planned/Actual)',
+annualSummary: 'ANNUAL SUMMARY (Planned / Actual)',
+expenseCategoryDetails: 'EXPENSE CATEGORY DETAILS (Original Currency)',
+incomeCategoryDetails: 'INCOME CATEGORY DETAILS (Original Currency)',
+category: 'Category',
+actual: 'Actual',
+diff: 'Diff',
+rate: 'Rate',
+balanceSheet: 'BALANCE SHEET',
+item: 'Item',
+assets: 'Assets',
+liabilities: 'Liabilities',
+equity: 'Equity',
+balanceDetails: 'BALANCE SHEET DETAILS',
+group: 'Group',
+assetPrefix: 'Asset',
+liabilityPrefix: 'Liability',
+appName: 'Budget Tracker',
+page: 'Page',
+pdfReady: 'PDF report generated'
+} : {
+titleMonthly: `${monthNamesFullASCII[currentMonth]} ${currentYear} Butce Raporu`,
+titleYearly: `${currentYear} Yili Butce Raporu`,
+createdAt: 'Olusturulma:',
+generalSummary: 'GENEL OZET',
+incomePlan: 'GELIR PLANI',
+expensePlan: 'GIDER PLANI',
+netPlan: 'NET PLAN',
+actualIncome: 'GERCEKLESEN GELIR',
+actualExpense: 'GERCEKLESEN GIDER',
+netStatus: 'NET DURUM',
+incomeProgress: 'Gelir Gerceklesme:',
+expenseProgress: 'Gider Gerceklesme:',
+monthlyBudgetByCurrency: 'AYLIK BUTCE - PARA BIRIMI BAZINDA (Plan/Gerceklesen)',
+annualSummary: 'YILLIK OZET (Plan / Gerceklesen)',
+expenseCategoryDetails: 'GIDER KATEGORILERI DETAYI (Orijinal Para Birimi)',
+incomeCategoryDetails: 'GELIR KATEGORILERI DETAYI (Orijinal Para Birimi)',
+category: 'Kategori',
+actual: 'Gerceklesen',
+diff: 'Fark',
+rate: 'Oran',
+balanceSheet: 'BILANCO',
+item: 'Kalem',
+assets: 'Varliklar',
+liabilities: 'Borclar',
+equity: 'Oz Sermaye',
+balanceDetails: 'BILANCO DETAY',
+group: 'Grup',
+assetPrefix: 'Varlik',
+liabilityPrefix: 'Borc',
+appName: 'Butce Takip Uygulamasi',
+page: 'Sayfa',
+pdfReady: 'PDF raporu olusturuldu'
+};
 
 // Binlik ayracli sayi formatlama
 function formatNum(num, decimals = 0) {
@@ -4514,10 +4591,11 @@ return yPos;
 
 // Title
 const title = isMonthly
-? `${monthNamesFullASCII[currentMonth]} ${currentYear} Butce Raporu`
-: `${currentYear} Yili Butce Raporu`;
+: pdfText.titleMonthly
+: pdfText.titleYearly;
 
-const subtitle = `Olusturulma: ${today.toLocaleDateString('tr-TR')} ${today.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}`;
+const locale = isEn ? 'en-US' : 'tr-TR';
+const subtitle = `${pdfText.createdAt} ${today.toLocaleDateString(locale)} ${today.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'})}`;
 
 let y = drawHeader(doc, title, subtitle);
 
@@ -4543,36 +4621,36 @@ const net = factIncome - factExpense;
 const netColor = net >= 0 ? colors.income : colors.expense;
 
 // ==================== OZET BOLUMU ====================
-y = drawSectionTitle(doc, 'GENEL OZET', y);
+y = drawSectionTitle(doc, pdfText.generalSummary, y);
 
 const tryRate = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 const rubRate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-drawInfoBox(doc, 14, y, 58, 30, 'GELIR PLANI', `$${formatNum(planIncome)}`, `TL ${formatNum(planIncome * tryRate)}`, colors.income);
-drawInfoBox(doc, 76, y, 58, 30, 'GIDER PLANI', `$${formatNum(planExpense)}`, `TL ${formatNum(planExpense * tryRate)}`, colors.expense);
-drawInfoBox(doc, 138, y, 58, 30, 'NET PLAN', `${(planIncome - planExpense) >= 0 ? '+' : ''}$${formatNum(Math.abs(planIncome - planExpense))}`, `TL ${formatNum((planIncome - planExpense) * tryRate)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
+drawInfoBox(doc, 14, y, 58, 30, pdfText.incomePlan, `$${formatNum(planIncome)}`, `TL ${formatNum(planIncome * tryRate)}`, colors.income);
+drawInfoBox(doc, 76, y, 58, 30, pdfText.expensePlan, `$${formatNum(planExpense)}`, `TL ${formatNum(planExpense * tryRate)}`, colors.expense);
+drawInfoBox(doc, 138, y, 58, 30, pdfText.netPlan, `${(planIncome - planExpense) >= 0 ? '+' : ''}$${formatNum(Math.abs(planIncome - planExpense))}`, `TL ${formatNum((planIncome - planExpense) * tryRate)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
 y += 35;
 
-drawInfoBox(doc, 14, y, 58, 30, 'GERCEKLESEN GELIR', `$${formatNum(factIncome)}`, `TL ${formatNum(factIncome * tryRate)}`, colors.income);
-drawInfoBox(doc, 76, y, 58, 30, 'GERCEKLESEN GIDER', `$${formatNum(factExpense)}`, `TL ${formatNum(factExpense * tryRate)}`, colors.expense);
-drawInfoBox(doc, 138, y, 58, 30, 'NET DURUM', `${net >= 0 ? '+' : ''}$${formatNum(Math.abs(net))}`, `TL ${formatNum(net * tryRate)}`, netColor);
+drawInfoBox(doc, 14, y, 58, 30, pdfText.actualIncome, `$${formatNum(factIncome)}`, `TL ${formatNum(factIncome * tryRate)}`, colors.income);
+drawInfoBox(doc, 76, y, 58, 30, pdfText.actualExpense, `$${formatNum(factExpense)}`, `TL ${formatNum(factExpense * tryRate)}`, colors.expense);
+drawInfoBox(doc, 138, y, 58, 30, pdfText.netStatus, `${net >= 0 ? '+' : ''}$${formatNum(Math.abs(net))}`, `TL ${formatNum(net * tryRate)}`, netColor);
 y += 38;
 
 doc.setTextColor(...colors.text);
 doc.setFontSize(9);
-doc.text('Gelir Gerceklesme:', 14, y);
+doc.text(pdfText.incomeProgress, 14, y);
 const incomePercent = planIncome > 0 ? (factIncome / planIncome) * 100 : 0;
 drawProgressBar(doc, 55, y - 3, 80, 5, incomePercent, colors.income);
 y += 10;
 
-doc.text('Gider Gerceklesme:', 14, y);
+doc.text(pdfText.expenseProgress, 14, y);
 const expensePercent = planExpense > 0 ? (factExpense / planExpense) * 100 : 0;
 drawProgressBar(doc, 55, y - 3, 80, 5, expensePercent, expensePercent > 100 ? colors.expense : colors.income);
 y += 15;
 
 // ==================== AYLIK HARCAMALAR (PARA BIRIMI BAZINDA) ====================
 y = checkPageBreak(doc, y, 120);
-y = drawSectionTitle(doc, 'AYLIK BUTCE - PARA BIRIMI BAZINDA (Plan/Gerceklesen)', y);
+y = drawSectionTitle(doc, pdfText.monthlyBudgetByCurrency, y);
 
 // Her ay için para birimi bazında plan ve gerçekleşen hesapla
 const monthlyByCurrencyData = [];
@@ -4666,7 +4744,7 @@ doc.roundedRect(14, y, 182, 42, 3, 3, 'F');
 
 doc.setTextColor(...colors.text);
 doc.setFontSize(9);
-doc.text('YILLIK OZET (Plan / Gerceklesen)', 20, y + 8);
+doc.text(pdfText.annualSummary, 20, y + 8);
 
 doc.setFontSize(8);
 // USD satırı
@@ -4805,7 +4883,7 @@ y += 68;
 
 // ==================== KATEGORI BAZINDA HARCAMALAR ====================
 y = checkPageBreak(doc, y, 50);
-y = drawSectionTitle(doc, 'GIDER KATEGORILERI DETAYI (Orijinal Para Birimi)', y, colors.expense);
+y = drawSectionTitle(doc, pdfText.expenseCategoryDetails, y, colors.expense);
 
 const categoryData = categories.expense.map(cat => {
 const budgetCurrency = getCategoryBudgetCurrency(cat);
@@ -4860,7 +4938,7 @@ factUSD
 };
 }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factUSD - a.factUSD);
 
-const catTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
+const catTableHeaders = [pdfText.category, 'PB', 'Plan', pdfText.actual, pdfText.diff, pdfText.rate];
 const catTableRows = categoryData.map(c => {
 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
 const percentColor = c.percent > 100 ? colors.expense : (c.percent > 80 ? colors.warning : colors.income);
@@ -4881,7 +4959,7 @@ y = drawTable(doc, catTableHeaders, catTableRows, y, [48, 16, 38, 38, 30, 18]);
 
 // ==================== GELIR KATEGORILERI ====================
 y = checkPageBreak(doc, y, 50);
-y = drawSectionTitle(doc, 'GELIR KATEGORILERI DETAYI (Orijinal Para Birimi)', y, colors.income);
+y = drawSectionTitle(doc, pdfText.incomeCategoryDetails, y, colors.income);
 
 const incomeData = categories.income.map(cat => {
 const budgetCurrency = getCategoryBudgetCurrency(cat);
@@ -4920,7 +4998,7 @@ percent
 };
 }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factOriginal - a.factOriginal);
 
-const incomeTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
+const incomeTableHeaders = [pdfText.category, 'PB', 'Plan', pdfText.actual, pdfText.diff, pdfText.rate];
 const incomeTableRows = incomeData.map(c => {
 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
 const percentColor = c.percent >= 100 ? colors.income : (c.percent > 50 ? colors.warning : colors.expense);
@@ -4947,13 +5025,13 @@ const reportYM = isMonthly
 const bt = computeBalanceTotals(reportYM);
 
 y = checkPageBreak(doc, y, 55);
-y = drawSectionTitle(doc, 'BILANCO', y, colors.primary);
+y = drawSectionTitle(doc, pdfText.balanceSheet, y, colors.primary);
 
-const balHeaders = ['Kalem', 'Tutar ($)'];
+const balHeaders = [pdfText.item, 'Amount ($)'];
 const balRows = [
-['Varliklar', `$${formatNum(bt.assetsTotal)}`],
-['Borclar', `$${formatNum(bt.liabilitiesTotal)}`],
-['Oz Sermaye', `$${formatNum(bt.equity)}`]
+[pdfText.assets, `$${formatNum(bt.assetsTotal)}`],
+[pdfText.liabilities, `$${formatNum(bt.liabilitiesTotal)}`],
+[pdfText.equity, `$${formatNum(bt.equity)}`]
 ];
 y = drawTable(doc, balHeaders, balRows, y, [70, 120]);
 
@@ -4972,12 +5050,12 @@ const aG = aggGroup(snap.assets);
 const lG = aggGroup(snap.liabilities);
 
 const gRows = [];
-Object.keys(aG).forEach(k=> gRows.push([`Varlik: ${k}`, `$${formatNum(aG[k])}`]));
-Object.keys(lG).forEach(k=> gRows.push([`Borc: ${k}`, `$${formatNum(lG[k])}`]));
+Object.keys(aG).forEach(k=> gRows.push([`${pdfText.assetPrefix}: ${k}`, `$${formatNum(aG[k])}`]));
+Object.keys(lG).forEach(k=> gRows.push([`${pdfText.liabilityPrefix}: ${k}`, `$${formatNum(lG[k])}`]));
 if (gRows.length){
 y = checkPageBreak(doc, y, 55);
-y = drawSectionTitle(doc, 'BILANCO DETAY', y, colors.primary);
-y = drawTable(doc, ['Grup', 'Tutar ($)'], gRows, y, [90, 100]);
+y = drawSectionTitle(doc, pdfText.balanceDetails, y, colors.primary);
+y = drawTable(doc, [pdfText.group, 'Amount ($)'], gRows, y, [90, 100]);
 }
 }catch(e){}
 
@@ -4989,8 +5067,8 @@ doc.setFillColor(...colors.primary);
 doc.rect(0, 287, 210, 10, 'F');
 doc.setTextColor(...colors.white);
 doc.setFontSize(8);
-doc.text('Butce Takip Uygulamasi', 105, 293, { align: 'center' });
-doc.text(`Sayfa ${i} / ${pageCount}`, 195, 293, { align: 'right' });
+doc.text(pdfText.appName, 105, 293, { align: 'center' });
+doc.text(`${pdfText.page} ${i} / ${pageCount}`, 195, 293, { align: 'right' });
 }
 
 // Save
@@ -4999,18 +5077,127 @@ const filename = isMonthly
 : `butce-${currentYear}-yillik.pdf`;
 
 doc.save(filename);
-showToast('PDF raporu olusturuldu');
+showToast(pdfText.pdfReady);
 }
 
 // ==================== EXCEL REPORT ====================
 function generateExcelReport() {
 const isMonthly = viewMode === 'monthly';
+const isEn = appSettings.lang === 'en';
 const yearTx = getYearTransactions();
 const tryRate = isMonthly
 ? getRateForMonth('TRY', currentMonth)
 : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 
 const wb = XLSX.utils.book_new();
+
+const excelText = isEn ? {
+reportTitle: 'BUDGET REPORT',
+periodYearSuffix: '',
+createdAt: 'Created:',
+summary: 'SUMMARY',
+actualUSD: 'Actual ($)',
+actualTRY: 'Actual (₺)',
+income: '💰 Income',
+expense: '💸 Expense',
+net: '📊 Net',
+currencyExpenses: 'CURRENCY-BASED EXPENSES',
+currency: 'Currency',
+currencyAbbr: 'Curr.',
+plan: 'Plan',
+actual: 'Actual',
+diff: 'Diff',
+rate: 'Rate',
+difference: 'Difference',
+dollar: '$ Dollar (USD)',
+lira: '₺ Turkish Lira (TRY)',
+ruble: '₽ Ruble (RUB)',
+summarySheet: 'Summary',
+incomeItemsTitle: '💰 INCOME ITEMS',
+category: 'Category',
+transaction: 'Txn',
+total: '📊 TOTAL',
+incomeItemsSheet: 'Income Items',
+expenseItemsTitle: '💸 EXPENSE ITEMS',
+monthlyPlanUSD: 'Monthly Plan ($)',
+monthlyPlanTRY: 'Monthly Plan (₺)',
+dailyUSD: 'Daily ($)',
+ratePercent: 'Rate %',
+expenseItemsSheet: 'Expense Items',
+transactionsTitle: '📋 TRANSACTIONS',
+date: 'Date',
+type: 'Type',
+amountUSD: 'Amount ($)',
+amountTRY: 'Amount (₺)',
+originalAmount: 'Original Amount',
+exchangeRate: 'Rate',
+note: 'Note',
+unknown: 'Unknown',
+incomeType: '✅ Income',
+expenseType: '❌ Expense',
+transactionsSheet: 'Transactions',
+monthlyBudgetsTitle: '📅 MONTHLY BUDGETS (Original Currency)',
+monthShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+yearly: 'Yearly',
+monthlyBudgetsSheet: 'Monthly Budgets',
+currencyRatesTitle: '💱 EXCHANGE RATES (1 USD = ?)',
+month: 'Month',
+average: '📊 Average',
+ratesSheet: 'Rates',
+excelReady: 'Excel report generated ✓'
+} : {
+reportTitle: 'BÜTÇE RAPORU',
+periodYearSuffix: ' Yılı',
+createdAt: 'Oluşturulma:',
+summary: 'ÖZET',
+actualUSD: 'Gerçekleşen ($)',
+actualTRY: 'Gerçekleşen (₺)',
+income: '💰 Gelir',
+expense: '💸 Gider',
+net: '📊 Net',
+currencyExpenses: 'PARA BİRİMİ BAZINDA HARCAMALAR',
+currency: 'Para Birimi',
+currencyAbbr: 'P.B.',
+plan: 'Plan',
+actual: 'Gerçekleşen',
+difference: 'Fark',
+dollar: '$ Dolar (USD)',
+lira: '₺ Türk Lirası (TRY)',
+ruble: '₽ Ruble (RUB)',
+summarySheet: 'Özet',
+incomeItemsTitle: '💰 GELİR KALEMLERİ',
+category: 'Kategori',
+transaction: 'İşlem',
+total: '📊 TOPLAM',
+incomeItemsSheet: 'Gelir Kalemleri',
+expenseItemsTitle: '💸 GİDER KALEMLERİ',
+monthlyPlanUSD: 'Aylık Plan ($)',
+monthlyPlanTRY: 'Aylık Plan (₺)',
+dailyUSD: 'Günlük ($)',
+ratePercent: 'Oran %',
+expenseItemsSheet: 'Gider Kalemleri',
+transactionsTitle: '📋 İŞLEMLER',
+date: 'Tarih',
+type: 'Tür',
+amountUSD: 'Tutar ($)',
+amountTRY: 'Tutar (₺)',
+originalAmount: 'Orijinal Tutar',
+exchangeRate: 'Kur',
+note: 'Not',
+unknown: 'Bilinmiyor',
+incomeType: '✅ Gelir',
+expenseType: '❌ Gider',
+transactionsSheet: 'İşlemler',
+monthlyBudgetsTitle: '📅 AYLIK BÜTÇELER (Orijinal Para Birimi)',
+monthShort: ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],
+yearly: 'Yıllık',
+monthlyBudgetsSheet: 'Aylık Bütçeler',
+currencyRatesTitle: '💱 DÖVİZ KURLARI (1 USD = ?)',
+month: 'Ay',
+average: '📊 Ortalama',
+ratesSheet: 'Kurlar',
+excelReady: 'Excel raporu oluşturuldu ✓'
+};
 
 // Stil sabitleri
 const borderStyle = { style: 'thin', color: { rgb: '000000' } };
@@ -5066,14 +5253,14 @@ ws['!cols'] = widths.map(w => ({ wch: w }));
 }
 
 function formatNumber(num) {
-return Number(num).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+return Number(num).toLocaleString(isEn ? 'en-US' : 'tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ===== ÖZET SAYFASI =====
 const summaryData = [];
-summaryData.push(['BÜTÇE RAPORU', '', '', '', '', '', '']);
-summaryData.push([isMonthly ? `${monthNamesFull[currentMonth]} ${currentYear}` : `${currentYear} Yılı`, '', '', '', '', '', '']);
-summaryData.push([`Oluşturulma: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}`, '', '', '', '', '', '']);
+summaryData.push([excelText.reportTitle, '', '', '', '', '', '']);
+summaryData.push([isMonthly ? `${monthNamesFull[currentMonth]} ${currentYear}` : `${currentYear}${excelText.periodYearSuffix}`, '', '', '', '', '', '']);
+summaryData.push([`${excelText.createdAt} ${new Date().toLocaleDateString(isEn ? 'en-US' : 'tr-TR')} ${new Date().toLocaleTimeString(isEn ? 'en-US' : 'tr-TR', {hour: '2-digit', minute: '2-digit'})}`, '', '', '', '', '', '']);
 summaryData.push(['', '', '', '', '', '', '']);
 
 // Hesaplamalar
@@ -5094,15 +5281,15 @@ const net = factIncome - factExpense;
 const incomeDiff = factIncome - planIncome;
 const expenseDiff = planExpense - factExpense;
 
-summaryData.push(['ÖZET', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)']);
-summaryData.push(['💰 Gelir', formatNumber(planIncome), formatNumber(planIncome * tryRate), formatNumber(factIncome), formatNumber(factIncome * tryRate), formatNumber(incomeDiff), formatNumber(incomeDiff * tryRate)]);
-summaryData.push(['💸 Gider', formatNumber(planExpense), formatNumber(planExpense * tryRate), formatNumber(factExpense), formatNumber(factExpense * tryRate), formatNumber(expenseDiff), formatNumber(expenseDiff * tryRate)]);
-summaryData.push(['📊 Net', '', '', formatNumber(net), formatNumber(net * tryRate), '', '']);
+summaryData.push([excelText.summary, 'Plan ($)', 'Plan (₺)', excelText.actualUSD, excelText.actualTRY, `${excelText.difference} ($)`, `${excelText.difference} (₺)`]);
+summaryData.push([excelText.income, formatNumber(planIncome), formatNumber(planIncome * tryRate), formatNumber(factIncome), formatNumber(factIncome * tryRate), formatNumber(incomeDiff), formatNumber(incomeDiff * tryRate)]);
+summaryData.push([excelText.expense, formatNumber(planExpense), formatNumber(planExpense * tryRate), formatNumber(factExpense), formatNumber(factExpense * tryRate), formatNumber(expenseDiff), formatNumber(expenseDiff * tryRate)]);
+summaryData.push([excelText.net, '', '', formatNumber(net), formatNumber(net * tryRate), '', '']);
 summaryData.push(['', '', '', '', '', '', '']);
 
 // Para birimi bazında özet
-summaryData.push(['PARA BİRİMİ BAZINDA HARCAMALAR', '', '', '', '', '', '']);
-summaryData.push(['Para Birimi', 'Plan', 'Gerçekleşen', 'Fark', '', '', '']);
+summaryData.push([excelText.currencyExpenses, '', '', '', '', '', '']);
+summaryData.push([excelText.currency, excelText.plan, excelText.actual, excelText.difference, '', '', '']);
 
 // Para birimi hesaplamaları
 let planUSD = 0, planTRY = 0, planRUB = 0;
@@ -5124,9 +5311,9 @@ actualUSD = txListForCurrency.filter(t => t.currency === 'USD').reduce((sum, t) 
 actualTRY = txListForCurrency.filter(t => t.currency === 'TRY').reduce((sum, t) => sum + t.amount, 0);
 actualRUB = txListForCurrency.filter(t => t.currency === 'RUB').reduce((sum, t) => sum + t.amount, 0);
 
-summaryData.push(['$ Dolar (USD)', formatNumber(planUSD), formatNumber(actualUSD), formatNumber(planUSD - actualUSD), '', '', '']);
-summaryData.push(['₺ Türk Lirası (TRY)', formatNumber(planTRY), formatNumber(actualTRY), formatNumber(planTRY - actualTRY), '', '', '']);
-summaryData.push(['₽ Ruble (RUB)', formatNumber(planRUB), formatNumber(actualRUB), formatNumber(planRUB - actualRUB), '', '', '']);
+summaryData.push([excelText.dollar, formatNumber(planUSD), formatNumber(actualUSD), formatNumber(planUSD - actualUSD), '', '', '']);
+summaryData.push([excelText.lira, formatNumber(planTRY), formatNumber(actualTRY), formatNumber(planTRY - actualTRY), '', '', '']);
+summaryData.push([excelText.ruble, formatNumber(planRUB), formatNumber(actualRUB), formatNumber(planRUB - actualRUB), '', '', '']);
 
 const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
 
@@ -5151,13 +5338,13 @@ applyStyleToSheet(wsSummary, summaryRange, summaryData.slice(4), 4, { hasTotal: 
 const currencyRange = { s: { r: 10, c: 0 }, e: { r: 14, c: 3 } };
 applyStyleToSheet(wsSummary, currencyRange, summaryData.slice(10), 10);
 
-XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+XLSX.utils.book_append_sheet(wb, wsSummary, excelText.summarySheet);
 
 // ===== GELİR KALEMLERİ SAYFASI =====
 const incomeData = [];
-incomeData.push(['💰 GELİR KALEMLERİ', '', '', '', '', '', '', '']);
+incomeData.push([excelText.incomeItemsTitle, '', '', '', '', '', '', '']);
 incomeData.push(['', '', '', '', '', '', '', '']);
-incomeData.push(['Kategori', 'Para Birimi', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'İşlem']);
+incomeData.push([excelText.category, excelText.currency, 'Plan ($)', 'Plan (₺)', excelText.actualUSD, excelText.actualTRY, `${excelText.difference} ($)`, excelText.transaction]);
 
 let totalIncomePlan = 0, totalIncomeFact = 0;
 categories.income.forEach(cat => {
@@ -5185,7 +5372,7 @@ txList.length
 });
 
 incomeData.push([
-'📊 TOPLAM',
+excelText.total,
 '',
 formatNumber(totalIncomePlan),
 formatNumber(totalIncomePlan * tryRate),
@@ -5203,18 +5390,18 @@ if (wsIncome['A1']) wsIncome['A1'].s = { font: titleFont };
 const incomeRange = { s: { r: 2, c: 0 }, e: { r: incomeData.length - 1, c: 7 } };
 applyStyleToSheet(wsIncome, incomeRange, incomeData.slice(2), 2, { hasTotal: true, totalRowIndex: incomeData.length - 1 });
 
-XLSX.utils.book_append_sheet(wb, wsIncome, 'Gelir Kalemleri');
+XLSX.utils.book_append_sheet(wb, wsIncome, excelText.incomeItemsSheet);
 
 // ===== GİDER KALEMLERİ SAYFASI =====
 const expenseData = [];
-expenseData.push(['💸 GİDER KALEMLERİ', '', '', '', '', '', '', '', '', '']);
+expenseData.push([excelText.expenseItemsTitle, '', '', '', '', '', '', '', '', '']);
 expenseData.push(['', '', '', '', '', '', '', '', '', '']);
 
 let totalExpensePlan = 0, totalExpenseFact = 0;
 
 if (isMonthly) {
 const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-expenseData.push(['Kategori', 'P.B.', 'Aylık Plan ($)', 'Aylık Plan (₺)', 'Günlük ($)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Oran %', 'İşlem']);
+expenseData.push([excelText.category, excelText.currencyAbbr, excelText.monthlyPlanUSD, excelText.monthlyPlanTRY, excelText.dailyUSD, excelText.actualUSD, excelText.actualTRY, `${excelText.difference} ($)`, excelText.ratePercent, excelText.transaction]);
 
 categories.expense.forEach(cat => {
 const plan = getCategoryMonthlyPlan(cat, currentMonth);
@@ -5243,7 +5430,7 @@ txList.length
 });
 
 expenseData.push([
-'📊 TOPLAM',
+excelText.total,
 '',
 formatNumber(totalExpensePlan),
 formatNumber(totalExpensePlan * tryRate),
@@ -5255,7 +5442,7 @@ totalExpensePlan > 0 ? `%${(totalExpenseFact / totalExpensePlan * 100).toFixed(0
 ''
 ]);
 } else {
-expenseData.push(['Kategori', 'P.B.', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'Oran %', 'İşlem']);
+expenseData.push([excelText.category, excelText.currencyAbbr, 'Plan ($)', 'Plan (₺)', excelText.actualUSD, excelText.actualTRY, `${excelText.difference} ($)`, `${excelText.difference} (₺)`, excelText.ratePercent, excelText.transaction]);
 
 categories.expense.forEach(cat => {
 const plan = getCategoryYearlyPlan(cat);
@@ -5283,7 +5470,7 @@ txList.length
 });
 
 expenseData.push([
-'📊 TOPLAM',
+excelText.total,
 '',
 formatNumber(totalExpensePlan),
 formatNumber(totalExpensePlan * tryRate),
@@ -5304,13 +5491,13 @@ if (wsExpense['A1']) wsExpense['A1'].s = { font: titleFont };
 const expenseRange = { s: { r: 2, c: 0 }, e: { r: expenseData.length - 1, c: 9 } };
 applyStyleToSheet(wsExpense, expenseRange, expenseData.slice(2), 2, { hasTotal: true, totalRowIndex: expenseData.length - 1 });
 
-XLSX.utils.book_append_sheet(wb, wsExpense, 'Gider Kalemleri');
+XLSX.utils.book_append_sheet(wb, wsExpense, excelText.expenseItemsSheet);
 
 // ===== İŞLEMLER SAYFASI =====
 const txData = [];
-txData.push(['📋 İŞLEMLER', '', '', '', '', '', '', '', '']);
+txData.push([excelText.transactionsTitle, '', '', '', '', '', '', '', '']);
 txData.push(['', '', '', '', '', '', '', '', '']);
-txData.push(['Tarih', 'Tür', 'Kategori', 'Tutar ($)', 'Tutar (₺)', 'Orijinal Tutar', 'Para Birimi', 'Kur', 'Not']);
+txData.push([excelText.date, excelText.type, excelText.category, excelText.amountUSD, excelText.amountTRY, excelText.originalAmount, excelText.currency, excelText.exchangeRate, excelText.note]);
 
 const txList = isMonthly
 ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth)
@@ -5318,12 +5505,12 @@ const txList = isMonthly
 
 txList.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
 const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
-const catName = cat ? cat.name : 'Bilinmiyor';
+const catName = cat ? cat.name : excelText.unknown;
 const txTryRate = getRateForMonth('TRY', new Date(tx.date).getMonth());
 
 txData.push([
-new Date(tx.date).toLocaleDateString('tr-TR'),
-tx.type === 'income' ? '✅ Gelir' : '❌ Gider',
+new Date(tx.date).toLocaleDateString(isEn ? 'en-US' : 'tr-TR'),
+tx.type === 'income' ? excelText.incomeType : excelText.expenseType,
 catName,
 formatNumber(tx.amountUSD),
 formatNumber(tx.amountUSD * txTryRate),
@@ -5342,13 +5529,13 @@ if (wsTx['A1']) wsTx['A1'].s = { font: titleFont };
 const txRange = { s: { r: 2, c: 0 }, e: { r: txData.length - 1, c: 8 } };
 applyStyleToSheet(wsTx, txRange, txData.slice(2), 2);
 
-XLSX.utils.book_append_sheet(wb, wsTx, 'İşlemler');
+XLSX.utils.book_append_sheet(wb, wsTx, excelText.transactionsSheet);
 
 // ===== AYLIK BÜTÇELER SAYFASI (Orijinal Para Birimi Bazında) =====
 const monthlyBudgetData = [];
-monthlyBudgetData.push(['📅 AYLIK BÜTÇELER (Orijinal Para Birimi)', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+monthlyBudgetData.push([excelText.monthlyBudgetsTitle, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
 monthlyBudgetData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-monthlyBudgetData.push(['Kategori', 'Tür', 'P.B.', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara', 'Yıllık']);
+monthlyBudgetData.push([excelText.category, excelText.type, excelText.currencyAbbr, ...excelText.monthShort, excelText.yearly]);
 
 // Para birimi bazında toplamları tutacak objeler
 const monthlyTotals = {
@@ -5365,7 +5552,7 @@ RUB: { income: 0, expense: 0 }
 // Gelirler
 categories.income.forEach(cat => {
 const budgetCurrency = getCategoryBudgetCurrency(cat);
-const row = [cat.name, '💰 Gelir', budgetCurrency];
+const row = [cat.name, excelText.income, budgetCurrency];
 let yearlyTotal = 0;
 
 for (let i = 0; i < 12; i++) {
@@ -5385,7 +5572,7 @@ monthlyBudgetData.push(row);
 // Giderler
 categories.expense.forEach(cat => {
 const budgetCurrency = getCategoryBudgetCurrency(cat);
-const row = [cat.name, '💸 Gider', budgetCurrency];
+const row = [cat.name, excelText.expense, budgetCurrency];
 let yearlyTotal = 0;
 
 for (let i = 0; i < 12; i++) {
@@ -5407,7 +5594,7 @@ monthlyBudgetData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', 
 
 // Para birimi bazında toplam satırları
 // USD Toplam
-const usdTotalRow = ['💵 USD TOPLAM', 'Net', 'USD'];
+const usdTotalRow = [`💵 USD ${excelText.total.replace('📊 ','')}`, excelText.net.replace('📊 ',''), 'USD'];
 let usdYearlyNet = 0;
 for (let i = 0; i < 12; i++) {
 const net = monthlyTotals.USD.income[i] - monthlyTotals.USD.expense[i];
@@ -5418,7 +5605,7 @@ usdTotalRow.push(formatNumber(usdYearlyNet));
 monthlyBudgetData.push(usdTotalRow);
 
 // TRY Toplam
-const tryTotalRow = ['💵 TRY TOPLAM', 'Net', 'TRY'];
+const tryTotalRow = [`💵 TRY ${excelText.total.replace('📊 ','')}`, excelText.net.replace('📊 ',''), 'TRY'];
 let tryYearlyNet = 0;
 for (let i = 0; i < 12; i++) {
 const net = monthlyTotals.TRY.income[i] - monthlyTotals.TRY.expense[i];
@@ -5429,7 +5616,7 @@ tryTotalRow.push(formatNumber(tryYearlyNet));
 monthlyBudgetData.push(tryTotalRow);
 
 // RUB Toplam
-const rubTotalRow = ['💵 RUB TOPLAM', 'Net', 'RUB'];
+const rubTotalRow = [`💵 RUB ${excelText.total.replace('📊 ','')}`, excelText.net.replace('📊 ',''), 'RUB'];
 let rubYearlyNet = 0;
 for (let i = 0; i < 12; i++) {
 const net = monthlyTotals.RUB.income[i] - monthlyTotals.RUB.expense[i];
@@ -5443,7 +5630,7 @@ monthlyBudgetData.push(rubTotalRow);
 monthlyBudgetData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
 // Genel Toplam (USD bazında)
-const grandTotalRow = ['📊 GENEL TOPLAM', 'Net', 'USD'];
+const grandTotalRow = [isEn ? '📊 GRAND TOTAL' : '📊 GENEL TOPLAM', excelText.net.replace('📊 ',''), 'USD'];
 let grandYearlyTotal = 0;
 for (let i = 0; i < 12; i++) {
 const tryRate = getRateForMonth('TRY', i);
@@ -5468,13 +5655,13 @@ if (wsMonthlyBudget['A1']) wsMonthlyBudget['A1'].s = { font: titleFont };
 const budgetRange = { s: { r: 2, c: 0 }, e: { r: monthlyBudgetData.length - 1, c: 15 } };
 applyStyleToSheet(wsMonthlyBudget, budgetRange, monthlyBudgetData.slice(2), 2, { hasTotal: true, totalRowIndex: monthlyBudgetData.length - 1 });
 
-XLSX.utils.book_append_sheet(wb, wsMonthlyBudget, 'Aylık Bütçeler');
+XLSX.utils.book_append_sheet(wb, wsMonthlyBudget, excelText.monthlyBudgetsSheet);
 
 // ===== KURLAR SAYFASI =====
 const ratesData = [];
-ratesData.push(['💱 DÖVİZ KURLARI (1 USD = ?)', '', '']);
+ratesData.push([excelText.currencyRatesTitle, '', '']);
 ratesData.push(['', '', '']);
-ratesData.push(['Ay', 'TRY (₺)', 'RUB (₽)']);
+ratesData.push([excelText.month, 'TRY (₺)', 'RUB (₽)']);
 for (let i = 0; i < 12; i++) {
 ratesData.push([monthNamesFull[i], formatNumber(monthlyRates.TRY[i]), formatNumber(monthlyRates.RUB[i])]);
 }
@@ -5482,7 +5669,7 @@ ratesData.push([monthNamesFull[i], formatNumber(monthlyRates.TRY[i]), formatNumb
 // Ortalama satırı
 const avgTRY = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 const avgRUB = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
-ratesData.push(['📊 Ortalama', formatNumber(avgTRY), formatNumber(avgRUB)]);
+ratesData.push([excelText.average, formatNumber(avgTRY), formatNumber(avgRUB)]);
 
 const wsRates = XLSX.utils.aoa_to_sheet(ratesData);
 setColumnWidths(wsRates, [16, 14, 14]);
@@ -5492,7 +5679,7 @@ if (wsRates['A1']) wsRates['A1'].s = { font: titleFont };
 const ratesRange = { s: { r: 2, c: 0 }, e: { r: ratesData.length - 1, c: 2 } };
 applyStyleToSheet(wsRates, ratesRange, ratesData.slice(2), 2, { hasTotal: true, totalRowIndex: ratesData.length - 1 });
 
-XLSX.utils.book_append_sheet(wb, wsRates, 'Kurlar');
+XLSX.utils.book_append_sheet(wb, wsRates, excelText.ratesSheet);
 
 // Dosyayı kaydet
 const filename = isMonthly
@@ -5519,7 +5706,7 @@ const wsBalance = XLSX.utils.aoa_to_sheet(balRows);
 XLSX.utils.book_append_sheet(wb, wsBalance, 'Balance');
 
 XLSX.writeFile(wb, filename);
-showToast('Excel raporu oluşturuldu ✓');
+showToast(excelText.excelReady);
 }
 
 function saveRates() {
