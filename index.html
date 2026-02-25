@@ -3963,283 +3963,350 @@ if (input) input.value = monthly.toFixed(2);
 
 function openCategoryModal(type) {
 
-    updateCategoryModalTexts();   // ← TAM OLARAK BURAYA EKLE
+    // Dil metinlerini güncelle
+    updateCategoryModalTexts();
 
+    // Başlık
     currentCategoryType = type;
     document.getElementById('categoryModalTitle').textContent =
       type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
+
+    // Temizle
     document.getElementById('categoryName').value = '';
     document.getElementById('categoryYearlyBudget').value = '';
+
+    // Varsayılanlar
     selectedIcon = 'fa-tag';
     selectedCategoryCurrency = 'USD';
+
+    // UI güncelle
     updateCategoryCurrencyUI();
     renderMonthlyBudgetGrid('monthlyBudgetGrid');
     renderIconGrid();
+
+    // Modal aç
     document.getElementById('categoryModal').classList.add('active');
 }
 
 
 function setCategoryCurrency(currency) {
-selectedCategoryCurrency = currency;
-updateCategoryCurrencyUI();
+    selectedCategoryCurrency = currency;
+    updateCategoryCurrencyUI();
 }
+
 
 function updateCategoryCurrencyUI() {
-  const symbol = currencySymbols[selectedCategoryCurrency];
-  document.getElementById('yearlyBudgetLabel').textContent = `${t('yearlyBudget')} (${symbol})`;
 
-// Update monthly budget label (keep button)
-const monthlyLabel = document.getElementById('monthlyBudgetLabel');
-  const btn = monthlyLabel.querySelector('button');
-  monthlyLabel.innerHTML = `${t('monthlyBudgets')} (${symbol}) `;
-  if (btn) {
-    btn.textContent = t('distributeEvenly');
-    monthlyLabel.appendChild(btn);
-  }
-  
-  const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
-  const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    const symbol = currencySymbols[selectedCategoryCurrency];
 
-// Update currency buttons
-document.querySelectorAll('#categoryCurrencyToggle .currency-btn').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.currency === selectedCategoryCurrency);
-});
+    // Yıllık bütçe etiketi
+    const yearlyLabel = document.getElementById('yearlyBudgetLabel');
+    if (yearlyLabel) {
+        yearlyLabel.textContent = `${t('yearlyBudget')} (${symbol})`;
+    }
 
-// Show rates
-updateCategoryRatesDisplay();
+    // Aylık bütçe etiketi
+    const monthlyText = document.getElementById('monthlyBudgetText');
+    if (monthlyText) {
+        monthlyText.textContent = `${t('monthlyBudgets')} (${symbol})`;
+    }
+
+    // "Eşit dağıt" butonu
+    const btn = document.getElementById('btnDistribute');
+    if (btn) {
+        btn.textContent = t('distributeEvenly');
+    }
+
+    // Para birimi butonları
+    const toggle = document.getElementById('categoryCurrencyToggle');
+    if (toggle) {
+        toggle.querySelectorAll('.currency-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.currency === selectedCategoryCurrency);
+        });
+    }
+
+    // Kur bilgisi
+    updateCategoryRatesDisplay();
 }
+
 
 function updateCategoryRatesDisplay() {
-const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
-const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-document.getElementById('categoryRatesDisplay').innerHTML = `
-    <span class="rate-chip">${t('avg') || 'Avg'}: 1$ = ${avgTryRate.toFixed(2)}₺</span>
-    <span class="rate-chip">${t('avg') || 'Avg'}: 1$ = ${avgRubRate.toFixed(2)}₽</span>
-  `;
+    const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+    const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+
+    const el = document.getElementById('categoryRatesDisplay');
+    if (!el) return;
+
+    el.innerHTML = `
+        <span class="rate-chip">${t('avg')}: 1$ = ${avgTryRate.toFixed(2)}₺</span>
+        <span class="rate-chip">${t('avg')}: 1$ = ${avgRubRate.toFixed(2)}₽</span>
+    `;
 }
+
 
 function renderIconGrid() {
-document.getElementById('iconGrid').innerHTML = icons.map(icon => `
-<button class="icon-option ${selectedIcon === icon ? 'selected' : ''}"
-onclick="selectIcon('${icon}')">
-<i class="fas ${icon}"></i>
-</button>
-`).join('');
+    const el = document.getElementById('iconGrid');
+    if (!el) return;
+
+    el.innerHTML = icons.map(icon => `
+        <button class="icon-option ${selectedIcon === icon ? 'selected' : ''}"
+            onclick="selectIcon('${icon}')">
+            <i class="fas ${icon}"></i>
+        </button>
+    `).join('');
 }
+
 
 function selectIcon(icon) {
-selectedIcon = icon;
-renderIconGrid();
+    selectedIcon = icon;
+    renderIconGrid();
 }
+
 
 function saveCategory() {
-const name = document.getElementById('categoryName').value.trim();
-let yearlyBudget = parseFloat(document.getElementById('categoryYearlyBudget').value) || 0;
-let monthlyBudgets = getMonthlyBudgets('monthlyBudgetGrid');
 
-if (!name) { showToast('İsim girin'); return; }
+    const name = document.getElementById('categoryName').value.trim();
+    let yearlyBudget = parseFloat(document.getElementById('categoryYearlyBudget').value) || 0;
+    let monthlyBudgets = getMonthlyBudgets('monthlyBudgetGrid');
 
-// Convert to USD if entered in different currency
-if (selectedCategoryCurrency !== 'USD') {
-const avgRate = selectedCategoryCurrency === 'TRY'
-? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
-: monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    if (!name) {
+        showToast(t('enterName'));
+        return;
+    }
 
-yearlyBudget = yearlyBudget / avgRate;
-monthlyBudgets = monthlyBudgets.map((val, i) => {
-const rate = getRateForMonth(selectedCategoryCurrency, i);
-return val / rate;
-});
+    // USD'ye çevir
+    if (selectedCategoryCurrency !== 'USD') {
+
+        const avgRate = selectedCategoryCurrency === 'TRY'
+            ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+            : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+
+        yearlyBudget = yearlyBudget / avgRate;
+
+        monthlyBudgets = monthlyBudgets.map((val, i) => {
+            const rate = getRateForMonth(selectedCategoryCurrency, i);
+            return val / rate;
+        });
+    }
+
+    // Kaydet
+    categories[currentCategoryType].push({
+        id: nextCategoryId++,
+        name,
+        yearlyBudget,
+        monthlyBudgets,
+        icon: selectedIcon
+    });
+
+    closeModal('categoryModal');
+    saveData();
+    updateAll();
+    showToast(t('added'));
 }
 
-categories[currentCategoryType].push({
-id: nextCategoryId++,
-name,
-yearlyBudget,
-monthlyBudgets,
-icon: selectedIcon
-});
-
-closeModal('categoryModal');
-saveData();
-updateAll();
-showToast('Eklendi ✓');
-}
 
 function openEditBudgetModal(categoryId) {
-const cat = [...categories.income, ...categories.expense].find(c => c.id === categoryId);
-if (!cat) return;
+    const cat = [...categories.income, ...categories.expense].find(c => c.id === categoryId);
+    if (!cat) return;
 
-editingCategoryId = categoryId;
+    editingCategoryId = categoryId;
 
-// Mevcut yıl için bütçe bilgilerini al
-const yearBudget = cat.budgets && cat.budgets[currentYear];
-let yearlyBudgetUSD = 0;
-let monthlyBudgetsUSD = [];
-let savedCurrency = 'USD';
+    // Mevcut yıl için bütçe bilgilerini al
+    const yearBudget = cat.budgets && cat.budgets[currentYear];
+    let yearlyBudgetUSD = 0;
+    let monthlyBudgetsUSD = [];
+    let savedCurrency = 'USD';
 
-if (yearBudget) {
-yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
-monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
-savedCurrency = yearBudget.budgetCurrency || 'USD';
-} else {
-// Eski format desteği (geriye uyumluluk)
-yearlyBudgetUSD = cat.yearlyBudget || 0;
-monthlyBudgetsUSD = cat.monthlyBudgets || [];
-savedCurrency = cat.budgetCurrency || 'USD';
-}
+    if (yearBudget) {
+        yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
+        monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
+        savedCurrency = yearBudget.budgetCurrency || 'USD';
+    } else {
+        // Eski format desteği (geriye uyumluluk)
+        yearlyBudgetUSD = cat.yearlyBudget || 0;
+        monthlyBudgetsUSD = cat.monthlyBudgets || [];
+        savedCurrency = cat.budgetCurrency || 'USD';
+    }
 
-selectedEditCategoryCurrency = savedCurrency;
-document.getElementById('editCategoryName').value = cat.name;
+    selectedEditCategoryCurrency = savedCurrency;
+    document.getElementById('editCategoryName').value = cat.name;
 
-// Eğer kayıtlı para birimi varsa, o para biriminde göster
-if (savedCurrency !== 'USD') {
-const avgRate = savedCurrency === 'TRY'
-? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
-: monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
-document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
+    // Eğer kayıtlı para birimi varsa, o para biriminde göster
+    if (savedCurrency !== 'USD') {
+        const avgRate = savedCurrency === 'TRY'
+            ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+            : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
-const rate = getRateForMonth(savedCurrency, i);
-return val * rate;
-});
-renderMonthlyBudgetGrid('editMonthlyBudgetGrid', convertedMonthly);
-} else {
-document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD;
-renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
-}
+        document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
 
-updateEditCategoryCurrencyUI();
+        const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
+            const rate = getRateForMonth(savedCurrency, i);
+            return val * rate;
+        });
+        renderMonthlyBudgetGrid('editMonthlyBudgetGrid', convertedMonthly);
+    } else {
+        document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD;
+        renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
+    }
 
-// Günlük takip ayarını oku
-const dailyTracking = cat.dailyTracking !== undefined ? cat.dailyTracking : false;
-document.getElementById('editDailyTracking').checked = dailyTracking;
-updateDailyTrackingStatus();
+    updateEditCategoryCurrencyUI();
 
-// Modal başlığına yılı ekle
-document.querySelector('#editBudgetModal .modal-header h2').textContent = `${currentYear} ${t('editBudget')}`;
-document.getElementById('editBudgetModal').classList.add('active');
+    // Günlük takip ayarını oku
+    const dailyTracking = cat.dailyTracking !== undefined ? cat.dailyTracking : false;
+    document.getElementById('editDailyTracking').checked = dailyTracking;
+    updateDailyTrackingStatus();
+
+    // Modal başlığına yılı ekle
+    const header = document.querySelector('#editBudgetModal .modal-header h2');
+    if (header) {
+        header.textContent = `${currentYear} ${t('editBudget') || 'Bütçe Düzenle'}`;
+    }
+
+    document.getElementById('editBudgetModal').classList.add('active');
 }
 
 function updateDailyTrackingStatus() {
-const isChecked = document.getElementById('editDailyTracking').checked;
-document.getElementById('dailyTrackingStatus').textContent = isChecked ? 'Açık' : 'Kapalı';
-document.getElementById('dailyTrackingStatus').style.color = isChecked ? 'var(--accent-main)' : 'var(--text-secondary)';
+    const isChecked = document.getElementById('editDailyTracking').checked;
+    const statusEl = document.getElementById('dailyTrackingStatus');
+    if (!statusEl) return;
+
+    statusEl.textContent = isChecked ? (t('Açık') || 'Açık') : (t('Kapalı') || 'Kapalı');
+    statusEl.style.color = isChecked ? 'var(--accent-main)' : 'var(--text-secondary)';
 }
 
 function setEditCategoryCurrency(currency) {
-// Get current values in USD
-const cat = [...categories.income, ...categories.expense].find(c => c.id === editingCategoryId);
-if (!cat) return;
+    // Get current values in USD
+    const cat = [...categories.income, ...categories.expense].find(c => c.id === editingCategoryId);
+    if (!cat) return;
 
-selectedEditCategoryCurrency = currency;
-updateEditCategoryCurrencyUI();
+    selectedEditCategoryCurrency = currency;
+    updateEditCategoryCurrencyUI();
 
-// Yıl bazında bütçe bilgilerini al
-const yearBudget = cat.budgets && cat.budgets[currentYear];
-let yearlyBudgetUSD = 0;
-let monthlyBudgetsUSD = [];
+    // Yıl bazında bütçe bilgilerini al
+    const yearBudget = cat.budgets && cat.budgets[currentYear];
+    let yearlyBudgetUSD = 0;
+    let monthlyBudgetsUSD = [];
 
-if (yearBudget) {
-yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
-monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
-} else {
-// Eski format desteği
-yearlyBudgetUSD = cat.yearlyBudget || 0;
-monthlyBudgetsUSD = cat.monthlyBudgets || [];
-}
+    if (yearBudget) {
+        yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
+        monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
+    } else {
+        // Eski format desteği
+        yearlyBudgetUSD = cat.yearlyBudget || 0;
+        monthlyBudgetsUSD = cat.monthlyBudgets || [];
+    }
 
-// Convert and display in selected currency
-if (currency === 'USD') {
-document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD.toFixed(2);
-renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
-} else {
-const avgRate = currency === 'TRY'
-? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
-: monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    // Seçilen para biriminde göster
+    if (currency === 'USD') {
+        document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD.toFixed(2);
+        renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
+    } else {
+        const avgRate = currency === 'TRY'
+            ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+            : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
+        document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
 
-const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
-const rate = getRateForMonth(currency, i);
-return val * rate;
-});
-renderMonthlyBudgetGrid('editMonthlyBudgetGrid', convertedMonthly);
-}
+        const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
+            const rate = getRateForMonth(currency, i);
+            return val * rate;
+        });
+        renderMonthlyBudgetGrid('editMonthlyBudgetGrid', convertedMonthly);
+    }
 }
 
 function updateEditCategoryCurrencyUI() {
-const symbol = currencySymbols[selectedEditCategoryCurrency];
-document.getElementById('editYearlyBudgetLabel').textContent = `Yıllık Bütçe (${symbol})`;
+    const symbol = currencySymbols[selectedEditCategoryCurrency];
 
-// Update monthly budget label (keep button)
-const monthlyLabel = document.getElementById('editMonthlyBudgetLabel');
-const btn = monthlyLabel.querySelector('button');
-monthlyLabel.innerHTML = `Aylık Bütçeler (${symbol}) `;
-monthlyLabel.appendChild(btn);
+    // Yıllık bütçe etiketi
+    const yearlyLabel = document.getElementById('editYearlyBudgetLabel');
+    if (yearlyLabel) {
+        yearlyLabel.textContent = `Yıllık Bütçe (${symbol})`;
+    }
 
-// Update currency buttons
-document.querySelectorAll('#editCategoryCurrencyToggle .currency-btn').forEach(btn => {
-btn.classList.toggle('active', btn.dataset.currency === selectedEditCategoryCurrency);
-});
+    // Aylık bütçe etiketi + buton
+    const monthlyText = document.getElementById('editMonthlyBudgetText');
+    if (monthlyText) {
+        monthlyText.textContent = `Aylık Bütçeler (${symbol})`;
+    }
 
-// Show rates
-updateEditCategoryRatesDisplay();
+    const btn = document.getElementById('btnDistributeEdit');
+    if (btn) {
+        btn.textContent = 'Eşit Dağıt';
+    }
+
+    // Para birimi butonları
+    const toggle = document.getElementById('editCategoryCurrencyToggle');
+    if (toggle) {
+        toggle.querySelectorAll('.currency-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.currency === selectedEditCategoryCurrency);
+        });
+    }
+
+    // Kur bilgisi
+    updateEditCategoryRatesDisplay();
 }
 
 function updateEditCategoryRatesDisplay() {
-const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
-const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+    const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-document.getElementById('editCategoryRatesDisplay').innerHTML = `
-<span class="rate-chip">Ort: 1$ = ${avgTryRate.toFixed(2)}₺</span>
-<span class="rate-chip">Ort: 1$ = ${avgRubRate.toFixed(2)}₽</span>
-`;
+    const el = document.getElementById('editCategoryRatesDisplay');
+    if (!el) return;
+
+    el.innerHTML = `
+        <span class="rate-chip">Ort: 1$ = ${avgTryRate.toFixed(2)}₺</span>
+        <span class="rate-chip">Ort: 1$ = ${avgRubRate.toFixed(2)}₽</span>
+    `;
 }
 
 function updateCategory() {
-const name = document.getElementById('editCategoryName').value.trim();
-let yearlyBudget = parseFloat(document.getElementById('editCategoryYearlyBudget').value) || 0;
-let monthlyBudgets = getMonthlyBudgets('editMonthlyBudgetGrid');
+    const name = document.getElementById('editCategoryName').value.trim();
+    let yearlyBudget = parseFloat(document.getElementById('editCategoryYearlyBudget').value) || 0;
+    let monthlyBudgets = getMonthlyBudgets('editMonthlyBudgetGrid');
 
-if (!name) { showToast('İsim girin'); return; }
+    if (!name) {
+        showToast('İsim girin');
+        return;
+    }
 
-// Convert to USD if entered in different currency
-if (selectedEditCategoryCurrency !== 'USD') {
-const avgRate = selectedEditCategoryCurrency === 'TRY'
-? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
-: monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    // USD'ye çevir
+    if (selectedEditCategoryCurrency !== 'USD') {
+        const avgRate = selectedEditCategoryCurrency === 'TRY'
+            ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+            : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-yearlyBudget = yearlyBudget / avgRate;
-monthlyBudgets = monthlyBudgets.map((val, i) => {
-const rate = getRateForMonth(selectedEditCategoryCurrency, i);
-return val / rate;
-});
+        yearlyBudget = yearlyBudget / avgRate;
+
+        monthlyBudgets = monthlyBudgets.map((val, i) => {
+            const rate = getRateForMonth(selectedEditCategoryCurrency, i);
+            return val / rate;
+        });
+    }
+
+    const dailyTracking = document.getElementById('editDailyTracking').checked;
+
+    ['income', 'expense'].forEach(type => {
+        const cat = categories[type].find(c => c.id === editingCategoryId);
+        if (cat) {
+            cat.name = name;
+            cat.dailyTracking = dailyTracking;
+            if (!cat.budgets) cat.budgets = {};
+            cat.budgets[currentYear] = {
+                yearlyBudget: yearlyBudget,
+                monthlyBudgets: monthlyBudgets,
+                budgetCurrency: selectedEditCategoryCurrency
+            };
+        }
+    });
+
+    closeModal('editBudgetModal');
+    saveData();
+    updateAll();
+    showToast('Güncellendi ✓');
 }
 
-const dailyTracking = document.getElementById('editDailyTracking').checked;
-
-['income', 'expense'].forEach(type => {
-const cat = categories[type].find(c => c.id === editingCategoryId);
-if (cat) {
-cat.name = name;
-cat.dailyTracking = dailyTracking; // Günlük takip ayarı
-// Yıl bazında bütçe kaydet
-if (!cat.budgets) cat.budgets = {};
-cat.budgets[currentYear] = {
-yearlyBudget: yearlyBudget,
-monthlyBudgets: monthlyBudgets,
-budgetCurrency: selectedEditCategoryCurrency
-};
-}
-});
-
-closeModal('editBudgetModal');
-saveData();
-updateAll();
-showToast('Güncellendi ✓');
-}
 
 function renderMonthlyRatesGrid(containerId, currency) {
 const container = document.getElementById(containerId);
