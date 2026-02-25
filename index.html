@@ -3472,7 +3472,7 @@ let barClass = type === 'expense'
 const planLabel = isMonthly ? (isEn ? 'Monthly Plan' : 'Aylık Plan') : (isEn ? 'Yearly Plan' : 'Yıllık Plan');
 const actualLabel = isEn ? 'Actual' : 'Gerçekleşen';
 const diffLabel = isEn ? 'Difference' : 'Fark';
-const subtitle = `${txList.length} işlem`;
+const subtitle = isEn ? `${txList.length} transaction${txList.length !== 1 ? 's' : ''}` : `${txList.length} işlem`;
 
 // Günlük limit hesaplama (sadece aylık görünüm, gider ve günlük takip açık olanlar için)
 let dailySection = '';
@@ -3544,48 +3544,48 @@ dailySection = `
 
 return `
 <div class="budget-item">
-<div class="budget-header">
-<div class="budget-left">
-<div class="budget-icon ${type}">
-<i class="fas ${cat.icon}"></i>
-</div>
-<div class="budget-info">
-<h3>${cat.name}</h3>
-<span>${subtitle}</span>
-</div>
-</div>
-<div class="budget-actions">
-<button class="action-btn edit" onclick="openEditBudgetModal(${cat.id})">
-<i class="fas fa-pen"></i>
-</button>
-<button class="action-btn delete" onclick="confirmDelete('category', ${cat.id}, '${type}', '${cat.name}')">
-<i class="fas fa-trash"></i>
-</button>
-</div>
-</div>
-<div class="budget-stats">
-<div class="stat-box">
-<div class="stat-label">${planLabel}</div>
-<div class="stat-value plan">${formatCurrency(plan)}</div>
-<div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')} / ${formatCurrency(plan * rubRate, 'RUB')}</div>
-${planOriginalHtml}
-</div>
-<div class="stat-box">
-<div class="stat-label">${t('actual')}</div>
-<div class="stat-value fact">${formatCurrency(fact)}</div>
-<div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')} / ${formatCurrency(fact * rubRate, 'RUB')}</div>
-${originalCurrencyHtml}
-</div>
-<div class="stat-box">
-<div class="stat-label">${t('difference')}</div>
-<div class="stat-value diff ${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatCurrency(diff)}</div>
-<div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')} / ${diff >= 0 ? '+' : ''}${formatCurrency(diff * rubRate, 'RUB')}</div>
-</div>
-</div>
-${dailySection}
-<div class="plan-fact-bar">
-<div class="plan-fact-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
-</div>
+    <div class="budget-header">
+        <div class="budget-left">
+            <div class="budget-icon ${type}">
+                <i class="fas ${cat.icon}"></i>
+            </div>
+            <div class="budget-info">
+                <h3>${cat.name}</h3>
+                <span>${subtitle}</span>
+            </div>
+        </div>
+        <div class="budget-actions">
+            <button class="action-btn edit" onclick="openEditBudgetModal(${cat.id})">
+                <i class="fas fa-pen"></i>
+            </button>
+            <button class="action-btn delete" onclick="confirmDelete('category', ${cat.id}, '${type}', '${cat.name}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="budget-stats">
+        <div class="stat-box">
+            <div class="stat-label">${planLabel}</div>
+            <div class="stat-value plan">${formatCurrency(plan)}</div>
+            <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')} / ${formatCurrency(plan * rubRate, 'RUB')}</div>
+            ${planOriginalHtml}
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">${actualLabel}</div>
+            <div class="stat-value fact">${formatCurrency(fact)}</div>
+            <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')} / ${formatCurrency(fact * rubRate, 'RUB')}</div>
+            ${originalCurrencyHtml}
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">${diffLabel}</div>
+            <div class="stat-value diff ${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatCurrency(diff)}</div>
+            <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')} / ${diff >= 0 ? '+' : ''}${formatCurrency(diff * rubRate, 'RUB')}</div>
+        </div>
+    </div>
+    ${dailySection}
+    <div class="plan-fact-bar">
+        <div class="plan-fact-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
+    </div>
 </div>
 `;
 }).join('');
@@ -5706,6 +5706,7 @@ setTimeout(() => toast.remove(), 300);
 }
 
 // ==================== UPDATE ALL ====================
+// ==================== UPDATE ALL ====================
 function updateAll() {
   // Önce dili uygula ki tüm render fonksiyonları doğru dili kullansın
   applyLanguage();
@@ -5750,7 +5751,7 @@ function updateAll() {
     headerTitle.innerHTML = `<i class="fas fa-wallet"></i> ${isEn ? 'Budget Tracker' : 'Bütçe Takip'}`;
   }
   
-  // Net Durum kartı başlığı - toUpperCase YOK, manuel büyük harf
+  // Net Durum kartı başlığı - toUpperCase YOK, direkt yaz
   const netLabel = document.querySelector('.summary-card.full .label');
   if (netLabel) {
     netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
@@ -5769,7 +5770,7 @@ function updateAll() {
     if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
   }
   
-  // CASH FLOW TABLO BAŞLIKLARI - toUpperCase YOK, manuel büyük harf
+  // CASH FLOW TABLO BAŞLIKLARI - toUpperCase YOK, direkt yaz
   const cfTable = document.getElementById('cashflowTable');
   if (cfTable && isEn) {
     const th = cfTable.querySelectorAll('thead th');
@@ -5797,7 +5798,7 @@ function updateAll() {
     }
   }
   
-  // BÜTÇE KARTLARINDAKİ LABEL'LAR - toUpperCase YOK
+  // BÜTÇE KARTLARINDAKİ LABEL'LAR - toUpperCase YOK, direkt yaz
   const budgetItems = document.querySelectorAll('.budget-item');
   budgetItems.forEach(item => {
     const statLabels = item.querySelectorAll('.stat-label');
