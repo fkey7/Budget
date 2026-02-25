@@ -2102,20 +2102,30 @@ function saveAppSettings(){
 try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
 }
 function applyEnglishUppercase() {
-    if (appSettings.lang === 'en') {
-        document.querySelectorAll(
-            '.label, .stat-label, .chart-title, .tab, .month-chip, .currency-label, .summary-title, .section-title'
-        ).forEach(el => {
-            el.textContent = el.textContent.toLocaleUpperCase('en-US');
-        });
-    }
-} 
+    if (appSettings.lang !== 'en') return;
+
+    document.querySelectorAll(`
+        .summary-card .label,
+        .stat-box .stat-label,
+        .cashflow-table th,
+        .summary-title,
+        .section-title,
+        .budget-info h3,
+        .transaction-category,
+        .balance-card-title,
+        .balance-group-title
+    `).forEach(el => {
+        el.textContent = el.textContent.toLocaleUpperCase('en-US');
+    });
+}
+
 function setLanguage(lang) {
     appSettings.lang = lang;
     saveAppSettings();
     renderAll();              // UI’yı yeniden çiz
     applyEnglishUppercase();  // İngilizce ise büyük harf düzelt
 }
+
 
 
 const I18N = {
