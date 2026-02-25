@@ -1715,7 +1715,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <canvas id="balanceChart"></canvas>
 </div>
 
-<div class="muted" style="margin-top:10px;" data-i18n="balanceNote">
+<div class="muted" style="margin-top:10px;" data-="balanceNote">
 Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD'ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle <b>aynıysa</b>,
 gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.
 </div>
@@ -1758,7 +1758,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="category-select-grid" id="categorySelectGrid"></div>
 </div>
 <div class="form-group">
-<label data-i18n="currency">Para Birimi</label>
+<label data-="currency">Para Birimi</label>
 <div class="currency-toggle" id="currencyToggle">
 <button class="currency-btn active" data-currency="USD" onclick="selectTransactionCurrency('USD')">$ USD</button>
 <button class="currency-btn" data-currency="TRY" onclick="selectTransactionCurrency('TRY')">₺ TRY</button>
@@ -1780,7 +1780,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="rates-display" id="currentRates"></div>
 </div>
 <div class="form-group">
-<label data-i18n="amount">Tutar</label>
+<label data-="amount">Tutar</label>
 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
 </div>
 <div class="form-group">
@@ -2136,32 +2136,20 @@ const I18N = {
     appSettings: 'Uygulama Ayarları', language: 'Dil Seçimi', theme: 'Tema Seçimi', darkMode: 'Karanlık Mod', lightMode: 'Aydınlık Mod',
     exportData: 'Dışa Aktar', importData: 'İçe Aktar', clearAllData: 'Tüm Verileri Sil', backupDownloaded: 'Yedek indirildi', dataLoaded: 'Veriler yüklendi', dataCleared: 'Veriler temizlendi',
     exchangeRates: 'Döviz Kurları', currentRates: 'Güncel Kurlar', fetchRates: 'Güncel Kurları Al', applyToAll: 'Tümüne Uygula', monthlyRates: 'Aylık Kurlar',
-    income: 'Gelir', expense: 'Gider', budget: 'Bütçe', actual: 'Gerçekleşen', plan: 'Plan',
+    income: 'Gelir', expense: 'Gider', budget: 'Bütçe', plan: 'Plan',
     monthlyIncomePlan: 'Aylık Gelir Planı', monthlyExpensePlan: 'Aylık Gider Planı', yearlyIncomePlan: 'Yıllık Gelir Planı', yearlyExpensePlan: 'Yıllık Gider Planı', netPositionActual: 'Net Durum (Gerçekleşen)', netPosition: 'Net Durum',
     incomeType: 'Gelir', expenseType: 'Gider', usd: 'USD', try: 'TRY', rub: 'RUB',
-    actualColon: 'Gerçekleşen:',
-    monthlyPlan: 'Aylık Plan',
-    yearlyPlan: 'Yıllık Plan',
-    all: 'Tümü',
-    latest: 'Son Durum',
-    total: 'TOPLAM',
-    actual: 'Gerçekleşen',
-    difference: 'Fark',
-    cash: 'Nakit',
-    receivables: 'Alacaklar',
-    investments: 'Yatırımlar',
-    loans: 'Krediler',
-    creditCards: 'Kredi Kartı Borçları',
-    personalDebts: 'Şahıslara Borçlar',
-    newIncomeCategory: 'Yeni Gelir Kalemi',
-    newExpenseCategory: 'Yeni Gider Kalemi',
-    newTransaction: 'Yeni İşlem',
-    editBudget: 'Bütçe Düzenle',
     avg: 'Ort',
     balanceSnapshotInfo: 'Bu kayıt seçtiğin ayın snapshot\'ına işlenir. Geçmiş aylar değişmez.',
     amount: 'Tutar',
+    month: 'Ay',
+    netGerç: 'Net Gerçek.',
+    gelirPlan: 'Gelir Plan',
+    gelirGerç: 'Gelir Gerçek.',
+    giderPlan: 'Gider Plan',
+    giderGerç: 'Gider Gerçek.'
   },
-  I18N.en = {
+  en: {
     appTitle: 'Budget Tracker',
     budget: 'Budget',
     transactions: 'Transactions',
@@ -2307,8 +2295,8 @@ const I18N = {
     gelirGerç: 'Income Actual',
     giderPlan: 'Expense Plan',
     giderGerç: 'Expense Actual'
+  }
 };
-
 function t(key){
 const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
 return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
