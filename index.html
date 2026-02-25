@@ -482,29 +482,29 @@ gap: 4px;
 }
 
 .budget-stats {
-display: grid;
-grid-template-columns: 1fr 1fr 1fr;
-gap: 8px;
-margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .stat-box {
-text-align: center;
-padding: 10px 8px;
-background: var(--bg-secondary);
-border-radius: 10px;
+  text-align: center;
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
 }
 
 .stat-box .stat-label {
-font-size: 0.65rem;
-color: var(--text-secondary);
-font-weight: 700;
+  font-size: 0.65rem !important;
+  color: var(--text-secondary);
+  font-weight: 700;
 }
 
 .stat-box .stat-value {
-font-size: 0.9rem;
-font-weight: 800;
-margin-top: 2px;
+  font-size: 0.9rem !important;
+  font-weight: 800;
+  margin-top: 2px;
 }
 
 .stat-box .stat-value.plan { color: var(--accent-main); }
@@ -513,12 +513,11 @@ margin-top: 2px;
 .stat-box .stat-value.diff.negative { color: var(--accent-expense); }
 
 .stat-box .stat-sub {
-font-size: 0.65rem;
-color: var(--text-secondary);
-margin-top: 2px;
-opacity: 0.8;
+  font-size: 0.65rem !important;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  opacity: 0.8;
 }
-
 .daily-budget-info {
 background: var(--bg-secondary);
 border-radius: 10px;
@@ -6248,9 +6247,9 @@ document.getElementById('balanceItemAmount').value = (it.originalAmount != null 
 const __amt2 = document.getElementById('balanceItemAmount');
 if (__amt2) __amt2.oninput = () => { updateBalanceUsdPreview(); };
 
-const info = document.getElementById('balanceItemMonthInfo');
+const info = document.querySelector('#balanceItemModal [data-i18n="balanceSnapshotInfo"]');
 if (info){
-info.textContent = `Ay: ${ym} (Bu ayın snapshot’ını düzenliyorsun. Geçmiş aylar değişmez.)`;
+    info.textContent = t('balanceSnapshotInfo');
 }
 updateBalanceUsdPreview();
 openModal('balanceItemModal');
