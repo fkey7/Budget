@@ -5736,6 +5736,48 @@ function updateAll() {
             }
         });
     });
+    
+    // KESİN ÇÖZÜM - En son çalışır, her şeyi ezer
+    setTimeout(() => {
+        const isEn2 = appSettings.lang === 'en';
+        if (!isEn2) return;
+        
+        // Cash Flow tablosu başlıkları - tekrar kontrol
+        const cfTable2 = document.getElementById('cashflowTable');
+        if (cfTable2) {
+            const headers = cfTable2.querySelectorAll('thead th');
+            if (headers.length >= 8) {
+                headers[6].textContent = 'Net Actual';
+                headers[7].textContent = 'Cumulative';
+            }
+        }
+        
+        // Özet kartı - Net Position (Actual)
+        document.querySelectorAll('.summary-card').forEach(card => {
+            const label = card.querySelector('.label');
+            if (label) {
+                const txt = label.textContent;
+                if (txt.toLowerCase().includes('net') && txt.toLowerCase().includes('position')) {
+                    label.textContent = 'Net Position (Actual)';
+                }
+            }
+        });
+        
+        // Budget item labelleri - son kontrol
+        document.querySelectorAll('.stat-label').forEach(el => {
+            const txt = el.textContent.trim().toLowerCase();
+            if (txt === 'actual' || txt === 'gerçekleşen' || txt === 'gerçeklesen') {
+                el.textContent = 'Actual';
+            }
+            if (txt === 'plan' || txt === 'planlanan' || txt === 'monthly plan' || txt === 'yearly plan') {
+                el.textContent = 'Plan';
+            }
+            if (txt === 'difference' || txt === 'fark') {
+                el.textContent = 'Difference';
+            }
+        });
+        
+    }, 100);
 }
 // ==================== INIT ====================
 loadData();
