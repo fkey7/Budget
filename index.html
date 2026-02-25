@@ -1802,8 +1802,8 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
 </div>
 <div class="form-group">
-<label>Kategori Adı</label>
-<input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
+<label id="categoryNameLabel" data-i18n="categoryName">Kategori Adı</label>
+<input type="text" id="categoryName" placeholder="Örn: Maaş, Kira..." data-i18n-placeholder="categoryNamePlaceholder">
 </div>
 <div class="form-group">
     <label data-i18n="budgetCurrency">Bütçe Para Birimi</label>
@@ -1826,7 +1826,7 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
     <label data-i18n="icon">İkon</label>
 <div class="icon-grid" id="iconGrid"></div>
 </div>
-<button class="submit-btn" onclick="saveCategory()" data-i18n="save">Kaydet</button>
+<button class="submit-btn" id="saveCategoryBtn" onclick="saveCategory()" data-i18n="save">Kaydet</button>
 </div>
 </div>
 
@@ -3927,10 +3927,23 @@ function openCategoryModal(type) {
     selectedIcon = 'fa-tag';
     selectedCategoryCurrency = 'USD';
     
+    // Modal metinlerini aktif dile göre güncelle
+    const categoryNameLabel = document.getElementById('categoryNameLabel');
+    if (categoryNameLabel) categoryNameLabel.textContent = t('categoryName');
+
+    const budgetCurrencyLabel = document.querySelector('#categoryModal [data-i18n="budgetCurrency"]');
+    if (budgetCurrencyLabel) budgetCurrencyLabel.textContent = t('budgetCurrency');
+
+    const iconLabel = document.querySelector('#categoryModal [data-i18n="icon"]');
+    if (iconLabel) iconLabel.textContent = t('icon');
+
+    const saveBtn = document.getElementById('saveCategoryBtn');
+    if (saveBtn) saveBtn.textContent = t('save');
+
     // Input placeholder'ları güncelle
     const nameInput = document.getElementById('categoryName');
     if (nameInput) nameInput.placeholder = t('categoryNamePlaceholder');
-    
+
     updateCategoryCurrencyUI();
     renderMonthlyBudgetGrid('monthlyBudgetGrid');
     renderIconGrid();
@@ -6810,5 +6823,4 @@ const lang = (window.appSettings && window.appSettings.lang) ? window.appSetting
 translateDOM(lang);
 });
 })();
-
 
