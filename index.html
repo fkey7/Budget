@@ -5737,18 +5737,23 @@ function updateAll() {
         });
     });
     
-    // KESİN ÇÖZÜM - En son çalışır, her şeyi ezer
-    setTimeout(() => {
+    // KESİN ÇÖZÜM - Interval ile sürekli kontrol (3 saniye boyunca)
+    let fixCount = 0;
+    const fixInterval = setInterval(() => {
         const isEn2 = appSettings.lang === 'en';
-        if (!isEn2) return;
+        if (!isEn2) {
+            clearInterval(fixInterval);
+            return;
+        }
         
-        // Cash Flow tablosu başlıkları - tekrar kontrol
+        // Cash Flow tablosu başlıkları
         const cfTable2 = document.getElementById('cashflowTable');
         if (cfTable2) {
             const headers = cfTable2.querySelectorAll('thead th');
             if (headers.length >= 8) {
-                headers[6].textContent = 'Net Actual';
-                headers[7].textContent = 'Cumulative';
+                // Direkt I harfi kullanarak ata
+                headers[6].innerHTML = 'Net Actual';
+                headers[7].innerHTML = 'Cumulative';
             }
         }
         
@@ -5757,26 +5762,61 @@ function updateAll() {
             const label = card.querySelector('.label');
             if (label) {
                 const txt = label.textContent;
-                if (txt.toLowerCase().includes('net') && txt.toLowerCase().includes('position')) {
-                    label.textContent = 'Net Position (Actual)';
+                // Türkçe İ harfi içeren versiyonu da kontrol et
+                if (txt.indexOf('NET POSİTİON') !== -1 || txt.indexOf('NET POSITION') !== -1) {
+                    label.innerHTML = 'Net Position (Actual)';
                 }
             }
         });
         
-        // Budget item labelleri - son kontrol
+        // Budget item labelleri
         document.querySelectorAll('.stat-label').forEach(el => {
-            const txt = el.textContent.trim().toLowerCase();
-            if (txt === 'actual' || txt === 'gerçekleşen' || txt === 'gerçeklesen') {
-                el.textContent = 'Actual';
+            const txt = el.textContent.trim();
+            // Büyük harfli versiyonları da kontrol et
+            if (txt === 'ACTUAL' || txt === 'GERÇEKLEŞEN' || txt === 'GERCEKLESEN') {
+                el.innerHTML = 'Actual';
             }
-            if (txt === 'plan' || txt === 'planlanan' || txt === 'monthly plan' || txt === 'yearly plan') {
-                el.textContent = 'Plan';
+            if (txt === 'PLAN' || txt === 'PLANLANAN' || txt === 'AYLIK PLAN' || txt === 'YILLIK PLAN') {
+                el.innerHTML = 'Plan';
             }
-            if (txt === 'difference' || txt === 'fark') {
-                el.textContent = 'Difference';
+            if (txt === 'DIFFERENCE' || txt === 'FARK') {
+                el.innerHTML = 'Difference';
             }
         });
         
+        // Tüm text node'ları tara (en derin çözüm)
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+        let node;
+        while (node = walker.nextNode()) {
+            const val = node.nodeValue;
+            if (!val) continue;
+            
+            // Türkçe İ harfini I yap
+            if (val.indexOf('İ') !== -1) {
+                node.nodeValue = val.replace(/İ/g, 'I');
+            }
+            // CUMULATİVE -> Cumulative
+            if (val === 'CUMULATİVE' || val === 'CUMULATIVE') {
+                node.nodeValue = 'Cumulative';
+            }
+            // NET POSİTİON -> Net Position
+            if (val === 'NET POSİTİON (ACTUAL)' || val === 'NET POSITION (ACTUAL)') {
+                node.nodeValue = 'Net Position (Actual)';
+            }
+            // DIFFERENCE -> Difference
+            if (val === 'DIFFERENCE') {
+                node.nodeValue = 'Difference';
+            }
+            // ACTUAL -> Actual
+            if (val === 'ACTUAL' || val === 'ACTUAL:') {
+                node.nodeValue = val === 'ACTUAL:' ? 'Actual:' : 'Actual';
+            }
+        }
+        
+        fixCount++;
+        if (fixCount >= 10) { // 10 x 100ms = 1 saniye sonra dur
+            clearInterval(fixInterval);
+        }
     }, 100);
 }
 // ==================== INIT ====================
