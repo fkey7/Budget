@@ -3388,7 +3388,9 @@ let barClass = type === 'expense'
 ? (percent > 100 ? 'over' : percent > 80 ? 'warning' : 'under')
 : (percent >= 100 ? 'under' : percent > 50 ? 'warning' : 'over');
 
-const planLabel = isMonthly ? t('monthlyPlan') : t('yearlyPlan');
+const planLabel = isMonthly ? (isEn ? 'Monthly Plan' : 'Aylık Plan') : (isEn ? 'Yearly Plan' : 'Yıllık Plan');
+const actualLabel = isEn ? 'Actual' : 'Gerçekleşen';
+const diffLabel = isEn ? 'Difference' : 'Fark';
 const subtitle = `${txList.length} işlem`;
 
 // Günlük limit hesaplama (sadece aylık görünüm, gider ve günlük takip açık olanlar için)
@@ -5667,7 +5669,7 @@ function updateAll() {
     headerTitle.innerHTML = `<i class="fas fa-wallet"></i> ${isEn ? 'Budget Tracker' : 'Bütçe Takip'}`;
   }
   
-  // Net Durum kartı başlığı
+  // Net Durum kartı başlığı - toUpperCase YOK, manuel büyük harf
   const netLabel = document.querySelector('.summary-card.full .label');
   if (netLabel) {
     netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
@@ -5685,8 +5687,49 @@ function updateAll() {
     const span = factExpenseRow.querySelector('span:first-child');
     if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
   }
+  
+  // CASH FLOW TABLO BAŞLIKLARI - toUpperCase YOK, manuel büyük harf
+  const cfTable = document.getElementById('cashflowTable');
+  if (cfTable && isEn) {
+    const th = cfTable.querySelectorAll('thead th');
+    if (th && th.length >= 8) {
+      th[0].textContent = 'Month';
+      th[1].textContent = 'Income Plan';
+      th[2].textContent = 'Income Actual';
+      th[3].textContent = 'Expense Plan';
+      th[4].textContent = 'Expense Actual';
+      th[5].textContent = 'Net Plan';
+      th[6].textContent = 'Net Actual';
+      th[7].textContent = 'Cumulative';
+    }
+  } else if (cfTable && !isEn) {
+    const th = cfTable.querySelectorAll('thead th');
+    if (th && th.length >= 8) {
+      th[0].textContent = 'Ay';
+      th[1].textContent = 'Gelir Plan';
+      th[2].textContent = 'Gelir Gerç.';
+      th[3].textContent = 'Gider Plan';
+      th[4].textContent = 'Gider Gerç.';
+      th[5].textContent = 'Net Plan';
+      th[6].textContent = 'Net Gerç.';
+      th[7].textContent = 'Kümülatif';
+    }
+  }
+  
+  // BÜTÇE KARTLARINDAKİ LABEL'LAR - toUpperCase YOK
+  const budgetItems = document.querySelectorAll('.budget-item');
+  budgetItems.forEach(item => {
+    const statLabels = item.querySelectorAll('.stat-label');
+    statLabels.forEach(label => {
+      const text = label.textContent.trim();
+      if (isEn) {
+        if (text === 'PLAN' || text === 'Plan' || text === 'PLANLANAN') label.textContent = 'Plan';
+        if (text === 'GERÇEKLEŞEN' || text === 'Gerçekleşen' || text === 'ACTUAL') label.textContent = 'Actual';
+        if (text === 'FARK' || text === 'Fark' || text === 'DIFFERENCE') label.textContent = 'Difference';
+      }
+    });
+  });
 }
-
 // ==================== INIT ====================
 loadData();
 document.getElementById('yearDisplay').textContent = currentYear;
