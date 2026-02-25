@@ -2177,7 +2177,10 @@ netGerç: 'Net Gerçek.',
 gelirPlan: 'Gelir Plan',
 gelirGerç: 'Gelir Gerçek.',
 giderPlan: 'Gider Plan',
-giderGerç: 'Gider Gerçek.'
+giderGerç: 'Gider Gerçek.',
+newBalanceItem: 'Yeni Bilanço Kalemi',
+asset: 'Varlık',
+liability: 'Borç',
 },
 en: {
 appTitle: 'Budget Tracker',
@@ -2326,7 +2329,10 @@ netGerç: 'Net Actual',
 gelirPlan: 'Income Plan',
 gelirGerç: 'Income Actual',
 giderPlan: 'Expense Plan',
-giderGerç: 'Expense Actual'
+giderGerç: 'Expense Actual',
+newBalanceItem: 'New Balance Item',
+asset: 'Asset',
+liability: 'Liability',
 }
 };
 function t(key){
@@ -6094,25 +6100,63 @@ renderBalanceChart();
 
 
 function openBalanceItemModal(){
-balanceEditPtr = null;
-document.getElementById('balanceItemModalTitle').textContent = 'Yeni Bilanço Kalemi';
-const _bd = document.getElementById('balanceItemDate');
-if (_bd) { _bd.value = new Date().toISOString().slice(0,10); }
-
-selectedBalanceCurrency = 'USD';
-setBalanceCurrency('USD');
-setBalanceType('asset');
-const ym = resolveBalanceYM();
-const info = document.getElementById('balanceItemMonthInfo');
-if (info){
-info.textContent = `Ay: ${ym} (Bu ayın snapshot’ına kayıt edilir. Geçmiş aylar değişmez.)`;
-}
-document.getElementById('balanceItemName').value = '';
-document.getElementById('balanceItemAmount').value = '';
-const __amt = document.getElementById('balanceItemAmount');
-if (__amt) __amt.oninput = () => { updateBalanceUsdPreview(); };
-updateBalanceUsdPreview();
-openModal('balanceItemModal');
+    balanceEditPtr = null;
+    
+    // Başlık çevirisi
+    const titleEl = document.getElementById('balanceItemModalTitle');
+    if (titleEl) titleEl.textContent = t('newBalanceItem');
+    
+    const _bd = document.getElementById('balanceItemDate');
+    if (_bd) { _bd.value = new Date().toISOString().slice(0,10); }
+    
+    selectedBalanceCurrency = 'USD';
+    setBalanceCurrency('USD');
+    setBalanceType('asset');
+    
+    // Tip butonları çevirisi
+    const assetBtn = document.getElementById('balTypeAsset');
+    const liabBtn = document.getElementById('balTypeLiab');
+    if (assetBtn) {
+        assetBtn.innerHTML = '<i class="fas fa-gem"></i> ' + t('asset');
+    }
+    if (liabBtn) {
+        liabBtn.innerHTML = '<i class="fas fa-building-columns"></i> ' + t('liability');
+    }
+    
+    const ym = resolveBalanceYM();
+    const info = document.getElementById('balanceItemMonthInfo');
+    if (info){
+        info.textContent = t('balanceSnapshotInfo');
+    }
+    
+    // Label çevirileri
+    const labels = {
+        'date': document.querySelector('#balanceItemModal label[data-i18n="date"]'),
+        'type': document.querySelector('#balanceItemModal label[data-i18n="type"]'),
+        'group': document.querySelector('#balanceItemModal label[data-i18n="group"]'),
+        'categoryName': document.querySelector('#balanceItemModal label[data-i18n="categoryName"]'),
+        'amount': document.querySelector('#balanceItemModal label[data-i18n="amount"]'),
+        'currency': document.querySelector('#balanceItemModal label[data-i18n="currency"]')
+    };
+    
+    for (const [key, element] of Object.entries(labels)) {
+        if (element) element.textContent = t(key);
+    }
+    
+    // Kaydet butonu
+    const saveBtn = document.querySelector('#balanceItemModal button[data-i18n="save"]');
+    if (saveBtn) saveBtn.textContent = t('save');
+    
+    // Placeholder
+    const nameInput = document.getElementById('balanceItemName');
+    if (nameInput) nameInput.placeholder = t('categoryNamePlaceholder');
+    
+    document.getElementById('balanceItemName').value = '';
+    document.getElementById('balanceItemAmount').value = '';
+    const __amt = document.getElementById('balanceItemAmount');
+    if (__amt) __amt.oninput = () => { updateBalanceUsdPreview(); };
+    updateBalanceUsdPreview();
+    openModal('balanceItemModal');
 }
 
 
