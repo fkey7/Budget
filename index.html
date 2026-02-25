@@ -2701,8 +2701,35 @@ factExpense = txList.filter(t => t.type === 'expense').reduce((sum, t) => sum + 
 avgTryRate = getRateForMonth('TRY', currentMonth);
 avgRubRate = getRateForMonth('RUB', currentMonth);
 
-document.getElementById('incomeLabel').textContent = viewMode === 'monthly' ? t('monthlyIncomePlan') : t('yearlyIncomePlan');
-document.getElementById('expenseLabel').textContent = viewMode === 'monthly' ? t('monthlyExpensePlan') : t('yearlyExpensePlan');
+const isEn = appSettings.lang === 'en';
+    
+    document.getElementById('incomeLabel').textContent = viewMode === 'monthly' 
+        ? (isEn ? 'Monthly Income Plan' : 'Aylık Gelir Planı')
+        : (isEn ? 'Yearly Income Plan' : 'Yıllık Gelir Planı');
+        
+    document.getElementById('expenseLabel').textContent = viewMode === 'monthly'
+        ? (isEn ? 'Monthly Expense Plan' : 'Aylık Gider Planı')
+        : (isEn ? 'Yearly Expense Plan' : 'Yıllık Gider Planı');
+
+    // Net Durum kartı
+    const netLabel = document.querySelector('.summary-card.full .label');
+    if (netLabel) {
+        netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
+    }
+
+    // Gerçekleşen satırları
+    const factIncomeRow = document.getElementById('factIncomeRow');
+    if (factIncomeRow) {
+        const span = factIncomeRow.querySelector('span:first-child');
+        if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
+    }
+    
+    const factExpenseRow = document.getElementById('factExpenseRow');
+    if (factExpenseRow) {
+        const span = factExpenseRow.querySelector('span:first-child');
+        if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
+    }
+
 } else {
 // Yıllık modda
 txList = yearTx;
@@ -2887,123 +2914,123 @@ function updateCurrencySummary(txList, tryRate, rubRate) {
 }
 
 function updateCashFlow() {
-const yearTx = getYearTransactions();
-const tbody = document.getElementById('cashflowBody');
-const tfoot = document.getElementById('cashflowFoot');
-const summary = document.getElementById('cashflowSummary');
+    const yearTx = getYearTransactions();
+    const tbody = document.getElementById('cashflowBody');
+    const tfoot = document.getElementById('cashflowFoot');
+    const summary = document.getElementById('cashflowSummary');
 
-const today = new Date();
-const thisMonth = today.getMonth();
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    
+    const isEn = (appSettings.lang === 'en');
 
-let rows = '';
-let totalIncomePlan = 0, totalIncomeActual = 0;
-let totalExpensePlan = 0, totalExpenseActual = 0;
-let cumulativePlan = 0, cumulativeActual = 0;
+    let rows = '';
+    let totalIncomePlan = 0, totalIncomeActual = 0;
+    let totalExpensePlan = 0, totalExpenseActual = 0;
+    let cumulativePlan = 0, cumulativeActual = 0;
 
-// Her ay için hesapla
-for (let i = 0; i < 12; i++) {
-const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+    // Her ay için hesapla
+    for (let i = 0; i < 12; i++) {
+        const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
 
-const incomePlan = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
-const incomeActual = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+        const incomePlan = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+        const incomeActual = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
 
-const expensePlan = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
-const expenseActual = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+        const expensePlan = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+        const expenseActual = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
 
-const netPlan = incomePlan - expensePlan;
-const netActual = incomeActual - expenseActual;
+        const netPlan = incomePlan - expensePlan;
+        const netActual = incomeActual - expenseActual;
 
-cumulativePlan += netPlan;
-cumulativeActual += netActual;
+        cumulativePlan += netPlan;
+        cumulativeActual += netActual;
 
-totalIncomePlan += incomePlan;
-totalIncomeActual += incomeActual;
-totalExpensePlan += expensePlan;
-totalExpenseActual += expenseActual;
+        totalIncomePlan += incomePlan;
+        totalIncomeActual += incomeActual;
+        totalExpensePlan += expensePlan;
+        totalExpenseActual += expenseActual;
 
-const isCurrentMonth = (today.getFullYear() === currentYear && i === thisMonth);
-const isFutureMonth = (today.getFullYear() === currentYear && i > thisMonth) || (today.getFullYear() < currentYear);
+        const isCurrentMonth = (today.getFullYear() === currentYear && i === thisMonth);
+        const isFutureMonth = (today.getFullYear() === currentYear && i > thisMonth) || (today.getFullYear() < currentYear);
 
-rows += `
-<tr class="${isCurrentMonth ? 'current-month' : ''}">
-<td>${monthNames[i]}</td>
-<td>$${incomePlan.toFixed(0)}</td>
-<td class="${incomeActual > 0 ? 'positive' : ''}">${isFutureMonth && incomeActual === 0 ? '-' : '$' + incomeActual.toFixed(0)}</td>
-<td>$${expensePlan.toFixed(0)}</td>
-<td class="${expenseActual > 0 ? 'negative' : ''}">${isFutureMonth && expenseActual === 0 ? '-' : '$' + expenseActual.toFixed(0)}</td>
-<td class="${netPlan >= 0 ? 'positive' : 'negative'}">${netPlan >= 0 ? '+' : ''}$${netPlan.toFixed(0)}</td>
-<td class="${netActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '-' : (netActual >= 0 ? '+' : '') + '$' + netActual.toFixed(0)}</td>
-<td class="${cumulativeActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '($' + cumulativePlan.toFixed(0) + ')' : (cumulativeActual >= 0 ? '+' : '') + '$' + cumulativeActual.toFixed(0)}</td>
-</tr>
-`;
-}
+        rows += `
+        <tr class="${isCurrentMonth ? 'current-month' : ''}">
+            <td>${monthNames[i]}</td>
+            <td>$${incomePlan.toFixed(0)}</td>
+            <td class="${incomeActual > 0 ? 'positive' : ''}">${isFutureMonth && incomeActual === 0 ? '-' : '$' + incomeActual.toFixed(0)}</td>
+            <td>$${expensePlan.toFixed(0)}</td>
+            <td class="${expenseActual > 0 ? 'negative' : ''}">${isFutureMonth && expenseActual === 0 ? '-' : '$' + expenseActual.toFixed(0)}</td>
+            <td class="${netPlan >= 0 ? 'positive' : 'negative'}">${netPlan >= 0 ? '+' : ''}$${netPlan.toFixed(0)}</td>
+            <td class="${netActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '-' : (netActual >= 0 ? '+' : '') + '$' + netActual.toFixed(0)}</td>
+            <td class="${cumulativeActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '($' + cumulativePlan.toFixed(0) + ')' : (cumulativeActual >= 0 ? '+' : '') + '$' + cumulativeActual.toFixed(0)}</td>
+        </tr>
+        `;
+    }
 
-tbody.innerHTML = rows;
+    tbody.innerHTML = rows;
 
-// Toplam satırı - getCategoryYearlyPlan kullanarak özet kartlarıyla tutarlı hesaplama
-const yearlyIncomePlan = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
-const yearlyExpensePlan = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
-const yearlyNetPlan = yearlyIncomePlan - yearlyExpensePlan;
-const totalNetActual = totalIncomeActual - totalExpenseActual;
+    // Toplam satırı - getCategoryYearlyPlan kullanarak özet kartlarıyla tutarlı hesaplama
+    const yearlyIncomePlan = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+    const yearlyExpensePlan = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+    const yearlyNetPlan = yearlyIncomePlan - yearlyExpensePlan;
+    const totalNetActual = totalIncomeActual - totalExpenseActual;
 
-tfoot.innerHTML = `
-<tr>
-<td>${t('total').toUpperCase()}</td>
-<td>$${yearlyIncomePlan.toFixed(0)}</td>
-<td class="positive">$${totalIncomeActual.toFixed(0)}</td>
-<td>$${yearlyExpensePlan.toFixed(0)}</td>
-<td class="negative">$${totalExpenseActual.toFixed(0)}</td>
-<td class="${yearlyNetPlan >= 0 ? 'positive' : 'negative'}">${yearlyNetPlan >= 0 ? '+' : ''}$${yearlyNetPlan.toFixed(0)}</td>
-<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
-<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
-</tr>
-`;
+    tfoot.innerHTML = `
+    <tr>
+        <td>${t('total').toUpperCase()}</td>
+        <td>$${yearlyIncomePlan.toFixed(0)}</td>
+        <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
+        <td>$${yearlyExpensePlan.toFixed(0)}</td>
+        <td class="negative">$${totalExpenseActual.toFixed(0)}</td>
+        <td class="${yearlyNetPlan >= 0 ? 'positive' : 'negative'}">${yearlyNetPlan >= 0 ? '+' : ''}$${yearlyNetPlan.toFixed(0)}</td>
+        <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
+        <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
+    </tr>
+    `;
 
-// TRY ve RUB için ortalama kur
-const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
-const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+    // TRY ve RUB için ortalama kur
+    const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+    const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-// Tasarruf özeti - yıllık plan değerlerini kullan (özet kartlarıyla tutarlı)
-const yearlySavingsPlan = yearlyNetPlan;
-const yearlySavingsActual = totalNetActual;
-const monthlySavingsPlan = yearlySavingsPlan / 12;
-const remainingMonths = 12 - thisMonth - 1;
-const projectedSavings = totalNetActual + (remainingMonths * monthlySavingsPlan);
+    // Tasarruf özeti - yıllık plan değerlerini kullan (özet kartlarıyla tutarlı)
+    const yearlySavingsPlan = yearlyNetPlan;
+    const yearlySavingsActual = totalNetActual;
+    const monthlySavingsPlan = yearlySavingsPlan / 12;
+    const remainingMonths = 12 - thisMonth - 1;
+    const projectedSavings = totalNetActual + (remainingMonths * monthlySavingsPlan);
 
-var html = '';
-html += '<div class="cashflow-card savings">';
-html += `<div class="cashflow-card-title">📈 ${t('annualSavingsPlan')}</div>`;
-html += '<div class="cashflow-card-value">' + (yearlySavingsPlan >= 0 ? '+' : '') + '$' + yearlySavingsPlan.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (yearlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
-html += '</div>';
+    // Çeviri metinleri
+    const annualSavingsTitle = isEn ? '📈 Annual Savings Plan' : '📈 Yıllık Tasarruf Planı';
+    const actualSavingsTitle = isEn ? '💰 Actual Savings' : '💰 Gerçekleşen Tasarruf';
+    const monthlyTargetTitle = isEn ? '🎯 Monthly Savings Target' : '🎯 Aylık Tasarruf Hedefi';
+    const yearEndForecastTitle = isEn ? '🔮 Year-End Forecast' : '🔮 Yıl Sonu Tahmini';
 
-html += '<div class="cashflow-card ' + (yearlySavingsActual >= 0 ? 'savings' : 'spending') + '">';
-html += '<div class="cashflow-card-title">💰 Gerçekleşen Tasarruf</div>';
-html += '<div class="cashflow-card-value">' + (yearlySavingsActual >= 0 ? '+' : '') + '$' + yearlySavingsActual.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (yearlySavingsActual * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsActual * avgRubRate).toFixed(0) + '</div>';
-html += '</div>';
+    var html = '';
+    html += '<div class="cashflow-card savings">';
+    html += `<div class="cashflow-card-title">${annualSavingsTitle}</div>`;
+    html += '<div class="cashflow-card-value">' + (yearlySavingsPlan >= 0 ? '+' : '') + '$' + yearlySavingsPlan.toFixed(0) + '</div>';
+    html += '<div class="cashflow-card-sub">₺' + (yearlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
+    html += '</div>';
 
-html += '<div class="cashflow-card savings">';
-html += '<div class="cashflow-card-title">🎯 Aylık Tasarruf Hedefi</div>';
-html += '<div class="cashflow-card-value">' + (monthlySavingsPlan >= 0 ? '+' : '') + '$' + monthlySavingsPlan.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (monthlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (monthlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
-html += '</div>';
+    html += '<div class="cashflow-card ' + (yearlySavingsActual >= 0 ? 'savings' : 'spending') + '">';
+    html += `<div class="cashflow-card-title">${actualSavingsTitle}</div>`;
+    html += '<div class="cashflow-card-value">' + (yearlySavingsActual >= 0 ? '+' : '') + '$' + yearlySavingsActual.toFixed(0) + '</div>';
+    html += '<div class="cashflow-card-sub">₺' + (yearlySavingsActual * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsActual * avgRubRate).toFixed(0) + '</div>';
+    html += '</div>';
 
-html += '<div class="cashflow-card ' + (projectedSavings >= 0 ? 'savings' : 'spending') + '">';
-html += '<div class="cashflow-card-title">🔮 Yıl Sonu Tahmini</div>';
-html += '<div class="cashflow-card-value">' + (projectedSavings >= 0 ? '+' : '') + '$' + projectedSavings.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (projectedSavings * avgTryRate).toFixed(0) + ' / ₽' + (projectedSavings * avgRubRate).toFixed(0) + '</div>';
-html += '</div>';
+    html += '<div class="cashflow-card savings">';
+    html += `<div class="cashflow-card-title">${monthlyTargetTitle}</div>`;
+    html += '<div class="cashflow-card-value">' + (monthlySavingsPlan >= 0 ? '+' : '') + '$' + monthlySavingsPlan.toFixed(0) + '</div>';
+    html += '<div class="cashflow-card-sub">₺' + (monthlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (monthlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
+    html += '</div>';
 
-summary.innerHTML = html;
+    html += '<div class="cashflow-card ' + (projectedSavings >= 0 ? 'savings' : 'spending') + '">';
+    html += `<div class="cashflow-card-title">${yearEndForecastTitle}</div>`;
+    html += '<div class="cashflow-card-value">' + (projectedSavings >= 0 ? '+' : '') + '$' + projectedSavings.toFixed(0) + '</div>';
+    html += '<div class="cashflow-card-sub">₺' + (projectedSavings * avgTryRate).toFixed(0) + ' / ₽' + (projectedSavings * avgRubRate).toFixed(0) + '</div>';
+    html += '</div>';
 
-// Yeni basılan cashflow içeriğini seçili dile çevir (EN/TR)
-if (window.translateDOM) {
-window.translateDOM(appSettings.lang || 'tr');
-}
-
-// Buradaki "}" updateCashflow/updateCashFlow fonksiyonunu kapatmak içindir.
-// Eğer zaten kapanmışsa bu satırı çıkarma; senin verdiğin akışta updateChart buradan sonra başlıyor.
+    summary.innerHTML = html;
 }
 
 function updateChart() {
@@ -3252,22 +3279,24 @@ return `${symbol}${formattedOriginal} ($${formattedUSD}) - %${percent}`;
 
 // ==================== BUDGETS ====================
 function renderBudgets() {
-const yearTx = getYearTransactions();
-const isMonthly = viewMode === 'monthly';
+    const yearTx = getYearTransactions();
+    const isMonthly = viewMode === 'monthly';
+    const isEn = appSettings.lang === 'en'; // BU SATIRI EKLEYİN
 
-['income', 'expense'].forEach(type => {
-const container = document.getElementById(`${type}Budgets`);
-const cats = categories[type];
+    ['income', 'expense'].forEach(type => {
+        const container = document.getElementById(`${type}Budgets`);
+        const cats = categories[type];
 
-if (cats.length === 0) {
-container.innerHTML = `
-<div class="empty-state">
-<i class="fas fa-folder-plus"></i>
-<p>${type === 'income' ? 'Gelir' : 'Gider'} kalemi ekleyin</p>
-</div>
-`;
-return;
-}
+        if (cats.length === 0) {
+            // BU KISMI DEĞİŞTİRİN
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-folder-plus"></i>
+                    <p>${isEn ? (type === 'income' ? 'Add income items' : 'Add expense items') : (type === 'income' ? 'Gelir kalemi ekleyin' : 'Gider kalemi ekleyin')}</p>
+                </div>
+            `;
+            return;
+        }
 
 // TRY kuru (aylık veya yıllık ortalama)
 const tryRate = isMonthly
@@ -5584,6 +5613,56 @@ function updateAll() {
   const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
   if (activeTab === 'balance') {
     renderBalance();
+  }
+  
+  // MANUEL DÜZELTMELER - BU KISMI EKLEYİN
+  const isEn = appSettings.lang === 'en';
+  
+  // Gelir/Gider Kalemleri başlıkları
+  const budgetSection = document.getElementById('budget-section');
+  if (budgetSection) {
+    const titles = budgetSection.querySelectorAll('.section-title span');
+    titles.forEach((title, index) => {
+      if (index === 0) title.textContent = isEn ? 'Income Items' : 'Gelir Kalemleri';
+      if (index === 1) title.textContent = isEn ? 'Expense Items' : 'Gider Kalemleri';
+    });
+    
+    // Ekle butonları
+    const addButtons = budgetSection.querySelectorAll('.section-title button');
+    addButtons.forEach(btn => {
+      btn.innerHTML = `<i class="fas fa-plus"></i> ${isEn ? 'Add' : 'Ekle'}`;
+    });
+  }
+  
+  // Çıkış butonu
+  const logoutBtn = document.getElementById('btnLogout');
+  if (logoutBtn) {
+    logoutBtn.innerHTML = `<i class="fas fa-sign-out-alt"></i> ${isEn ? 'Sign out' : 'Çıkış'}`;
+  }
+  
+  // Header başlığı
+  const headerTitle = document.querySelector('.header h1');
+  if (headerTitle) {
+    headerTitle.innerHTML = `<i class="fas fa-wallet"></i> ${isEn ? 'Budget Tracker' : 'Bütçe Takip'}`;
+  }
+  
+  // Net Durum kartı başlığı
+  const netLabel = document.querySelector('.summary-card.full .label');
+  if (netLabel) {
+    netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
+  }
+  
+  // Gerçekleşen satırları
+  const factIncomeRow = document.getElementById('factIncomeRow');
+  if (factIncomeRow) {
+    const span = factIncomeRow.querySelector('span:first-child');
+    if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
+  }
+  
+  const factExpenseRow = document.getElementById('factExpenseRow');
+  if (factExpenseRow) {
+    const span = factExpenseRow.querySelector('span:first-child');
+    if (span) span.textContent = isEn ? 'Actual:' : 'Gerçekleşen:';
   }
 }
 
