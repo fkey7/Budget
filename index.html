@@ -6498,7 +6498,7 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
 
       // Title
       const title = document.querySelector('title');
-      if (title) title.textContent = (L === 'en') ? 'Budget Tracker' : 'Bütçe Takip';
+      if (title) title.textContent = (lang === 'en') ? 'Budget Tracker' : 'Bütçe Takip';
 
       const root = document.body || document.documentElement;
       if (!root) return;
@@ -6511,7 +6511,7 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
       for (const n of nodes){
         if (n.nodeType === Node.TEXT_NODE){
           const v = n.nodeValue;
-          const nv = translateLiteral(v, L);
+          const nv = translateLiteral(v, lang);
           if (nv !== v) n.nodeValue = nv;
         } else if (n.nodeType === Node.ELEMENT_NODE){
           translateAttrs(n, L);
