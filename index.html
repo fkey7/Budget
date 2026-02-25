@@ -3184,7 +3184,7 @@ data: {
 labels: monthNames,
 datasets: [
 {
-label: 'Gelir Planı',
+label: t('incomePlan'),
 data: incomePlanData,
 backgroundColor: 'rgba(0, 184, 148, 0.3)',
 borderColor: '#00b894',
@@ -3193,7 +3193,7 @@ borderRadius: 4,
 order: 2
 },
 {
-label: 'Gelir Gerçekleşen',
+label: t('incomeActual'),
 data: incomeData,
 backgroundColor: '#00b894',
 borderColor: '#00b894',
@@ -3202,7 +3202,7 @@ borderRadius: 4,
 order: 1
 },
 {
-label: 'Gider Planı',
+label: t('expensePlan'),
 data: expensePlanData,
 backgroundColor: 'rgba(225, 112, 85, 0.3)',
 borderColor: '#e17055',
@@ -3211,7 +3211,7 @@ borderRadius: 4,
 order: 4
 },
 {
-label: 'Gider Gerçekleşen',
+label: t('expenseActual'),
 data: expenseData,
 backgroundColor: '#e17055',
 borderColor: '#e17055',
@@ -6823,4 +6823,3 @@ const lang = (window.appSettings && window.appSettings.lang) ? window.appSetting
 translateDOM(lang);
 });
 })();
-
