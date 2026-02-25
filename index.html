@@ -6235,127 +6235,203 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
   const MONTHS_EN_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   const trToEn = {
-"Bütçe Takip":"Budget Tracker",
-"Bütçe":"Budget",
-"İşlemler":"Transactions",
-"Bilanço":"Balance",
-"Bilanço (Varlıklar / Borçlar / Öz Sermaye)":"Balance Sheet (Assets / Liabilities / Equity)",
-"Tema":"Theme",
-"Dil":"Language",
-"PDF Rapor":"PDF Report",
-"Excel Rapor":"Excel Report",
-"Veri Yönetimi":"Data Management",
-"Döviz Kurları":"Exchange Rates",
-"Yükle":"Install",
-"Giriş yapılmadı":"Not signed in",
-"Google ile Giriş":"Sign in with Google",
-"Çıkış":"Sign out",
-"Giriş gerekiyor":"Login required",
-"Devam etmek için Google ile giriş yap.":"Please sign in with Google to continue",
+    "Bütçe Takip":"Budget Tracker",
+    "Bütçe":"Budget",
+    "İşlemler":"Transactions",
+    "Bilanço":"Balance",
+    "Bilanço (Varlıklar / Borçlar / Öz Sermaye)":"Balance Sheet (Assets / Liabilities / Equity)",
+    "Tema":"Theme",
+    "Dil":"Language",
+    "PDF Rapor":"PDF Report",
+    "Excel Rapor":"Excel Report",
+    "Veri Yönetimi":"Data Management",
+    "Döviz Kurları":"Exchange Rates",
+    "Yükle":"Install",
+    "Giriş yapılmadı":"Not signed in",
+    "Google ile Giriş":"Sign in with Google",
+    "Çıkış":"Sign out",
+    "Giriş gerekiyor":"Login required",
+    "Devam etmek için Google ile giriş yap.":"Please sign in with Google to continue",
 
-"Aylık":"Monthly",
-"Yıllık":"Yearly",
+    "Aylık":"Monthly",
+    "Yıllık":"Yearly",
 
-"Aylık Gelir Planı":"Monthly Income Plan",
-"Aylık Gider Planı":"Monthly Expense Plan",
-"Net Durum (Gerçekleşen)":"Net Position (Actual)",
-"Net Durum":"Net Position",
-"Gerçekleşen:":"Actual:",
-"Planlanan":"Planned",
-"Gerçekleşen":"Actual",
-"Fark":"Difference",
+    "Aylık Gelir Planı":"Monthly Income Plan",
+    "Aylık Gider Planı":"Monthly Expense Plan",
+    "Yıllık Gelir Planı":"Yearly Income Plan",
+    "Yıllık Gider Planı":"Yearly Expense Plan",
+    "Net Durum (Gerçekleşen)":"Net Position (Actual)",
+    "Net Durum":"Net Position",
+    "Gerçekleşen:":"Actual:",
+    "Planlanan":"Planned",
+    "Gerçekleşen":"Actual",
+    "Fark":"Difference",
 
-"📊 Bütçe Özeti (Para Birimi Bazında)":"📊 Budget Summary (by Currency)",
-"Planlanan Gelir:":"Planned Income:",
-"Gerçekleşen Gelir:":"Actual Income:",
-"Planlanan Gider:":"Planned Expense:",
-"Gerçekleşen Gider:":"Actual Expense:",
-"Net:":"Net:",
+    "📊 Bütçe Özeti (Para Birimi Bazında)":"📊 Budget Summary (by Currency)",
+    "Planlanan Gelir:":"Planned Income:",
+    "Gerçekleşen Gelir:":"Actual Income:",
+    "Planlanan Gider:":"Planned Expense:",
+    "Gerçekleşen Gider:":"Actual Expense:",
+    "Net:":"Net:",
 
-"Planlanan Gelir":"Planned Income",
-"Gerçekleşen Gelir":"Actual Income",
-"Planlanan Gider":"Planned Expense",
-"Gerçekleşen Gider":"Actual Expense",
+    "Planlanan Gelir":"Planned Income",
+    "Gerçekleşen Gelir":"Actual Income",
+    "Planlanan Gider":"Planned Expense",
+    "Gerçekleşen Gider":"Actual Expense",
 
-"💰 Aylık Nakit Akışı (Cash Flow)":"💰 Monthly Cashflow",
-"Aylık Nakit Akışı (Cash Flow)":"Monthly Cashflow",
-"Ay":"Month",
-"Gelir Plan":"Income Plan",
-"Gelir Gerç.":"Income Actual",
-"Gelir Gerçek":"Income Actual",
-"Gider Plan":"Expense Plan",
-"Gider Gerç.":"Expense Actual",
-"Gider Gerçek":"Expense Actual",
-"Net Plan":"Net Plan",
-"Net Gerç.":"Net Actual",
-"Kümülatif":"Cumulative",
-"Toplam":"Total",
+    "💰 Aylık Nakit Akışı (Cash Flow)":"💰 Monthly Cashflow",
+    "Aylık Nakit Akışı (Cash Flow)":"Monthly Cashflow",
+    "Ay":"Month",
+    "Gelir Plan":"Income Plan",
+    "Gelir Gerç.":"Income Actual",
+    "Gelir Gerçek":"Income Actual",
+    "Gider Plan":"Expense Plan",
+    "Gider Gerç.":"Expense Actual",
+    "Gider Gerçek":"Expense Actual",
+    "Net Plan":"Net Plan",
+    "Net Gerç.":"Net Actual",
+    "Net Gerçek":"Net Actual",
+    "Kümülatif":"Cumulative",
+    "Toplam":"Total",
+    "TOPLAM":"TOTAL",
 
-"Yıllık Tasarruf Planı":"Annual Savings Plan",
-"Gerçekleşen Tasarruf":"Actual Savings",
-"Aylık Tasarruf Hedefi":"Monthly Savings Target",
-"Ay Sonu Tasarruf Hedefi":"Monthly Savings Target",
-"Yıl Sonu Tahmini":"Year-End Forecast",
+    "Yıllık Tasarruf Planı":"Annual Savings Plan",
+    "Gerçekleşen Tasarruf":"Actual Savings",
+    "Aylık Tasarruf Hedefi":"Monthly Savings Target",
+    "Ay Sonu Tasarruf Hedefi":"Monthly Savings Target",
+    "Yıl Sonu Tahmini":"Year-End Forecast",
 
-"📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
-"💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
-"🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
-"🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
-"Actual Tasarruf":"Actual Savings",
-"Tasarruf":"Savings",
+    "📈 Yıllık Tasarruf Planı":"📈 Annual Savings Plan",
+    "💰 Gerçekleşen Tasarruf":"💰 Actual Savings",
+    "🎯 Aylık Tasarruf Hedefi":"🎯 Monthly Savings Target",
+    "🔮 Yıl Sonu Tahmini":"🔮 Year-End Forecast",
+    "Actual Tasarruf":"Actual Savings",
+    "Tasarruf":"Savings",
 
-"Aylık Bütçe vs Gerçekleşen":"Monthly Budget vs Actual",
-"Kategori Dağılımı":"Category Distribution",
-"Bilanço Trend":"Balance Trend",
+    "Aylık Bütçe vs Gerçekleşen":"Monthly Budget vs Actual",
+    "Kategori Dağılımı":"Category Distribution",
+    "Bilanço Trend":"Balance Trend",
+    "Bilanço Trend (Aylık)":"Balance Trend (Monthly)",
+    "Bilanço Trend (Yıllık)":"Balance Trend (Yearly)",
 
-"Gelir Kalemleri":"Income Items",
-"Gider Kalemleri":"Expense Items",
-"Ekle":"Add",
-"Kalem Ekle":"Add Item",
+    "Gelir Kalemleri":"Income Items",
+    "Gider Kalemleri":"Expense Items",
+    "Ekle":"Add",
+    "+Ekle":"+Add",
+    "Kalem Ekle":"Add Item",
 
-"Tümü":"All",
-"Bu dönemde işlem yok":"No transactions for this period",
+    "Tümü":"All",
+    "Bu dönemde işlem yok":"No transactions for this period",
 
-"💎 Varlıklar":"💎 Assets",
-"🏦 Borçlar":"🧱 Liabilities",
-"📈 Öz Sermaye":"⚖️ Equity",
-"Varlıklar":"Assets",
-"Borçlar":"Liabilities",
-"Öz Sermaye":"Equity",
-"Son Durum":"Net Position",
+    "💎 Varlıklar":"💎 Assets",
+    "🏦 Borçlar":"🏦 Liabilities",
+    "📈 Öz Sermaye":"📈 Equity",
+    "Varlıklar":"Assets",
+    "Borçlar":"Liabilities",
+    "Öz Sermaye":"Equity",
+    "Son Durum":"Latest",
 
-"Nakit":"Cash",
-"Bankalar":"Banks",
-"Alacaklar":"Receivables",
-"Yatırımlar":"Investments",
-"Kredi Kartları":"Credit Cards",
-"Krediler":"Loans",
-"Borçlar":"Debts",
-"Şahıslara Borçlar":"Personal Debts",
+    "Nakit":"Cash",
+    "Bankalar":"Banks",
+    "Alacaklar":"Receivables",
+    "Yatırımlar":"Investments",
+    "Kredi Kartları":"Credit Cards",
+    "Krediler":"Loans",
+    "Şahıslara Borçlar":"Personal Debts",
 
-"Yeni İşlem":"New Transaction",
-"Gelir":"Income",
-"Gider":"Expense",
-"Kategori":"Category",
-"Para Birimi":"Currency",
-"Tutar":"Amount",
-"Not (Opsiyonel)":"Note (Optional)",
-"Tarih":"Date",
-"Kaydet":"Save",
+    "Yeni İşlem":"New Transaction",
+    "Gelir":"Income",
+    "Gider":"Expense",
+    "Kategori":"Category",
+    "Para Birimi":"Currency",
+    "Tutar":"Amount",
+    "Not (Opsiyonel)":"Note (Optional)",
+    "Tarih":"Date",
+    "Kaydet":"Save",
 
-"Yeni Kategori":"New Category",
-"Kategori Adı":"Category Name",
-"Bütçe Para Birimi":"Budget Currency",
-"Yıllık Bütçe ($)":"Annual Budget ($)",
-"Aylık Bütçeler ($)":"Monthly Budgets ($)",
-"Eşit Dağıt":"Distribute Evenly",
-"İkon":"Icon",
-"Güncelle":"Update",
-"Düzenle":"Edit",
-"Sil":"Delete",
-"Kapalı":"Off",
-"Açık":"On",
-
+    "Yeni Kategori":"New Category",
+    "Yeni Gelir Kalemi":"New Income Category",
+    "Yeni Gider Kalemi":"New Expense Category",
+    "Kategori Adı":"Category Name",
+    "Bütçe Para Birimi":"Budget Currency",
+    "Yıllık Bütçe ($)":"Annual Budget ($)",
+    "Aylık Bütçeler ($)":"Monthly Budgets ($)",
+    "Eşit Dağıt":"Distribute Evenly",
+    "İkon":"Icon",
+    "Güncelle":"Update",
+    "Düzenle":"Edit",
+    "Sil":"Delete",
+    "Kapalı":"Off",
+    "Açık":"On",
+    
+    // Günlük takip
+    "Günlük Takip":"Daily Tracking",
+    "Günlük Limit":"Daily Limit",
+    "Günlük Ortalama":"Daily Average",
+    "Günlük Fark":"Daily Difference",
+    
+    // Modal başlıkları
+    "Bütçe Düzenle":"Edit Budget",
+    "Veri Yönetimi":"Data Management",
+    "Döviz Kurları":"Exchange Rates",
+    
+    // Butonlar
+    "İptal":"Cancel",
+    "Evet, Sil":"Yes, Delete",
+    "Anladım":"Got it",
+    
+    // Boş durum mesajları
+    "Gelir kalemi ekleyin":"Add income items",
+    "Gider kalemi ekleyin":"Add expense items",
+    
+    // Diğer
+    "Açıklama...":"Description...",
+    "Örn: Maaş, Kira...":"e.g., Salary, Rent...",
+    "Örn: 10000":"e.g., 10000",
+    "Varlık":"Asset",
+    "Borç":"Liability",
+    "Grup":"Group",
+    
+    // Filtre ve sekme
+    "Ay:":"Month:",
+    "Yıl:":"Year:",
+    "Son 5 Yıl":"Last 5 Years",
+    
+    // İşlem listesi
+    "işlem":"transaction",
+    "işlem sayısı":"transaction count",
+    
+    // Kur modalı
+    "Güncel Kurları Al":"Fetch Current Rates",
+    "Tümüne Uygula":"Apply to All",
+    
+    // Toast mesajları
+    "Kaydedildi":"Saved",
+    "Silindi":"Deleted",
+    "Güncellendi":"Updated",
+    "Eklendi":"Added",
+    "Yükleniyor...":"Loading...",
+    
+    // Hata mesajları
+    "Hata":"Error",
+    "Başarılı":"Success",
+    "Uyarı":"Warning",
+    "Bilgi":"Info",
+    
+    // Onay modalı
+    "Silmek istediğinize emin misiniz?":"Are you sure you want to delete?",
+    "Bu işlem geri alınamaz.":"This action cannot be undone.",
+    
+    // Emoji versiyonları (eğer varsa)
+    "💰":"💰",
+    "📊":"📊",
+    "📈":"📈",
+    "🎯":"🎯",
+    "🔮":"🔮",
+    "💎":"💎",
+    "🏦":"🏦",
+    "⚖️":"⚖️"
+};
 // Install banner
 "📱 iPhone'a Yükle":"📱 Install on iPhone",
 "Bu uygulamayı ana ekranınıza ekleyebilirsiniz:":"You can add this app to your Home Screen:",
@@ -6427,26 +6503,33 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
 
   // Replace any known literals INSIDE longer strings (e.g., "Gerçekleşen: $123")
   function translateLiteral(text, lang){
+    if (!text || typeof text !== 'string') return text;
     let out = String(text);
     const map = (lang === 'en') ? trToEn : enToTr;
-
-    // Longer keys first so "Kredi Kartı Borçları" wins over "Borçlar"
-    const keys = Object.keys(map).sort((a,b)=>b.length-a.length);
-
+    
+    // Uzun anahtarları önce dene (daha spesifik olanlar önce)
+    const keys = Object.keys(map).sort((a,b) => b.length - a.length);
+    
     for (const k of keys){
-      const v = map[k];
-      if (!k || v === undefined) continue;
-
-      // For purely letter keys use word-boundary regex, otherwise do plain replace
-      if (/^\p{L}[\p{L}\s]*\p{L}$/u.test(k)){
-        out = out.replace(makeWordBoundaryRe(k), `$1${v}`);
-      } else {
-        // non-letter (emoji/punct) - exact chunk replace
-        out = out.split(k).join(v);
-      }
+        const v = map[k];
+        if (!k || v === undefined) continue;
+        if (k === v) continue; // Aynıysa atla
+        
+        // Basit string replace - tüm eşleşmeleri değiştir
+        // Özel regex karakterleri için escape yap
+        const escapedK = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        try {
+            const regex = new RegExp(escapedK, 'g');
+            out = out.replace(regex, v);
+        } catch(e) {
+            // Regex hatası olursa düz replace dene
+            out = out.split(k).join(v);
+        }
     }
+    
     return out;
-  }
+}
 
   function translateAttrs(el, lang){
     const attrs = ['title','placeholder','aria-label','data-title'];
@@ -6469,46 +6552,69 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
 
   function translateDOM(lang){
     try{
-    document.documentElement.lang = lang === "en" ? "en" : "tr";
-    
-    // 1. data-i18n attribute'lu elementleri çevir
-    const i18nElements = document.querySelectorAll('[data-i18n]');
-    i18nElements.forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      const translation = I18N[lang]?.[key];
-      if (translation) {
-        el.textContent = translation;
-      }
-    });
+        document.documentElement.lang = lang === "en" ? "en" : "tr";
+        
+        // 1. data-i18n attribute'lu elementleri çevir
+        const i18nElements = document.querySelectorAll('[data-i18n]');
+        i18nElements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const translation = I18N[lang]?.[key];
+            if (translation) {
+                el.textContent = translation;
+            }
+        });
 
-      // Title
-      const title = document.querySelector('title');
-      if (title) title.textContent = (lang === 'en') ? 'Budget Tracker' : 'Bütçe Takip';
-
-      const root = document.body || document.documentElement;
-      if (!root) return;
-
-      // Walk all text nodes + elements once
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
-      const nodes = [];
-      while (walker.nextNode()) nodes.push(walker.currentNode);
-
-      for (const n of nodes){
-        if (n.nodeType === Node.TEXT_NODE){
-          const v = n.nodeValue;
-          const nv = translateLiteral(v, lang);
-          if (nv !== v) n.nodeValue = nv;
-        } else if (n.nodeType === Node.ELEMENT_NODE){
-          translateAttrs(n, L);
-          if (n.tagName === 'OPTION'){
-            const v = n.textContent;
-            const nv = translateLiteral(v, L);
-            if (nv !== v) n.textContent = nv;
-          }
+        // Title
+        const title = document.querySelector('title');
+        if (title) {
+            const newTitle = translateLiteral(title.textContent, lang);
+            if (newTitle !== title.textContent) title.textContent = newTitle;
         }
-      }
-    }catch(e){}
-  }
+
+        const root = document.body || document.documentElement;
+        if (!root) return;
+
+        // Walk all text nodes + elements once
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+
+        for (const n of nodes){
+            if (n.nodeType === Node.TEXT_NODE){
+                const v = n.nodeValue;
+                if (!v || !v.trim()) continue;
+                const nv = translateLiteral(v, lang);
+                if (nv !== v) n.nodeValue = nv;
+            } else if (n.nodeType === Node.ELEMENT_NODE){
+                translateAttrs(n, lang);
+                
+                // OPTION elementleri
+                if (n.tagName === 'OPTION'){
+                    const v = n.textContent;
+                    const nv = translateLiteral(v, lang);
+                    if (nv !== v) n.textContent = nv;
+                }
+                
+                // BUTTON elementleri
+                if (n.tagName === 'BUTTON'){
+                    const v = n.textContent;
+                    const nv = translateLiteral(v, lang);
+                    if (nv !== v) n.textContent = nv;
+                }
+                
+                // SPAN elementleri (özellikle summary kartlarındakiler)
+                if (n.tagName === 'SPAN' && n.children.length === 0){
+                    const v = n.textContent;
+                    const nv = translateLiteral(v, lang);
+                    if (nv !== v) n.textContent = nv;
+                }
+            }
+        }
+    } catch(e) {
+        console.error('translateDOM error:', e);
+    }
+}
 
   window.translateDOM = translateDOM;
 
