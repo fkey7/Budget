@@ -2102,7 +2102,7 @@ function saveAppSettings(){
 try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
 }
 function applyEnglishUppercase() {
-    if (currentLanguage === 'en') {
+    if (appSettings.lang === 'en') {
         document.querySelectorAll(
             '.label, .stat-label, .chart-title, .tab, .month-chip, .currency-label, .summary-title, .section-title'
         ).forEach(el => {
@@ -2110,12 +2110,13 @@ function applyEnglishUppercase() {
         });
     }
 } 
- function setLanguage(lang) {
-    currentLanguage = lang;
+function setLanguage(lang) {
+    appSettings.lang = lang;
     saveAppSettings();
-    renderAll();          // UI’yı yeniden çiz
+    renderAll();              // UI’yı yeniden çiz
     applyEnglishUppercase();  // İngilizce ise büyük harf düzelt
 }
+
 
 const I18N = {
   tr: {
