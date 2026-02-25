@@ -2969,15 +2969,18 @@ function updateCashFlow() {
 
     tbody.innerHTML = rows;
 
-    // Toplam satırı - getCategoryYearlyPlan kullanarak özet kartlarıyla tutarlı hesaplama
+    // Toplam satırı
     const yearlyIncomePlan = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
     const yearlyExpensePlan = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
     const yearlyNetPlan = yearlyIncomePlan - yearlyExpensePlan;
     const totalNetActual = totalIncomeActual - totalExpenseActual;
 
+    // toUpperCase yerine manuel büyük harf (Türkçe İ sorunu için)
+    const totalText = isEn ? 'TOTAL' : 'TOPLAM';
+
     tfoot.innerHTML = `
     <tr>
-        <td>${t('total').toUpperCase()}</td>
+        <td>${totalText}</td>
         <td>$${yearlyIncomePlan.toFixed(0)}</td>
         <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
         <td>$${yearlyExpensePlan.toFixed(0)}</td>
@@ -2988,11 +2991,29 @@ function updateCashFlow() {
     </tr>
     `;
 
+    // Tablo başlıklarını güncelle
+    const cfTable = document.getElementById('cashflowTable');
+    if (cfTable) {
+        const th = cfTable.querySelectorAll('thead th');
+        if (th && th.length >= 5) {
+            th[0].textContent = isEn ? 'Month' : 'Ay';
+            th[1].textContent = isEn ? 'Income Plan' : 'Gelir Plan';
+            th[2].textContent = isEn ? 'Income Actual' : 'Gelir Gerç.';
+            th[3].textContent = isEn ? 'Expense Plan' : 'Gider Plan';
+            th[4].textContent = isEn ? 'Expense Actual' : 'Gider Gerç.';
+            if (th.length > 5) {
+                th[5].textContent = isEn ? 'Net Plan' : 'Net Plan';
+                th[6].textContent = isEn ? 'Net Actual' : 'Net Gerç.';
+                th[7].textContent = isEn ? 'Cumulative' : 'Kümülatif';
+            }
+        }
+    }
+
     // TRY ve RUB için ortalama kur
     const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
     const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-    // Tasarruf özeti - yıllık plan değerlerini kullan (özet kartlarıyla tutarlı)
+    // Tasarruf özeti
     const yearlySavingsPlan = yearlyNetPlan;
     const yearlySavingsActual = totalNetActual;
     const monthlySavingsPlan = yearlySavingsPlan / 12;
