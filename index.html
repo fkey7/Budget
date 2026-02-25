@@ -316,7 +316,6 @@ background: var(--accent-main);
 .summary-card .label {
 font-size: 0.7rem;
 color: var(--text-secondary);
-text-transform: uppercase;
 letter-spacing: 0.5px;
 font-weight: 700;
 margin-bottom: 6px;
@@ -498,7 +497,6 @@ border-radius: 10px;
 .stat-box .stat-label {
 font-size: 0.65rem;
 color: var(--text-secondary);
-text-transform: uppercase;
 font-weight: 700;
 }
 
@@ -674,7 +672,6 @@ background: var(--accent-main);
 color: white;
 font-weight: 700;
 font-size: 0.65rem;
-text-transform: uppercase;
 position: sticky;
 top: 0;
 }
@@ -2104,6 +2101,10 @@ if (raw) appSettings = { ...appSettings, ...(JSON.parse(raw)||{}) };
 function saveAppSettings(){
 try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
 }
+ function setLanguage(lang) {
+    currentLanguage = lang;
+    updateUITexts();
+} 
 
 const I18N = {
   tr: {
@@ -6818,6 +6819,21 @@ Safe approach: do NOT touch business logic. Only translate known UI literals.
   });
 })();
 
+<script>
+
+// BURAYA EKLE
+
+function applyEnglishUppercase() {
+    if (currentLanguage === 'en') {
+        document.querySelectorAll(
+            '.label, .stat-label, .chart-title, .tab, .month-chip, .currency-label, .summary-title, .section-title'
+        ).forEach(el => {
+            el.textContent = el.textContent.toLocaleUpperCase('en-US');
+        });
+    }
+}
+
 </script>
 </body>
 </html>
+
