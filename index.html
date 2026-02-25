@@ -2093,14 +2093,17 @@ return monthlyRates[currency]?.[month] || exchangeRates[currency] || 1;
 
 // ==================== APP SETTINGS (Theme + Language) ====================
 let appSettings = { lang: 'tr', theme: 'light' };
+window.appSettings = appSettings;
 function loadAppSettings(){
 try{
 const raw = localStorage.getItem('budgetAppSettings');
 if (raw) appSettings = { ...appSettings, ...(JSON.parse(raw)||{}) };
+window.appSettings = appSettings;
 }catch(e){}
 }
 function saveAppSettings(){
 try{ localStorage.setItem('budgetAppSettings', JSON.stringify(appSettings)); }catch(e){}
+window.appSettings = appSettings;
 }
 function applyEnglishUppercase() {
 if (appSettings.lang !== 'en') return;
@@ -2123,6 +2126,7 @@ el.textContent = el.textContent.toLocaleUpperCase('en-US');
 function setLanguage(lang) {
 appSettings.lang = lang;
 saveAppSettings();
+window.appSettings = appSettings;
 renderAll(); // UI’yı yeniden çiz
 applyEnglishUppercase(); // İngilizce ise büyük harf düzelt
 }
@@ -6681,19 +6685,7 @@ Object.assign(trToEn, {
 "Yeni Gelir Kalemi":"New Income Item",
 "Yıllık Bütçe":"Annual Budget",
 "Aylık Bütçeler":"Monthly Budgets",
-"Monthly Income Statement":"Aylık Gelir Planı",
-"Monthly Expense Plan":"Aylık Gider Planı",
-"Net position(actual)":"Net Durum (Gerçekleşen)",
-"Net Position (Actual)":"Net Durum (Gerçekleşen)",
-"Actual Savings Plan":"Yıllık Tasarruf Planı",
-"Monthly savings plan":"Aylık Tasarruf Hedefi",
-"actual savings":"Gerçekleşen Tasarruf",
-"year-end forecast":"Yıl Sonu Tahmini",
-"Date":"Tarih",
-"Category Name":"Kategori Adı",
-"Amount":"Tutar",
-"Currency":"Para Birimi",
-"Save":"Kaydet"
+"Net position(actual)":"Net Position (Actual)"
 });
 
 // Add months (full + short)
@@ -6830,8 +6822,13 @@ console.error('translateDOM error:', e);
 
 window.translateDOM = translateDOM;
 
+function getCurrentLanguage(){
+if (typeof appSettings !== 'undefined' && appSettings && appSettings.lang) return appSettings.lang;
+if (window.appSettings && window.appSettings.lang) return window.appSettings.lang;
+return 'tr';
+}
+
 document.addEventListener('DOMContentLoaded', function(){
-const lang = (window.appSettings && window.appSettings.lang) ? window.appSettings.lang : 'tr';
-translateDOM(lang);
+translateDOM(getCurrentLanguage());
 });
 })();
