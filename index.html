@@ -1741,23 +1741,23 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="modal-overlay" id="transactionModal">
 <div class="modal">
 <div class="modal-header">
-<h2 id="transactionModalTitle">Yeni İşlem</h2>
+<h2 id="transactionModalTitle" data-i18n="newTransaction">Yeni İşlem</h2>
 <button class="modal-close" onclick="closeModal('transactionModal')">×</button>
 </div>
 <div class="type-toggle">
 <button class="type-btn income active" onclick="setTransactionType('income')">
-<i class="fas fa-arrow-down"></i> Gelir
+<i class="fas fa-arrow-down"></i> <span data-i18n="incomeType">Gelir</span>
 </button>
 <button class="type-btn expense" onclick="setTransactionType('expense')">
-<i class="fas fa-arrow-up"></i> Gider
+<i class="fas fa-arrow-up"></i> <span data-i18n="expenseType">Gider</span>
 </button>
 </div>
 <div class="form-group">
-<label>Kategori</label>
+<label data-i18n="category">Kategori</label>
 <div class="category-select-grid" id="categorySelectGrid"></div>
 </div>
 <div class="form-group">
-<label data-="currency">Para Birimi</label>
+<label data-i18n="currency">Para Birimi</label>
 <div class="currency-toggle" id="currencyToggle">
 <button class="currency-btn active" data-currency="USD" onclick="selectTransactionCurrency('USD')">$ USD</button>
 <button class="currency-btn" data-currency="TRY" onclick="selectTransactionCurrency('TRY')">₺ TRY</button>
@@ -1779,15 +1779,15 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="rates-display" id="currentRates"></div>
 </div>
 <div class="form-group">
-<label data-="amount">Tutar</label>
+<label data-i18n="amount">Tutar</label>
 <input type="number" id="transactionAmount" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateUsdEquivalent()">
 </div>
 <div class="form-group">
-<label>Not (Opsiyonel)</label>
-<input type="text" id="transactionNote" placeholder="Açıklama...">
+<label data-i18n="noteOptional">Not (Opsiyonel)</label>
+<input type="text" id="transactionNote" placeholder="Açıklama..." data-i18n-placeholder="descriptionPlaceholder">
 </div>
 <div class="form-group">
-<label>Tarih</label>
+<label data-i18n="date">Tarih</label>
 <input type="date" id="transactionDate">
 </div>
 <button class="submit-btn" onclick="saveTransaction()" data-i18n="save">Kaydet</button>
@@ -2154,6 +2154,7 @@ newIncomeCategory: 'Yeni Gelir Kalemi', newExpenseCategory: 'Yeni Gider Kalemi',
 categoryName: 'Kategori Adı', budgetCurrency: 'Bütçe Para Birimi', yearlyBudget: 'Yıllık Bütçe', monthlyBudgets: 'Aylık Bütçeler', distributeEvenly: 'Eşit Dağıt', icon: 'İkon',
 dailyTracking: 'Günlük Takip', dailyTrackingDesc: 'Yemek, ulaşım gibi günlük harcamalar için açın. Kira, fatura gibi tek seferlik ödemeler için kapalı bırakın.', off: 'Kapalı', on: 'Açık',
 type: 'Tip', selectCategory: 'Kategori Seçin', enterAmount: 'Tutar girin', noteOptional: 'Not (Opsiyonel)', description: 'Açıklama', date: 'Tarih', save: 'Kaydet', select: 'Seçin',
+category: 'Kategori', descriptionPlaceholder: 'Açıklama...',
 categoryNamePlaceholder: 'Örn: Maaş, Kira...', amountPlaceholder: 'Örn: 10000', asset: 'Varlık', liability: 'Borç', group: 'Grup', currency: 'Para Birimi',
 balanceNote: 'Not: Bilanço kalemleri USD olarak saklanır. İstersen TL/RUB girip kaydederken USD\'ye çevirebilirsin. İşlem eklerken kategori adı bilanço alt kalemiyle aynıysa, gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu artırır.',
 noTransactions: 'Bu dönemde işlem yok', noIncomeItems: 'Gelir kalemi ekleyin', noExpenseItems: 'Gider kalemi ekleyin',
@@ -2255,6 +2256,8 @@ description: 'Description',
 date: 'Date',
 save: 'Save',
 select: 'Select',
+category: 'Category',
+descriptionPlaceholder: 'Description...',
 categoryNamePlaceholder: 'e.g., Salary, Rent...',
 amountPlaceholder: 'e.g., 10000',
 asset: 'Asset',
@@ -6766,6 +6769,15 @@ const key = el.getAttribute('data-i18n');
 const translation = I18N[lang]?.[key];
 if (translation) {
 el.textContent = translation;
+}
+});
+
+const i18nPlaceholderElements = document.querySelectorAll('[data-i18n-placeholder]');
+i18nPlaceholderElements.forEach(el => {
+const key = el.getAttribute('data-i18n-placeholder');
+const translation = I18N[lang]?.[key];
+if (translation) {
+el.setAttribute('placeholder', translation);
 }
 });
 
