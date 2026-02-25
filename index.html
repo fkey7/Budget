@@ -1797,15 +1797,17 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="modal-overlay" id="categoryModal">
 <div class="modal">
 <div class="modal-header">
-<h2 id="categoryModalTitle">Yeni Kategori</h2>
+<h2 id="categoryModalTitle"></h2>
 <button class="modal-close" onclick="closeModal('categoryModal')">×</button>
 </div>
+
 <div class="form-group">
-<label>Kategori Adı</label>
-<input type="text" id="categoryName" placeholder="Örn: Maaş, Kira...">
+<label id="lblCategoryName"></label>
+<input type="text" id="categoryName">
 </div>
+
 <div class="form-group">
-<label>Bütçe Para Birimi</label>
+<label id="lblBudgetCurrency"></label>
 <div class="currency-toggle" id="categoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setCategoryCurrency('TRY')">₺ TRY</button>
@@ -1813,35 +1815,45 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 </div>
 <div class="rates-display" id="categoryRatesDisplay"></div>
 </div>
+
 <div class="form-group">
-<label id="yearlyBudgetLabel">Yıllık Bütçe ($)</label>
+<label id="yearlyBudgetLabel"></label>
 <input type="number" id="categoryYearlyBudget" placeholder="0.00" step="0.01" inputmode="decimal">
 </div>
+
 <div class="form-group">
-<label id="monthlyBudgetLabel">Aylık Bütçeler ($) <button type="button" class="fill-equal-btn" onclick="fillEqualMonthly()">Eşit Dağıt</button></label>
+<label id="monthlyBudgetLabel">
+    <span id="monthlyBudgetText"></span>
+    <button type="button" class="fill-equal-btn" onclick="fillEqualMonthly()" id="btnDistribute"></button>
+</label>
 <div class="monthly-grid" id="monthlyBudgetGrid"></div>
 </div>
+
 <div class="form-group">
-<label>İkon</label>
+<label id="lblIcon"></label>
 <div class="icon-grid" id="iconGrid"></div>
 </div>
-<button class="submit-btn" onclick="saveCategory()">Kaydet</button>
+
+<button class="submit-btn" id="btnSaveCategory" onclick="saveCategory()"></button>
 </div>
 </div>
+
 
 <!-- Edit Budget Modal -->
 <div class="modal-overlay" id="editBudgetModal">
 <div class="modal">
 <div class="modal-header">
-<h2>Düzenle</h2>
+<h2 id="editModalTitle"></h2>
 <button class="modal-close" onclick="closeModal('editBudgetModal')">×</button>
 </div>
+
 <div class="form-group">
-<label>Kategori Adı</label>
+<label id="lblEditCategoryName"></label>
 <input type="text" id="editCategoryName">
 </div>
+
 <div class="form-group">
-<label>Bütçe Para Birimi</label>
+<label id="lblEditBudgetCurrency"></label>
 <div class="currency-toggle" id="editCategoryCurrencyToggle">
 <button type="button" class="currency-btn active" data-currency="USD" onclick="setEditCategoryCurrency('USD')">$ USD</button>
 <button type="button" class="currency-btn" data-currency="TRY" onclick="setEditCategoryCurrency('TRY')">₺ TRY</button>
@@ -1849,30 +1861,37 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 </div>
 <div class="rates-display" id="editCategoryRatesDisplay"></div>
 </div>
+
 <div class="form-group">
-<label id="editYearlyBudgetLabel">Yıllık Bütçe ($)</label>
+<label id="editYearlyBudgetLabel"></label>
 <input type="number" id="editCategoryYearlyBudget" step="0.01" inputmode="decimal">
 </div>
+
 <div class="form-group">
-<label id="editMonthlyBudgetLabel">Aylık Bütçeler ($) <button type="button" class="fill-equal-btn" onclick="fillEqualMonthlyEdit()">Eşit Dağıt</button></label>
+<label id="editMonthlyBudgetLabel">
+    <span id="editMonthlyBudgetText"></span>
+    <button type="button" class="fill-equal-btn" onclick="fillEqualMonthlyEdit()" id="btnDistributeEdit"></button>
+</label>
 <div class="monthly-grid" id="editMonthlyBudgetGrid"></div>
 </div>
+
 <div class="form-group">
-<label class="toggle-label">
-<span>📅 Günlük Takip</span>
-<small style="display: block; color: var(--text-secondary); font-weight: normal; font-size: 0.8rem; margin-top: 4px;">Yemek, ulaşım gibi günlük harcamalar için açın. Kira, fatura gibi tek seferlik ödemeler için kapalı bırakın.</small>
-</label>
+<label id="lblDailyTracking"></label>
+<small id="lblDailyTrackingDesc" style="display: block; color: var(--text-secondary); font-weight: normal; font-size: 0.8rem; margin-top: 4px;"></small>
+
 <div class="toggle-switch-container" style="display: flex; align-items: center; margin-top: 8px;">
 <label class="toggle-switch">
 <input type="checkbox" id="editDailyTracking" onchange="updateDailyTrackingStatus()">
 <span class="toggle-slider"></span>
 </label>
-<span id="dailyTrackingStatus" style="margin-left: 12px; font-size: 0.9rem;">Kapalı</span>
+<span id="dailyTrackingStatus" style="margin-left: 12px; font-size: 0.9rem;"></span>
 </div>
 </div>
-<button class="submit-btn" onclick="updateCategory()">Güncelle</button>
+
+<button class="submit-btn" id="btnUpdateCategory" onclick="updateCategory()"></button>
 </div>
 </div>
+
 
 <!-- Data Management Modal -->
 <div class="modal-overlay" id="dataModal">
@@ -2321,6 +2340,32 @@ const I18N = {
     giderGerç: 'Expense Actual'
   }
 };
+function updateCategoryModalTexts() {
+    const lang = appSettings.lang;
+
+    // Add modal
+    document.getElementById("categoryModalTitle").textContent = t("Yeni Kategori");
+    document.getElementById("lblCategoryName").textContent = t("Kategori Adı");
+    document.getElementById("lblBudgetCurrency").textContent = t("Bütçe Para Birimi");
+    document.getElementById("yearlyBudgetLabel").textContent = t("Yıllık Bütçe ($)");
+    document.getElementById("monthlyBudgetText").textContent = t("Aylık Bütçeler ($)");
+    document.getElementById("btnDistribute").textContent = t("Eşit Dağıt");
+    document.getElementById("lblIcon").textContent = t("İkon");
+    document.getElementById("btnSaveCategory").textContent = t("Kaydet");
+
+    // Edit modal
+    document.getElementById("editModalTitle").textContent = t("Düzenle");
+    document.getElementById("lblEditCategoryName").textContent = t("Kategori Adı");
+    document.getElementById("lblEditBudgetCurrency").textContent = t("Bütçe Para Birimi");
+    document.getElementById("editYearlyBudgetLabel").textContent = t("Yıllık Bütçe ($)");
+    document.getElementById("editMonthlyBudgetText").textContent = t("Aylık Bütçeler ($)");
+    document.getElementById("btnDistributeEdit").textContent = t("Eşit Dağıt");
+    document.getElementById("lblDailyTracking").textContent = t("Günlük Takip");
+    document.getElementById("lblDailyTrackingDesc").textContent = t("Yemek, ulaşım gibi günlük harcamalar için açın. Kira, fatura gibi tek seferlik ödemeler için kapalı bırakın.");
+    document.getElementById("dailyTrackingStatus").textContent = t("Kapalı");
+    document.getElementById("btnUpdateCategory").textContent = t("Güncelle");
+}
+    
 function t(key){
 const lang = (appSettings && appSettings.lang) ? appSettings.lang : 'tr';
 return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : (I18N.tr[key] || key);
@@ -3918,18 +3963,22 @@ if (input) input.value = monthly.toFixed(2);
 }
 
 function openCategoryModal(type) {
-currentCategoryType = type;
-document.getElementById('categoryModalTitle').textContent =
-  type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
-document.getElementById('categoryName').value = '';
-document.getElementById('categoryYearlyBudget').value = '';
-selectedIcon = 'fa-tag';
-selectedCategoryCurrency = 'USD';
-updateCategoryCurrencyUI();
-renderMonthlyBudgetGrid('monthlyBudgetGrid');
-renderIconGrid();
-document.getElementById('categoryModal').classList.add('active');
+
+    updateCategoryModalTexts();   // ← TAM OLARAK BURAYA EKLE
+
+    currentCategoryType = type;
+    document.getElementById('categoryModalTitle').textContent =
+      type === 'income' ? t('newIncomeCategory') : t('newExpenseCategory');
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryYearlyBudget').value = '';
+    selectedIcon = 'fa-tag';
+    selectedCategoryCurrency = 'USD';
+    updateCategoryCurrencyUI();
+    renderMonthlyBudgetGrid('monthlyBudgetGrid');
+    renderIconGrid();
+    document.getElementById('categoryModal').classList.add('active');
 }
+
 
 function setCategoryCurrency(currency) {
 selectedCategoryCurrency = currency;
