@@ -5811,6 +5811,44 @@ function updateAll() {
             if (val === 'ACTUAL' || val === 'ACTUAL:') {
                 node.nodeValue = val === 'ACTUAL:' ? 'Actual:' : 'Actual';
             }
+              // EN KESİN ÇÖZÜM - Net Position için
+    setTimeout(function() {
+        var isEn = appSettings.lang === 'en';
+        if (!isEn) return;
+        
+        // 1. Summary card label
+        var summaryCards = document.querySelectorAll('.summary-card.full, .summary-card');
+        for (var i = 0; i < summaryCards.length; i++) {
+            var label = summaryCards[i].querySelector('.label');
+            if (label) {
+                var txt = label.textContent;
+                if (txt.indexOf('İ') !== -1 || txt.indexOf('NET POS') !== -1 || txt === 'NET POSITION (ACTUAL)' || txt === 'Net Position (Actual)'.toUpperCase()) {
+                    label.innerHTML = 'Net Position (Actual)';
+                }
+            }
+        }
+        
+        // 2. Tüm text node'ları tara
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        var node;
+        while (node = walker.nextNode()) {
+            var val = node.nodeValue;
+            if (!val) continue;
+            
+            // Net Position düzelt
+            if (val.indexOf('Net Position') !== -1 && val.indexOf('İ') !== -1) {
+                node.nodeValue = val.replace(/İ/g, 'I');
+            }
+            if (val === 'NET POSİTİON (ACTUAL)' || val === 'NET POSITION (ACTUAL)' || val === 'NET POSITION') {
+                node.nodeValue = 'Net Position (Actual)';
+            }
+        }
+        
+        // 3. InnerHTML düzelt
+        document.body.innerHTML = document.body.innerHTML.replace(/NET POSİTİON/g, 'Net Position').replace(/\(ACTUAL\)/g, '(Actual)');
+        
+    }, 100);
+}
         }
         
         fixCount++;
