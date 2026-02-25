@@ -3629,18 +3629,48 @@ ${t.currency !== 'USD' ? `
 
 // ==================== MODALS ====================
 function openTransactionModal() {
-document.getElementById('transactionModal').classList.add('active');
-document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
-document.getElementById('transactionAmount').value = '';
-document.getElementById('transactionNote').value = '';
-document.getElementById('transactionModalTitle').textContent = t('newTransaction');
-selectedCategoryId = null;
-selectedCurrency = 'USD';
-setTransactionType('income');
-renderCategorySelect();
-updateCurrencyButtons();
-updateCurrentRatesDisplay();
-updateLiveRateDisplay();
+    document.getElementById('transactionModal').classList.add('active');
+    document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('transactionAmount').value = '';
+    document.getElementById('transactionNote').value = '';
+    
+    // Modal başlığı
+    document.getElementById('transactionModalTitle').textContent = t('newTransaction');
+    
+    // Gelir/Gider butonları
+    const incomeBtn = document.querySelector('.type-btn.income span[data-i18n="incomeType"]');
+    const expenseBtn = document.querySelector('.type-btn.expense span[data-i18n="expenseType"]');
+    if (incomeBtn) incomeBtn.textContent = t('incomeType');
+    if (expenseBtn) expenseBtn.textContent = t('expenseType');
+    
+    // Label'lar
+    const categoryLabel = document.querySelector('#transactionModal label[data-i18n="category"]');
+    const currencyLabel = document.querySelector('#transactionModal label[data-i18n="currency"]');
+    const amountLabel = document.querySelector('#transactionModal label[data-i18n="amount"]');
+    const noteLabel = document.querySelector('#transactionModal label[data-i18n="noteOptional"]');
+    const dateLabel = document.querySelector('#transactionModal label[data-i18n="date"]');
+    
+    if (categoryLabel) categoryLabel.textContent = t('category');
+    if (currencyLabel) currencyLabel.textContent = t('currency');
+    if (amountLabel) amountLabel.textContent = t('amount');
+    if (noteLabel) noteLabel.textContent = t('noteOptional');
+    if (dateLabel) dateLabel.textContent = t('date');
+    
+    // Kaydet butonu
+    const saveBtn = document.querySelector('#transactionModal button[data-i18n="save"]');
+    if (saveBtn) saveBtn.textContent = t('save');
+    
+    // Placeholder
+    const noteInput = document.getElementById('transactionNote');
+    if (noteInput) noteInput.placeholder = t('descriptionPlaceholder');
+    
+    selectedCategoryId = null;
+    selectedCurrency = 'USD';
+    setTransactionType('income');
+    renderCategorySelect();
+    updateCurrencyButtons();
+    updateCurrentRatesDisplay();
+    updateLiveRateDisplay();
 }
 
 function openModal(id) {
