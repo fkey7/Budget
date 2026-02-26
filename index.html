@@ -1729,14 +1729,14 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 
 <!-- Install Banner -->
 <div class="install-banner" id="installBanner">
-<h3>📱 iPhone'a Yükle</h3>
-<p>Bu uygulamayı ana ekranınıza ekleyebilirsiniz:</p>
-<div class="steps">
+<h3 id="installBannerTitle">📱 iPhone'a Yükle</h3>
+<p id="installBannerDesc">Bu uygulamayı ana ekranınıza ekleyebilirsiniz:</p>
+<div class="steps" id="installBannerSteps">
 1️⃣ Safari'de <strong>Paylaş</strong> butonuna tıklayın <i class="fas fa-share-square"></i><br>
 2️⃣ <strong>"Ana Ekrana Ekle"</strong> seçin<br>
 3️⃣ <strong>"Ekle"</strong> butonuna tıklayın
 </div>
-<button class="install-close" onclick="hideInstallBanner()">Anladım</button>
+<button class="install-close" id="installBannerClose" onclick="hideInstallBanner()">Anladım</button>
 </div>
 
 <!-- Transaction Modal -->
@@ -2147,6 +2147,7 @@ budgetSummaryTitle: 'Bütçe Özeti (Para Birimi Bazında)', cashflowTitle: 'Ayl
 categoryDistribution: 'Kategori Dağılımı', monthlyBudgetVsActual: 'Aylık Bütçe vs Gerçekleşen',
 theme: 'Tema', lang: 'Dil', pdfReport: 'PDF Rapor', excelReport: 'Excel Rapor',
 dataMgmt: 'Veri Yönetimi', rates: 'Döviz Kurları', install: 'Yükle',
+installBannerTitle: '📱 iPhone\'a Yükle', installBannerDescription: 'Bu uygulamayı ana ekranınıza ekleyebilirsiniz:', installBannerStep1: '1️⃣ Safari\'de <strong>Paylaş</strong> butonuna tıklayın <i class="fas fa-share-square"></i>', installBannerStep2: '2️⃣ <strong>"Ana Ekrana Ekle"</strong> seçin', installBannerStep3: '3️⃣ <strong>"Ekle"</strong> butonuna tıklayın', gotIt: 'Anladım',
 balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)', addItem: 'Kalem Ekle',
 actual: 'Gerçekleşen', actualColon: 'Gerçekleşen:', planned: 'Planlanan', difference: 'Fark',
 monthlyPlan: 'Aylık Plan', yearlyPlan: 'Yıllık Plan', all: 'Tümü', latest: 'Son Durum', total: 'TOPLAM',
@@ -2212,6 +2213,12 @@ excelReport: 'Excel Report',
 dataMgmt: 'Data Management',
 rates: 'Exchange Rates',
 install: 'Install',
+installBannerTitle: '📱 Install on iPhone',
+installBannerDescription: 'You can add this app to your home screen:',
+installBannerStep1: '1️⃣ In Safari, tap the <strong>Share</strong> button <i class="fas fa-share-square"></i>',
+installBannerStep2: '2️⃣ Select <strong>"Add to Home Screen"</strong>',
+installBannerStep3: '3️⃣ Tap the <strong>"Add"</strong> button',
+gotIt: 'Got it',
 balanceSectionTitle: 'Balance Sheet (Assets / Liabilities / Equity)',
 addItem: 'Add Item',
 actual: 'Actual',
@@ -2406,6 +2413,15 @@ const bm = document.getElementById('btnBalTrendMonthly');
 const by = document.getElementById('btnBalTrendYearly');
 if (bm) bm.textContent = t('monthly');
 if (by) by.textContent = t('yearly');
+
+const installTitle = document.getElementById('installBannerTitle');
+const installDesc = document.getElementById('installBannerDesc');
+const installSteps = document.getElementById('installBannerSteps');
+const installClose = document.getElementById('installBannerClose');
+if (installTitle) installTitle.textContent = t('installBannerTitle');
+if (installDesc) installDesc.textContent = t('installBannerDescription');
+if (installSteps) installSteps.innerHTML = `${t('installBannerStep1')}<br>${t('installBannerStep2')}<br>${t('installBannerStep3')}`;
+if (installClose) installClose.textContent = t('gotIt');
 
 const balanceNoteEl = document.querySelector('#balance-section [data-i18n="balanceNote"]');
 if (balanceNoteEl) balanceNoteEl.textContent = t('balanceNote');
