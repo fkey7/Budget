@@ -4961,46 +4961,78 @@ function generatePDFReport() {
     }
 
     // ==================== BILANCO ====================
-    const reportYM = isMonthly
-        ? `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
-        : getLatestBalanceYMForYear(currentYear);
+const reportYM = isMonthly
+    ? `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+    : getLatestBalanceYMForYear(currentYear);
 
-    const bt = computeBalanceTotals(reportYM);
+const bt = computeBalanceTotals(reportYM);
 
-    y = checkPageBreak(doc, y, 55);
-    y = drawSectionTitle(doc, isEn ? 'BALANCE SHEET' : 'BILANCO', y, colors.primary);
+y = checkPageBreak(doc, y, 55);
 
-    const balHeaders = isEn ? ['Item', 'Amount ($)'] : ['Kalem', 'Tutar ($)'];
-    const balRows = [
-        [isEn ? 'Assets' : 'Varliklar', `$${formatNum(bt.assetsTotal)}`],
-        [isEn ? 'Liabilities' : 'Borclar', `$${formatNum(bt.liabilitiesTotal)}`],
-        [isEn ? 'Equity' : 'Oz Sermaye', `$${formatNum(bt.equity)}`]
-    ];
-    y = drawTable(doc, balHeaders, balRows, y, [70, 120]);
+y = drawSectionTitle(doc, isEn ? 'BALANCE SHEET' : 'BILANCO', y, colors.primary);
 
-    // Optional: breakdown by groups (top level)
-    try {
-        const snap = ensureBalanceMonth(reportYM);
-        const aggGroup = (items) => {
-            const out = {};
-            Object.keys(items || {}).forEach(k => {
-                const it = items[k] || {};
-                out[k] = Object.values(it).reduce((s, v) => s + (Number(v.usd) || 0), 0);
-            });
-            return out;
-        };
-        const aG = aggGroup(snap.assets);
-        const lG = aggGroup(snap.liabilities);
+const balHeaders = isEn ? ['Item', 'Amount ($)'] : ['Kalem', 'Tutar ($)'];
 
-        const gRows = [];
-        Object.keys(aG).forEach(k => gRows.push([`${isEn ? 'Asset' : 'Varlik'}: ${k}`, `$${formatNum(aG[k])}`]));
-        Object.keys(lG).forEach(k => gRows.push([`${isEn ? 'Liability' : 'Borc'}: ${k}`, `$${formatNum(lG[k])}`]));
-        if (gRows.length) {
-            y = checkPageBreak(doc, y, 55);
-            y = drawSectionTitle(doc, isEn ? 'BALANCE SHEET DETAIL' : 'BILANCO DETAY', y, colors.primary);
-            y = drawTable(doc, [isEn ? 'Group' : 'Grup', isEn ? 'Amount ($)' : 'Tutar ($)'], gRows, y, [90, 100]);
+const balRows = [
+    [isEn ? 'Assets' : 'Varliklar', `$${formatNum(bt.assetsTotal)}`],
+    [isEn ? 'Liabilities' : 'Borclar', `$${formatNum(bt.liabilitiesTotal)}`],
+    [isEn ? 'Equity' : 'Oz Sermaye', `$${formatNum(bt.equity)}`]
+];
+
+y = drawTable(doc, balHeaders, balRows, y, [70, 120]);
+
+// Optional: breakdown by groups (top level)
+try {
+    const snap = ensureBalanceMonth(reportYM);
+    
+    // DÜZELTME: Doğru veri yapısı - items[k] bir array
+    const aggGroup = (items) => {
+        const out = {};
+        Object.keys(items || {}).forEach(k => {
+            const arr = items[k] || []; // Bu bir array
+            // DÜZELTME: Array üzerinden reduce, Object.values değil
+            out[k] = arr.reduce((s, v) => s + (Number(v?.amountUSD) || 0), 0);
+        });
+        return out;
+    };
+
+    const aG = aggGroup(snap.assets);
+    const lG = aggGroup(snap.liabilities);
+
+    const gRows = [];
+    
+    // Asset grupları
+    Object.keys(aG).forEach(k => {
+        if (aG[k] > 0) { // Sadece değeri olanları göster
+            const label = {
+                'cash': isEn ? 'Cash' : 'Nakit',
+                'receivables': isEn ? 'Receivables' : 'Alacaklar',
+                'investments': isEn ? 'Investments' : 'Yatirimlar'
+            }[k] || k;
+            gRows.push([`${isEn ? 'Asset' : 'Varlik'}: ${label}`, `$${formatNum(aG[k])}`]);
         }
-    } catch (e) { }
+    });
+    
+    // Liability grupları
+    Object.keys(lG).forEach(k => {
+        if (lG[k] > 0) { // Sadece değeri olanları göster
+            const label = {
+                'loans': isEn ? 'Loans' : 'Krediler',
+                'cards': isEn ? 'Credit Cards' : 'Kredi Kartlari',
+                'payables': isEn ? 'Personal Debts' : 'Sahislara Borclar'
+            }[k] || k;
+            gRows.push([`${isEn ? 'Liability' : 'Borc'}: ${label}`, `$${formatNum(lG[k])}`]);
+        }
+    });
+
+    if (gRows.length) {
+        y = checkPageBreak(doc, y, 55);
+        y = drawSectionTitle(doc, isEn ? 'BALANCE SHEET DETAIL' : 'BILANCO DETAY', y, colors.primary);
+        y = drawTable(doc, [isEn ? 'Group' : 'Grup', isEn ? 'Amount ($)' : 'Tutar ($)'], gRows, y, [90, 100]);
+    }
+} catch (e) { 
+    console.error('Balance sheet detail error:', e);
+}
 
     // Footer on each page
     const pageCount = doc.internal.getNumberOfPages();
