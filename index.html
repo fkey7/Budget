@@ -4287,11 +4287,59 @@ document.getElementById('ratesModal').classList.add('active');
 
 // ==================== DATA MANAGEMENT ====================
 function openDataModal() {
-const catCount = categories.income.length + categories.expense.length;
-const txCount = transactions.length;
-document.getElementById('statCategories').textContent = `${catCount} kategori`;
-document.getElementById('statTransactions').textContent = `${txCount} işlem`;
-document.getElementById('dataModal').classList.add('active');
+    const isEn = appSettings.lang === 'en';
+    const catCount = categories.income.length + categories.expense.length;
+    const txCount = transactions.length;
+    
+    document.getElementById('statCategories').textContent = isEn 
+        ? `${catCount} categories` 
+        : `${catCount} kategori`;
+    document.getElementById('statTransactions').textContent = isEn 
+        ? `${txCount} transactions` 
+        : `${txCount} işlem`;
+    
+    // Uyarı mesajı
+    const warningEl = document.querySelector('#dataModal .data-info p');
+    if (warningEl) {
+        warningEl.textContent = isEn 
+            ? '⚠️ Data may be lost when the app is updated. Export your data regularly!'
+            : '⚠️ Uygulama güncellendiğinde veriler kaybolabilir. Verilerinizi düzenli olarak dışa aktarın!';
+    }
+    
+    // Label'ları güncelle
+    const labels = document.querySelectorAll('#dataModal .form-group label');
+    labels.forEach((label, index) => {
+        if (index === 0) {
+            label.textContent = isEn ? 'Export' : 'Dışa Aktar';
+        } else if (index === 1) {
+            label.textContent = isEn ? 'Import' : 'İçe Aktar';
+        } else if (index === 2) {
+            label.textContent = isEn ? 'Delete All Data' : 'Tüm Verileri Sil';
+        }
+    });
+    
+    // Buton metinlerini güncelle
+    const buttons = document.querySelectorAll('#dataModal .submit-btn');
+    buttons.forEach((btn, index) => {
+        const icon = btn.querySelector('i')?.outerHTML || '';
+        if (index === 0) {
+            btn.innerHTML = `${icon} ${isEn ? 'Download JSON' : 'JSON İndir'}`;
+        } else if (index === 1) {
+            btn.innerHTML = `${icon} ${isEn ? 'Upload JSON' : 'JSON Yükle'}`;
+        } else if (index === 2) {
+            btn.innerHTML = `${icon} ${isEn ? 'Clear Data' : 'Verileri Temizle'}`;
+        }
+    });
+    
+    // Modal başlığını güncelle
+    const titleEl = document.querySelector('#dataModal .modal-header h2');
+    if (titleEl) {
+        titleEl.innerHTML = isEn 
+            ? '<i class="fas fa-database"></i> Data Management'
+            : '<i class="fas fa-database"></i> Veri Yönetimi';
+    }
+    
+    document.getElementById('dataModal').classList.add('active');
 }
 
 
@@ -4321,13 +4369,27 @@ showToast('Yedek indirildi ✓');
 
 
 function importData(event) {
-const file = event.target.files[0];
-if (!file) return;
+    const file = event.target.files[0];
+    if (!file) return;
+    const isEn = appSettings.lang === 'en';
 
-const reader = new FileReader();
-reader.onload = function(e) {
-try {
-const data = JSON.parse(e.target.result);
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            // ... mevcut kod ...
+            
+            saveData();
+            closeModal('dataModal');
+            updateAll();
+            showToast(isEn ? 'Data loaded ✓' : 'Veriler yüklendi ✓');
+        } catch (err) {
+            showToast(isEn ? 'Could not read file' : 'Dosya okunamadı');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
 
 categories = data.categories || { income: [], expense: [] };
 transactions = data.transactions || [];
@@ -4360,17 +4422,20 @@ event.target.value = '';
 }
 
 function confirmClearAllData() {
-document.getElementById('confirmMessage').textContent = 'Tüm kategoriler ve işlemler silinecek. Bu işlem geri alınamaz!';
-deleteCallback = () => {
-categories = { income: [], expense: [] };
-transactions = [];
-nextCategoryId = 1;
-saveData();
-closeModal('dataModal');
-updateAll();
-showToast('Veriler temizlendi');
-};
-document.getElementById('confirmModal').classList.add('active');
+    const isEn = appSettings.lang === 'en';
+    document.getElementById('confirmMessage').textContent = isEn 
+        ? 'All categories and transactions will be deleted. This action cannot be undone!'
+        : 'Tüm kategoriler ve işlemler silinecek. Bu işlem geri alınamaz!';
+    deleteCallback = () => {
+        categories = { income: [], expense: [] };
+        transactions = [];
+        nextCategoryId = 1;
+        saveData();
+        closeModal('dataModal');
+        updateAll();
+        showToast(isEn ? 'Data cleared' : 'Veriler temizlendi');
+    };
+    document.getElementById('confirmModal').classList.add('active');
 }
 
 // ==================== PDF REPORT ====================
