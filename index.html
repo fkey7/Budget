@@ -1921,23 +1921,23 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="modal-overlay" id="ratesModal">
 <div class="modal">
 <div class="modal-header">
-<h2><i class="fas fa-coins"></i> Döviz Kurları</h2>
+<h2 id="ratesModalTitle"><i class="fas fa-coins"></i> Döviz Kurları</h2>
 <button class="modal-close" onclick="closeModal('ratesModal')">×</button>
 </div>
-<p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+<p id="ratesModalDescription" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
 Aylık kurları girin (1 USD = ?)
 </p>
 <div style="display: flex; gap: 8px; margin-bottom: 16px;">
 <button class="auto-rate-btn" onclick="fetchCurrentRates()" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #0984e3, #00b894); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
 <i class="fas fa-sync-alt" id="fetchRateIcon"></i>
-<span>Güncel Kurları Al</span>
+<span id="fetchRatesLabel">Güncel Kurları Al</span>
 </button>
 <button class="auto-rate-btn" onclick="fillAllMonthsWithCurrent()" style="padding: 10px 16px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 500;">
-<i class="fas fa-fill"></i> Tümüne Uygula
+<i class="fas fa-fill"></i> <span id="applyAllRatesLabel">Tümüne Uygula</span>
 </button>
 </div>
 <div id="currentRateDisplay" style="background: var(--bg-secondary); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: none;">
-<div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">📡 Güncel Kurlar (Canlı)</div>
+<div id="currentRatesLiveLabel" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">📡 Güncel Kurlar (Canlı)</div>
 <div style="display: flex; gap: 20px; font-weight: 600;">
 <span>🇹🇷 1$ = <span id="liveRateTRY">-</span> ₺</span>
 <span>🇷🇺 1$ = <span id="liveRateRUB">-</span> ₽</span>
@@ -1945,14 +1945,14 @@ Aylık kurları girin (1 USD = ?)
 <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;" id="rateUpdateTime"></div>
 </div>
 <div class="form-group">
-<label>🇹🇷 Türk Lirası (TRY)</label>
+<label id="tryRateLabel">🇹🇷 Türk Lirası (TRY)</label>
 <div class="monthly-grid" id="monthlyRatesTRY"></div>
 </div>
 <div class="form-group">
-<label>🇷🇺 Rus Rublesi (RUB)</label>
+<label id="rubRateLabel">🇷🇺 Rus Rublesi (RUB)</label>
 <div class="monthly-grid" id="monthlyRatesRUB"></div>
 </div>
-<button class="submit-btn" onclick="saveRates()">Kaydet</button>
+<button class="submit-btn" id="saveRatesBtn" onclick="saveRates()">Kaydet</button>
 </div>
 </div>
 
@@ -2171,7 +2171,7 @@ exportData: 'Dışa Aktar', importData: 'İçe Aktar', clearAllData: 'Tüm Veril
 jsonDownload: 'JSON İndir', jsonUpload: 'JSON Yükle', clearData: 'Verileri Temizle',
 dataModalWarning: '⚠️ Uygulama güncellendiğinde veriler kaybolabilir. Verilerinizi düzenli olarak dışa aktarın!',
 categoriesUnit: 'kategori', transactionsUnit: 'işlem',
-exchangeRates: 'Döviz Kurları', currentRates: 'Güncel Kurlar', fetchRates: 'Güncel Kurları Al', applyToAll: 'Tümüne Uygula', monthlyRates: 'Aylık Kurlar',
+exchangeRates: 'Döviz Kurları', currentRates: 'Güncel Kurlar', fetchRates: 'Güncel Kurları Al', applyToAll: 'Tümüne Uygula', monthlyRates: 'Aylık Kurlar', ratesInputHint: 'Aylık kurları girin (1 USD = ?)', currentRatesLive: '📡 Güncel Kurlar (Canlı)', tryLabel: '🇹🇷 Türk Lirası (TRY)', rubLabel: '🇷🇺 Rus Rublesi (RUB)',
 income: 'Gelir', expense: 'Gider', budget: 'Bütçe', plan: 'Plan',
 monthlyIncomePlan: 'Aylık Gelir Planı', monthlyExpensePlan: 'Aylık Gider Planı', yearlyIncomePlan: 'Yıllık Gelir Planı', yearlyExpensePlan: 'Yıllık Gider Planı', netPositionActual: 'Net Durum (Gerçekleşen)', netPosition: 'Net Durum',
 incomeType: 'Gelir', expenseType: 'Gider', usd: 'USD', try: 'TRY', rub: 'RUB',
@@ -2325,6 +2325,10 @@ currentRates: 'Current Rates',
 fetchRates: 'Fetch Current Rates',
 applyToAll: 'Apply to All',
 monthlyRates: 'Monthly Rates',
+ratesInputHint: 'Enter monthly exchange rates (1 USD = ?)',
+currentRatesLive: '📡 Current Rates (Live)',
+tryLabel: '🇹🇷 Turkish Lira (TRY)',
+rubLabel: '🇷🇺 Russian Ruble (RUB)',
 income: 'Income',
 expense: 'Expense',
 plan: 'Plan',
@@ -2504,6 +2508,23 @@ const dataImportBtn = document.getElementById('dataImportBtn');
 if (dataImportBtn) dataImportBtn.innerHTML = '<i class="fas fa-upload"></i> ' + t('jsonUpload');
 const dataClearBtn = document.getElementById('dataClearBtn');
 if (dataClearBtn) dataClearBtn.innerHTML = '<i class="fas fa-trash"></i> ' + t('clearData');
+
+const ratesModalTitle = document.getElementById('ratesModalTitle');
+if (ratesModalTitle) ratesModalTitle.innerHTML = '<i class="fas fa-coins"></i> ' + t('exchangeRates');
+const ratesModalDescription = document.getElementById('ratesModalDescription');
+if (ratesModalDescription) ratesModalDescription.textContent = t('ratesInputHint');
+const fetchRatesLabel = document.getElementById('fetchRatesLabel');
+if (fetchRatesLabel) fetchRatesLabel.textContent = t('fetchRates');
+const applyAllRatesLabel = document.getElementById('applyAllRatesLabel');
+if (applyAllRatesLabel) applyAllRatesLabel.textContent = t('applyToAll');
+const currentRatesLiveLabel = document.getElementById('currentRatesLiveLabel');
+if (currentRatesLiveLabel) currentRatesLiveLabel.textContent = t('currentRatesLive');
+const tryRateLabel = document.getElementById('tryRateLabel');
+if (tryRateLabel) tryRateLabel.textContent = t('tryLabel');
+const rubRateLabel = document.getElementById('rubRateLabel');
+if (rubRateLabel) rubRateLabel.textContent = t('rubLabel');
+const saveRatesBtn = document.getElementById('saveRatesBtn');
+if (saveRatesBtn) saveRatesBtn.textContent = t('save');
 
 if (window.translateDOM) window.translateDOM(appSettings.lang || 'tr');
 
@@ -4325,6 +4346,7 @@ return rates;
 function openRatesModal() {
 renderMonthlyRatesGrid('monthlyRatesTRY', 'TRY');
 renderMonthlyRatesGrid('monthlyRatesRUB', 'RUB');
+applyLanguage();
 document.getElementById('ratesModal').classList.add('active');
 }
 
@@ -5809,6 +5831,7 @@ showToast('Silindi');
 
 // ==================== INSTALL BANNER ====================
 function showInstallBanner() {
+applyLanguage();
 document.getElementById('installBanner').classList.add('show');
 }
 
