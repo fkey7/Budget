@@ -4371,19 +4371,39 @@ showToast('Yedek indirildi ✓');
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
-    const isEn = appSettings.lang === 'en';
 
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            // ... mevcut kod ...
+            
+            categories = data.categories || { income: [], expense: [] };
+            transactions = data.transactions || [];
+            monthlyRates = data.monthlyRates || {
+                TRY: Array(12).fill(38.50),
+                RUB: Array(12).fill(96.00)
+            };
+            exchangeRates = data.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
+            nextCategoryId = data.nextCategoryId || 1;
+            
+            // Balance + settings
+            balanceSheets = data.balanceSheets || balanceSheets || {};
+            if (data.appSettings){
+                appSettings = { ...appSettings, ...data.appSettings };
+                saveAppSettings();
+                applyTheme();
+                applyLanguage();
+            }
             
             saveData();
             closeModal('dataModal');
             updateAll();
+            
+            const isEn = appSettings.lang === 'en';
             showToast(isEn ? 'Data loaded ✓' : 'Veriler yüklendi ✓');
+            
         } catch (err) {
+            const isEn = appSettings.lang === 'en';
             showToast(isEn ? 'Could not read file' : 'Dosya okunamadı');
         }
     };
@@ -4423,9 +4443,12 @@ event.target.value = '';
 
 function confirmClearAllData() {
     const isEn = appSettings.lang === 'en';
+    const deleteMsg = isEn ? 'Data cleared' : 'Veriler temizlendi';
+    
     document.getElementById('confirmMessage').textContent = isEn 
         ? 'All categories and transactions will be deleted. This action cannot be undone!'
         : 'Tüm kategoriler ve işlemler silinecek. Bu işlem geri alınamaz!';
+    
     deleteCallback = () => {
         categories = { income: [], expense: [] };
         transactions = [];
@@ -4433,8 +4456,9 @@ function confirmClearAllData() {
         saveData();
         closeModal('dataModal');
         updateAll();
-        showToast(isEn ? 'Data cleared' : 'Veriler temizlendi');
+        showToast(deleteMsg);
     };
+    
     document.getElementById('confirmModal').classList.add('active');
 }
 
