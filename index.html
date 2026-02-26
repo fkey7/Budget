@@ -6126,8 +6126,7 @@ function openBalanceItemModal(){
         liabBtn.innerHTML = '<i class="fas fa-building-columns"></i> ' + t('liability');
     }
     
-    const ym = resolveBalanceYM();
-    const info = document.getElementById('balanceItemMonthInfo');
+    const info = document.querySelector('#balanceItemModal [data-i18n="balanceSnapshotInfo"]');
     if (info){
         info.textContent = t('balanceSnapshotInfo');
     }
