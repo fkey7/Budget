@@ -1881,11 +1881,11 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 <div class="modal-overlay" id="dataModal">
 <div class="modal">
 <div class="modal-header">
-<h2><i class="fas fa-database"></i> Veri Yönetimi</h2>
+<h2 id="dataModalTitle"><i class="fas fa-database"></i> Veri Yönetimi</h2>
 <button class="modal-close" onclick="closeModal('dataModal')">×</button>
 </div>
 <div class="data-info">
-<p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px; padding: 12px; background: var(--accent-warning-light); border-radius: 10px; border-left: 4px solid var(--accent-warning);">
+<p id="dataModalWarning" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px; padding: 12px; background: var(--accent-warning-light); border-radius: 10px; border-left: 4px solid var(--accent-warning);">
 ⚠️ Uygulama güncellendiğinde veriler kaybolabilir. Verilerinizi düzenli olarak dışa aktarın!
 </p>
 </div>
@@ -1896,21 +1896,21 @@ gider işlemleri ilgili borcu düşürür; aynı isimli varlık kalemi varsa onu
 </div>
 </div>
 <div class="form-group">
-<label>Dışa Aktar</label>
-<button class="submit-btn" onclick="exportData()" style="background: var(--accent-income); margin-top: 0;">
+<label id="dataExportLabel">Dışa Aktar</label>
+<button id="dataExportBtn" class="submit-btn" onclick="exportData()" style="background: var(--accent-income); margin-top: 0;">
 <i class="fas fa-download"></i> JSON İndir
 </button>
 </div>
 <div class="form-group">
-<label>İçe Aktar</label>
+<label id="dataImportLabel">İçe Aktar</label>
 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-<button class="submit-btn" onclick="document.getElementById('importFile').click()" style="background: var(--accent-main); margin-top: 0;">
+<button id="dataImportBtn" class="submit-btn" onclick="document.getElementById('importFile').click()" style="background: var(--accent-main); margin-top: 0;">
 <i class="fas fa-upload"></i> JSON Yükle
 </button>
 </div>
 <div class="form-group">
-<label>Tüm Verileri Sil</label>
-<button class="submit-btn" onclick="confirmClearAllData()" style="background: var(--accent-expense); margin-top: 0;">
+<label id="dataClearLabel">Tüm Verileri Sil</label>
+<button id="dataClearBtn" class="submit-btn" onclick="confirmClearAllData()" style="background: var(--accent-expense); margin-top: 0;">
 <i class="fas fa-trash"></i> Verileri Temizle
 </button>
 </div>
@@ -2167,6 +2167,9 @@ noTransactions: 'Bu dönemde işlem yok', noIncomeItems: 'Gelir kalemi ekleyin',
 edit: 'Düzenle', delete: 'Sil', cancel: 'İptal', confirmDelete: 'Silmek istediğinize emin misiniz?', thisActionCannotBeUndone: 'Bu işlem geri alınamaz.', yesDelete: 'Sil', added: 'Eklendi', updated: 'Güncellendi', saved: 'Kaydedildi', deleted: 'Silindi', loading: 'Yükleniyor...', error: 'Hata', success: 'Başarılı', warning: 'Uyarı', info: 'Bilgi', close: 'Kapat',
 appSettings: 'Uygulama Ayarları', language: 'Dil Seçimi', theme: 'Tema Seçimi', darkMode: 'Karanlık Mod', lightMode: 'Aydınlık Mod',
 exportData: 'Dışa Aktar', importData: 'İçe Aktar', clearAllData: 'Tüm Verileri Sil', backupDownloaded: 'Yedek indirildi', dataLoaded: 'Veriler yüklendi', dataCleared: 'Veriler temizlendi',
+jsonDownload: 'JSON İndir', jsonUpload: 'JSON Yükle', clearData: 'Verileri Temizle',
+dataModalWarning: '⚠️ Uygulama güncellendiğinde veriler kaybolabilir. Verilerinizi düzenli olarak dışa aktarın!',
+categoriesUnit: 'kategori', transactionsUnit: 'işlem',
 exchangeRates: 'Döviz Kurları', currentRates: 'Güncel Kurlar', fetchRates: 'Güncel Kurları Al', applyToAll: 'Tümüne Uygula', monthlyRates: 'Aylık Kurlar',
 income: 'Gelir', expense: 'Gider', budget: 'Bütçe', plan: 'Plan',
 monthlyIncomePlan: 'Aylık Gelir Planı', monthlyExpensePlan: 'Aylık Gider Planı', yearlyIncomePlan: 'Yıllık Gelir Planı', yearlyExpensePlan: 'Yıllık Gider Planı', netPositionActual: 'Net Durum (Gerçekleşen)', netPosition: 'Net Durum',
@@ -2304,6 +2307,12 @@ clearAllData: 'Clear All Data',
 backupDownloaded: 'Backup downloaded',
 dataLoaded: 'Data loaded',
 dataCleared: 'Data cleared',
+jsonDownload: 'Download JSON',
+jsonUpload: 'Upload JSON',
+clearData: 'Clear Data',
+dataModalWarning: '⚠️ Data may be lost when the app is updated. Export your data regularly!',
+categoriesUnit: 'categories',
+transactionsUnit: 'transactions',
 exchangeRates: 'Exchange Rates',
 currentRates: 'Current Rates',
 fetchRates: 'Fetch Current Rates',
@@ -2462,6 +2471,23 @@ chartTitle.textContent = viewMode === 'monthly'
 ? monthNamesFull[currentMonth] + ' - ' + t('categoryDistribution')
 : t('monthlyBudgetVsActual');
 }
+
+const dataModalTitle = document.getElementById('dataModalTitle');
+if (dataModalTitle) dataModalTitle.innerHTML = '<i class="fas fa-database"></i> ' + t('dataMgmt');
+const dataModalWarning = document.getElementById('dataModalWarning');
+if (dataModalWarning) dataModalWarning.textContent = t('dataModalWarning');
+const dataExportLabel = document.getElementById('dataExportLabel');
+if (dataExportLabel) dataExportLabel.textContent = t('exportData');
+const dataImportLabel = document.getElementById('dataImportLabel');
+if (dataImportLabel) dataImportLabel.textContent = t('importData');
+const dataClearLabel = document.getElementById('dataClearLabel');
+if (dataClearLabel) dataClearLabel.textContent = t('clearAllData');
+const dataExportBtn = document.getElementById('dataExportBtn');
+if (dataExportBtn) dataExportBtn.innerHTML = '<i class="fas fa-download"></i> ' + t('jsonDownload');
+const dataImportBtn = document.getElementById('dataImportBtn');
+if (dataImportBtn) dataImportBtn.innerHTML = '<i class="fas fa-upload"></i> ' + t('jsonUpload');
+const dataClearBtn = document.getElementById('dataClearBtn');
+if (dataClearBtn) dataClearBtn.innerHTML = '<i class="fas fa-trash"></i> ' + t('clearData');
 
 if (window.translateDOM) window.translateDOM(appSettings.lang || 'tr');
 
@@ -4290,8 +4316,8 @@ document.getElementById('ratesModal').classList.add('active');
 function openDataModal() {
 const catCount = categories.income.length + categories.expense.length;
 const txCount = transactions.length;
-document.getElementById('statCategories').textContent = `${catCount} kategori`;
-document.getElementById('statTransactions').textContent = `${txCount} işlem`;
+document.getElementById('statCategories').textContent = `${catCount} ${t('categoriesUnit')}`;
+document.getElementById('statTransactions').textContent = `${txCount} ${t('transactionsUnit')}`;
 document.getElementById('dataModal').classList.add('active');
 }
 
