@@ -5178,6 +5178,12 @@ function generateExcelReport() {
                 if (C > 0 && R > headerRowIndex) {
                     ws[cellRef].s.alignment = { horizontal: 'right' };
                 }
+
+                // Sayıları Number formatında tut ve küsüratı kaldır
+                if (ws[cellRef].t === 'n') {
+                    ws[cellRef].z = '#,##0';
+                    ws[cellRef].s.numFmt = '#,##0';
+                }
             }
         }
     }
@@ -5187,7 +5193,8 @@ function generateExcelReport() {
     }
 
     function formatNumber(num) {
-        return Number(num).toLocaleString(isEn ? 'en-US' : 'tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const normalized = Number(num);
+        return Number.isFinite(normalized) ? Math.round(normalized) : 0;
     }
 
     // ===== ÖZET SAYFASI =====
