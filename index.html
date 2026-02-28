@@ -2714,9 +2714,12 @@ let monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl
 
 
 function __usd(it){ const v = (it && (it.usd ?? it.amountUSD ?? it.valueUSD)); const n = Number(v); return (isFinite(n)? n:0); }
+function formatNumberNoFraction(n){
+const x = Number(n || 0);
+return x.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
 function formatMoney(n){
-const x = Number(n||0);
-return x.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+return formatNumberNoFraction(n);
 }
 function escapeHtml(str){
 return String(str ?? '').replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
@@ -2783,7 +2786,7 @@ try { renderBalance(); } catch(e) {}
 // ==================== HELPERS ====================
 function formatCurrency(amount, currency = 'USD') {
 const symbol = currencySymbols[currency] || '$';
-return symbol + Math.abs(amount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+return symbol + formatNumberNoFraction(Math.abs(amount));
 }
 
 function changeYear(delta) {
@@ -3452,8 +3455,8 @@ const currency = categoryCurrencies[idx] || 'USD';
 const symbol = currencySymbols[currency] || '$';
 
 // Orijinal tutar + Dolar karşılığı
-const formattedOriginal = originalAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-const formattedUSD = valueUSD.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+const formattedOriginal = formatNumberNoFraction(originalAmount);
+const formattedUSD = formatNumberNoFraction(valueUSD);
 
 if (currency === 'USD') {
 return `$${formattedUSD} - %${percent}`;
@@ -3970,7 +3973,7 @@ const amount = parseFloat(document.getElementById('transactionAmount').value) ||
 const liveUsdEquivalent = document.getElementById('liveUsdEquivalent');
 
 if (selectedCurrency === 'USD') {
-if (liveUsdEquivalent) liveUsdEquivalent.textContent = `$${amount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+if (liveUsdEquivalent) liveUsdEquivalent.textContent = `$${formatNumberNoFraction(amount)}`;
 return;
 }
 
@@ -3978,7 +3981,7 @@ const rate = cachedLiveRates[selectedCurrency];
 if (rate && rate > 0) {
 const usdAmount = amount / rate;
 if (liveUsdEquivalent) {
-liveUsdEquivalent.textContent = `$${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+liveUsdEquivalent.textContent = `$${formatNumberNoFraction(usdAmount)}`;
 }
 } else {
 // Aylık kur kullan
@@ -3987,7 +3990,7 @@ const month = txDate ? new Date(txDate).getMonth() : currentMonth;
 const monthlyRate = getRateForMonth(selectedCurrency, month);
 const usdAmount = monthlyRate > 0 ? amount / monthlyRate : 0;
 if (liveUsdEquivalent) {
-liveUsdEquivalent.textContent = `$${usdAmount.toLocaleString('tr-TR', { maximumFractionDigits: 2 })}`;
+liveUsdEquivalent.textContent = `$${formatNumberNoFraction(usdAmount)}`;
 }
 }
 }
@@ -4475,7 +4478,7 @@ function generatePDFReport() {
 
     // Binlik ayracli sayi formatlama
     function formatNum(num, decimals = 0) {
-        return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return formatNumberNoFraction(num);
     }
 
     // Para birimi sembolu
@@ -6123,7 +6126,7 @@ return { assetsTotal, liabilitiesTotal, equity };
 
 function fmtUSD(v){
 const n = Number(v)||0;
-return '$' + n.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+return '$' + formatNumberNoFraction(n);
 }
 
 
@@ -6561,7 +6564,7 @@ label: (ctx) => `${ctx.dataset.label}: ${fmtUSD(ctx.parsed.y)}`
 },
 scales: {
 y: {
-ticks: { callback: (v)=>'$' + Number(v).toLocaleString('tr-TR') }
+ticks: { callback: (v)=>'$' + formatNumberNoFraction(Number(v)) }
 }
 }
 }
