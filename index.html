@@ -2789,6 +2789,11 @@ const symbol = currencySymbols[currency] || '$';
 return symbol + formatNumberNoFraction(Math.abs(amount));
 }
 
+function formatSignedCurrency(amount, currency = 'USD') {
+const prefix = amount >= 0 ? '+' : '';
+return prefix + formatCurrency(amount, currency);
+}
+
 function changeYear(delta) {
 currentYear += delta;
 document.getElementById('yearDisplay').textContent = currentYear;
@@ -3130,13 +3135,13 @@ const isFutureMonth = (today.getFullYear() === currentYear && i > thisMonth) || 
 rows += `
 <tr class="${isCurrentMonth ? 'current-month' : ''}">
 <td>${monthNames[i]}</td>
-<td>$${incomePlan.toFixed(0)}</td>
-<td class="${incomeActual > 0 ? 'positive' : ''}">${isFutureMonth && incomeActual === 0 ? '-' : '$' + incomeActual.toFixed(0)}</td>
-<td>$${expensePlan.toFixed(0)}</td>
-<td class="${expenseActual > 0 ? 'negative' : ''}">${isFutureMonth && expenseActual === 0 ? '-' : '$' + expenseActual.toFixed(0)}</td>
-<td class="${netPlan >= 0 ? 'positive' : 'negative'}">${netPlan >= 0 ? '+' : ''}$${netPlan.toFixed(0)}</td>
-<td class="${netActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '-' : (netActual >= 0 ? '+' : '') + '$' + netActual.toFixed(0)}</td>
-<td class="${cumulativeActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '($' + cumulativePlan.toFixed(0) + ')' : (cumulativeActual >= 0 ? '+' : '') + '$' + cumulativeActual.toFixed(0)}</td>
+<td>${formatCurrency(incomePlan)}</td>
+<td class="${incomeActual > 0 ? 'positive' : ''}">${isFutureMonth && incomeActual === 0 ? '-' : formatCurrency(incomeActual)}</td>
+<td>${formatCurrency(expensePlan)}</td>
+<td class="${expenseActual > 0 ? 'negative' : ''}">${isFutureMonth && expenseActual === 0 ? '-' : formatCurrency(expenseActual)}</td>
+<td class="${netPlan >= 0 ? 'positive' : 'negative'}">${formatSignedCurrency(netPlan)}</td>
+<td class="${netActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '-' : formatSignedCurrency(netActual)}</td>
+<td class="${cumulativeActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '(' + formatCurrency(cumulativePlan) + ')' : formatSignedCurrency(cumulativeActual)}</td>
 </tr>
 `;
 }
@@ -3155,13 +3160,13 @@ const totalText = isEn ? 'TOTAL' : 'TOPLAM';
 tfoot.innerHTML = `
 <tr>
 <td>${totalText}</td>
-<td>$${yearlyIncomePlan.toFixed(0)}</td>
-<td class="positive">$${totalIncomeActual.toFixed(0)}</td>
-<td>$${yearlyExpensePlan.toFixed(0)}</td>
-<td class="negative">$${totalExpenseActual.toFixed(0)}</td>
-<td class="${yearlyNetPlan >= 0 ? 'positive' : 'negative'}">${yearlyNetPlan >= 0 ? '+' : ''}$${yearlyNetPlan.toFixed(0)}</td>
-<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
-<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
+<td>${formatCurrency(yearlyIncomePlan)}</td>
+<td class="positive">${formatCurrency(totalIncomeActual)}</td>
+<td>${formatCurrency(yearlyExpensePlan)}</td>
+<td class="negative">${formatCurrency(totalExpenseActual)}</td>
+<td class="${yearlyNetPlan >= 0 ? 'positive' : 'negative'}">${formatSignedCurrency(yearlyNetPlan)}</td>
+<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${formatSignedCurrency(totalNetActual)}</td>
+<td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${formatSignedCurrency(totalNetActual)}</td>
 </tr>
 `;
 
@@ -3203,26 +3208,26 @@ const yearEndForecastTitle = isEn ? '🔮 Year-End Forecast' : '🔮 Yıl Sonu T
 var html = '';
 html += '<div class="cashflow-card savings">';
 html += `<div class="cashflow-card-title">${annualSavingsTitle}</div>`;
-html += '<div class="cashflow-card-value">' + (yearlySavingsPlan >= 0 ? '+' : '') + '$' + yearlySavingsPlan.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (yearlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
+html += '<div class="cashflow-card-value">' + formatSignedCurrency(yearlySavingsPlan) + '</div>';
+html += '<div class="cashflow-card-sub">' + formatCurrency(yearlySavingsPlan * avgTryRate, 'TRY') + ' / ' + formatCurrency(yearlySavingsPlan * avgRubRate, 'RUB') + '</div>';
 html += '</div>';
 
 html += '<div class="cashflow-card ' + (yearlySavingsActual >= 0 ? 'savings' : 'spending') + '">';
 html += `<div class="cashflow-card-title">${actualSavingsTitle}</div>`;
-html += '<div class="cashflow-card-value">' + (yearlySavingsActual >= 0 ? '+' : '') + '$' + yearlySavingsActual.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (yearlySavingsActual * avgTryRate).toFixed(0) + ' / ₽' + (yearlySavingsActual * avgRubRate).toFixed(0) + '</div>';
+html += '<div class="cashflow-card-value">' + formatSignedCurrency(yearlySavingsActual) + '</div>';
+html += '<div class="cashflow-card-sub">' + formatCurrency(yearlySavingsActual * avgTryRate, 'TRY') + ' / ' + formatCurrency(yearlySavingsActual * avgRubRate, 'RUB') + '</div>';
 html += '</div>';
 
 html += '<div class="cashflow-card savings">';
 html += `<div class="cashflow-card-title">${monthlyTargetTitle}</div>`;
-html += '<div class="cashflow-card-value">' + (monthlySavingsPlan >= 0 ? '+' : '') + '$' + monthlySavingsPlan.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (monthlySavingsPlan * avgTryRate).toFixed(0) + ' / ₽' + (monthlySavingsPlan * avgRubRate).toFixed(0) + '</div>';
+html += '<div class="cashflow-card-value">' + formatSignedCurrency(monthlySavingsPlan) + '</div>';
+html += '<div class="cashflow-card-sub">' + formatCurrency(monthlySavingsPlan * avgTryRate, 'TRY') + ' / ' + formatCurrency(monthlySavingsPlan * avgRubRate, 'RUB') + '</div>';
 html += '</div>';
 
 html += '<div class="cashflow-card ' + (projectedSavings >= 0 ? 'savings' : 'spending') + '">';
 html += `<div class="cashflow-card-title">${yearEndForecastTitle}</div>`;
-html += '<div class="cashflow-card-value">' + (projectedSavings >= 0 ? '+' : '') + '$' + projectedSavings.toFixed(0) + '</div>';
-html += '<div class="cashflow-card-sub">₺' + (projectedSavings * avgTryRate).toFixed(0) + ' / ₽' + (projectedSavings * avgRubRate).toFixed(0) + '</div>';
+html += '<div class="cashflow-card-value">' + formatSignedCurrency(projectedSavings) + '</div>';
+html += '<div class="cashflow-card-sub">' + formatCurrency(projectedSavings * avgTryRate, 'TRY') + ' / ' + formatCurrency(projectedSavings * avgRubRate, 'RUB') + '</div>';
 html += '</div>';
 
 summary.innerHTML = html;
@@ -3520,9 +3525,9 @@ factByCurrency[t.currency] += t.amount;
 
 let originalCurrencyHtml = '';
 const parts = [];
-if (factByCurrency.USD > 0) parts.push('$' + factByCurrency.USD.toFixed(0));
-if (factByCurrency.TRY > 0) parts.push('₺' + factByCurrency.TRY.toFixed(0));
-if (factByCurrency.RUB > 0) parts.push('₽' + factByCurrency.RUB.toFixed(0));
+if (factByCurrency.USD > 0) parts.push(formatCurrency(factByCurrency.USD, 'USD'));
+if (factByCurrency.TRY > 0) parts.push(formatCurrency(factByCurrency.TRY, 'TRY'));
+if (factByCurrency.RUB > 0) parts.push(formatCurrency(factByCurrency.RUB, 'RUB'));
 if (parts.length > 0) {
 originalCurrencyHtml = '<div class="original-currency">📌 ' + parts.join(' + ') + '</div>';
 }
@@ -3542,7 +3547,7 @@ planInOriginal += monthPlan * monthRate;
 }
 }
 const symbol = currencySymbols[budgetCurrency];
-planOriginalHtml = '<div class="original-currency">📌 ' + symbol + planInOriginal.toFixed(0) + '</div>';
+planOriginalHtml = '<div class="original-currency">📌 ' + symbol + formatNumberNoFraction(planInOriginal) + '</div>';
 }
 
 let barClass = type === 'expense'
