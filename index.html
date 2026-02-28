@@ -138,8 +138,10 @@ letter-spacing: 0.5px;
 }
 
 .header-actions {
-display: flex;
+display: grid;
+grid-template-columns: repeat(4, 38px);
 gap: 6px;
+justify-content: end;
 }
 
 .header-btn {
@@ -6107,11 +6109,11 @@ if (type === 'asset') {
 return [
 { key:'cash', label:`💵 ${t('cash')}` },
 { key:'receivables', label:`🧾 ${t('receivables')}` },
-{ key:'investments', label:`💎 ${t('investments')}` }
+{ key:'investments', label:`🪙 ${t('investments')}` }
 ];
 }
 return [
-{ key:'loans', label:`🏦 ${t('loans')}` },
+{ key:'loans', label:`🤲💵 ${t('loans')}` },
 { key:'cards', label:`💳 ${t('creditCards')}` },
 { key:'payables', label:`🤝 ${t('personalDebts')}` }
 ];
