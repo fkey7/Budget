@@ -1577,7 +1577,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 
 <div class="summary-grid">
 <div class="summary-card income">
-<div class="label" id="incomeLabel">Aylık Gelir Planı</div>
+<div class="label" id="incomeLabel">AYLIK GELIR PLANI</div>
 <div class="amount" id="planIncome">$0</div>
 <div class="sub-amount" id="planIncomeSub">₺0 / ₽0</div>
 <div class="fact-row" id="factIncomeRow">
@@ -1589,7 +1589,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 </div>
 </div>
 <div class="summary-card expense">
-<div class="label" id="expenseLabel">Aylık Gider Planı</div>
+<div class="label" id="expenseLabel">AYLIK GIDER PLANI</div>
 <div class="amount" id="planExpense">$0</div>
 <div class="sub-amount" id="planExpenseSub">₺0 / ₽0</div>
 <div class="fact-row" id="factExpenseRow">
@@ -1601,7 +1601,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 </div>
 </div>
 <div class="summary-card full">
-<div class="label">Net Durum (Gerçekleşen)</div>
+<div class="label">NET DURUM (GERÇEKLEŞEN)</div>
 <div class="amount positive" id="netBalance">$0</div>
 <div class="sub-amount" id="netBalanceSub">₺0 / ₽0</div>
 </div>
@@ -1620,11 +1620,11 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <table class="cashflow-table" id="cashflowTable">
 <thead>
 <tr>
-<th>Ay</th>
-<th>Gelir Plan</th>
-<th>Gelir Gerç.</th>
-<th>Gider Plan</th>
-<th>Gider Gerç.</th>
+<th>AY</th>
+<th>GELIR PLAN</th>
+<th>GELIR GERÇ.</th>
+<th>GIDER PLAN</th>
+<th>GIDER GERÇ.</th>
 <th>Net Plan</th>
 <th>Net Gerç.</th>
 <th>Kümülatif</th>
@@ -2892,17 +2892,17 @@ avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
 // Label metinlerini güncelle
 document.getElementById('incomeLabel').textContent = viewMode === 'monthly' 
-? (isEn ? 'Monthly Income Plan' : 'Aylık Gelir Planı')
-: (isEn ? 'Yearly Income Plan' : 'Yıllık Gelir Planı');
+? (isEn ? 'MONTHLY INCOME PLAN' : 'AYLIK GELIR PLANI')
+: (isEn ? 'YEARLY INCOME PLAN' : 'YILLIK GELIR PLANI');
 
 document.getElementById('expenseLabel').textContent = viewMode === 'monthly'
-? (isEn ? 'Monthly Expense Plan' : 'Aylık Gider Planı')
-: (isEn ? 'Yearly Expense Plan' : 'Yıllık Gider Planı');
+? (isEn ? 'MONTHLY EXPENSE PLAN' : 'AYLIK GIDER PLANI')
+: (isEn ? 'YEARLY EXPENSE PLAN' : 'YILLIK GIDER PLANI');
 
 // Net Durum kartı
 const netLabel = document.querySelector('.summary-card.full .label');
 if (netLabel) {
-netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
+netLabel.textContent = isEn ? 'NET POSITION (ACTUAL)' : 'NET DURUM (GERÇEKLEŞEN)';
 }
 
 // Gerçekleşen satırları
@@ -3167,15 +3167,15 @@ const cfTable = document.getElementById('cashflowTable');
 if (cfTable) {
 const th = cfTable.querySelectorAll('thead th');
 if (th && th.length >= 5) {
-th[0].textContent = isEn ? 'Month' : 'Ay';
-th[1].textContent = isEn ? 'Income Plan' : 'Gelir Plan';
-th[2].textContent = isEn ? 'Income Actual' : 'Gelir Gerç.';
-th[3].textContent = isEn ? 'Expense Plan' : 'Gider Plan';
-th[4].textContent = isEn ? 'Expense Actual' : 'Gider Gerç.';
+th[0].textContent = isEn ? 'MONTH' : 'AY';
+th[1].textContent = isEn ? 'INCOME PLAN' : 'GELIR PLAN';
+th[2].textContent = isEn ? 'INCOME ACTUAL' : 'GELIR GERÇ.';
+th[3].textContent = isEn ? 'EXPENSE PLAN' : 'GIDER PLAN';
+th[4].textContent = isEn ? 'EXPENSE ACTUAL' : 'GIDER GERÇ.';
 if (th.length > 5) {
-th[5].textContent = isEn ? 'Net Plan' : 'Net Plan';
-th[6].textContent = isEn ? 'Net Actual' : 'Net Gerç.';
-th[7].textContent = isEn ? 'Cumulative' : 'Kümülatif';
+th[5].textContent = isEn ? 'NET PLAN' : 'NET PLAN';
+th[6].textContent = isEn ? 'NET ACTUAL' : 'NET GERÇ.';
+th[7].textContent = isEn ? 'CUMULATIVE' : 'KÜMÜLATIF';
 }
 }
 }
@@ -5897,7 +5897,7 @@ headerTitle.innerHTML = '<i class="fas fa-wallet"></i> ' + (isEn ? 'Budget Track
 
 const netLabel = document.querySelector('.summary-card.full .label');
 if (netLabel) {
-netLabel.textContent = isEn ? 'Net Position (Actual)' : 'Net Durum (Gerçekleşen)';
+netLabel.textContent = isEn ? 'NET POSITION (ACTUAL)' : 'NET DURUM (GERÇEKLEŞEN)';
 }
 
 const factIncomeRow = document.getElementById('factIncomeRow');
@@ -5917,23 +5917,23 @@ if (cfTable) {
 const th = cfTable.querySelectorAll('thead th');
 if (th && th.length >= 8) {
 if (isEn) {
-th[0].textContent = 'Month';
-th[1].textContent = 'Income Plan';
-th[2].textContent = 'Income Actual';
-th[3].textContent = 'Expense Plan';
-th[4].textContent = 'Expense Actual';
-th[5].textContent = 'Net Plan';
-th[6].textContent = 'Net Actual';
-th[7].textContent = 'Cumulative';
+th[0].textContent = 'MONTH';
+th[1].textContent = 'INCOME PLAN';
+th[2].textContent = 'INCOME ACTUAL';
+th[3].textContent = 'EXPENSE PLAN';
+th[4].textContent = 'EXPENSE ACTUAL';
+th[5].textContent = 'NET PLAN';
+th[6].textContent = 'NET ACTUAL';
+th[7].textContent = 'CUMULATIVE';
 } else {
-th[0].textContent = 'Ay';
-th[1].textContent = 'Gelir Plan';
-th[2].textContent = 'Gelir Gerç.';
-th[3].textContent = 'Gider Plan';
-th[4].textContent = 'Gider Gerç.';
-th[5].textContent = 'Net Plan';
-th[6].textContent = 'Net Gerç.';
-th[7].textContent = 'Kümülatif';
+th[0].textContent = 'AY';
+th[1].textContent = 'GELIR PLAN';
+th[2].textContent = 'GELIR GERÇ.';
+th[3].textContent = 'GIDER PLAN';
+th[4].textContent = 'GIDER GERÇ.';
+th[5].textContent = 'NET PLAN';
+th[6].textContent = 'NET GERÇ.';
+th[7].textContent = 'KÜMÜLATIF';
 }
 }
 }
@@ -5967,8 +5967,8 @@ const cfTable2 = document.getElementById('cashflowTable');
 if (cfTable2) {
 const headers = cfTable2.querySelectorAll('thead th');
 if (headers.length >= 8) {
-headers[6].textContent = 'Net Actual';
-headers[7].textContent = 'Cumulative';
+headers[6].textContent = 'NET ACTUAL';
+headers[7].textContent = 'CUMULATIVE';
 }
 }
 
