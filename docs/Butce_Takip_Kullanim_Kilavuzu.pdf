@@ -1,0 +1,281 @@
+%PDF-1.4
+%
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 495 >>
+stream
+0.07 0.43 0.75 rg 0 0 595 842 re f
+1 1 1 rg BT /F2 30 Tf 60 720 Td (Butce Takip Uygulamasi) Tj ET
+1 1 1 rg BT /F2 24 Tf 60 680 Td (Kapsamli Kullanim Kilavuzu) Tj ET
+1 1 1 rg BT /F1 14 Tf 60 630 Td (Hazirlayan: Codex teknik dokumantasyon asistani) Tj ET
+1 1 1 rg BT /F1 12 Tf 60 600 Td (Bu kilavuz, uygulamayi sifirdan kullanmaya baslamak icin hazirlanmistir.) Tj ET
+1 1 1 rg BT /F1 12 Tf 60 575 Td (Her bolumde: hangi ekrana gireceginiz ve hangi dugmeye basacaginiz net olarak belirtilir.) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Length 1042 >>
+stream
+BT /F2 16 Tf 50 790 Td (1\) UYGULAMANIN AMACI) Tj ET
+BT /F1 11 Tf 50 770 Td (Bu uygulama; gelir, gider, bilanco varlik/borc ve doviz bazli butce planini tek ekrandan) Tj ET
+BT /F1 11 Tf 50 755 Td (takip etmenizi saglar. Planladiginiz tutarlar ile gerceklesen tutarlari karsilastirir,) Tj ET
+BT /F1 11 Tf 50 740 Td (aylik ve yillik gorunum sunar.) Tj ET
+BT /F2 16 Tf 50 715 Td (2\) TEMEL BOLUMLER) Tj ET
+BT /F1 11 Tf 50 695 Td (? Butce sekmesi: Kategori tanimlari, planlar, grafikler ve ozet kartlar) Tj ET
+BT /F1 11 Tf 50 680 Td (? Islemler sekmesi: Tum gelir/gider hareketlerinin listesi) Tj ET
+BT /F1 11 Tf 50 665 Td (? Bilanco sekmesi: Varlik, borc ve ozkaynak takibi) Tj ET
+BT /F1 11 Tf 50 650 Td (? Ust menu: Tema, dil, PDF/Excel rapor, veri yonetimi, kur yonetimi) Tj ET
+BT /F2 16 Tf 50 625 Td (3\) BASLAMADAN ONCE) Tj ET
+BT /F1 11 Tf 50 605 Td (Onerilen siralama: \(1\) Doviz kurlarini girin, \(2\) gelir/gider kategorilerini olusturun,) Tj ET
+BT /F1 11 Tf 50 590 Td (\(3\) islemleri kaydedin, \(4\) aylik-yillik raporlari alin.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Length 1417 >>
+stream
+0.95 0.97 1 rg 40 120 515 680 re f
+0.2 0.5 0.8 RG 2 w 40 120 515 680 re S
+0.1 0.45 0.75 rg 40 740 515 60 re f
+1 1 1 rg BT /F2 16 Tf 60 765 Td (Ana Ekran \(Butce\)) Tj ET
+0.98 0.98 0.98 rg 60 650 220 70 re f 315 650 220 70 re f
+0.9 0.93 0.97 rg 60 560 475 70 re f
+0.94 0.97 0.94 rg 60 470 475 70 re f
+0.97 0.94 0.94 rg 60 380 475 70 re f
+0.92 0.92 0.92 rg 60 170 475 180 re f
+0 0 0 rg
+0.15 0.45 0.85 rg 70 318 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 329 Td (1) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 330 Td (Yil degistir: Sol/Sag ok dugmeleri) Tj ET
+0.15 0.45 0.85 rg 70 294 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 305 Td (2) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 306 Td (Aylik/Yillik gorunum secici) Tj ET
+0.15 0.45 0.85 rg 70 270 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 281 Td (3) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 282 Td (Ay degistir: Sol/Sag ok dugmeleri) Tj ET
+0.15 0.45 0.85 rg 70 246 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 257 Td (4) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 258 Td (Gelir plan/gerceklesen karti) Tj ET
+0.15 0.45 0.85 rg 70 222 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 233 Td (5) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 234 Td (Gider plan/gerceklesen karti) Tj ET
+0.15 0.45 0.85 rg 70 198 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 209 Td (6) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 210 Td (Net durum karti) Tj ET
+0.15 0.45 0.85 rg 70 174 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 185 Td (7) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 186 Td (Sekmeler: Butce - Islemler - Bilanco) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Length 879 >>
+stream
+BT /F2 16 Tf 50 790 Td (4\) GELIR/GIDER KATEGORISI EKLEME) Tj ET
+BT /F1 11 Tf 50 765 Td (Adimlar:) Tj ET
+BT /F1 11 Tf 70 745 Td (1. Butce sekmesinde GELIR veya GIDER basligindaki + dugmesine basin.) Tj ET
+BT /F1 11 Tf 70 730 Td (2. Acilan pencerede kategori adini yazin.) Tj ET
+BT /F1 11 Tf 70 715 Td (3. Ikon secin.) Tj ET
+BT /F1 11 Tf 70 700 Td (4. Para birimini secin \(USD, TRY, RUB\).) Tj ET
+BT /F1 11 Tf 70 685 Td (5. Yillik butceyi girin veya aylik kutulari tek tek doldurun.) Tj ET
+BT /F1 11 Tf 70 670 Td (6. Gunluk Takip secenegini sadece gunluk harcamalarda acin.) Tj ET
+BT /F1 11 Tf 70 655 Td (7. Kaydet dugmesine basin.) Tj ET
+BT /F2 11 Tf 50 630 Td (IPUCU:) Tj ET
+BT /F1 11 Tf 70 610 Td (Duzenli sabit giderlerde \(kira, okul, aidat\) gunluk takip kapali olmali.) Tj ET
+BT /F1 11 Tf 70 595 Td (Market/yemek/ulasim gibi sik islemlerde acik birakmaniz onerilir.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Length 846 >>
+stream
+BT /F2 16 Tf 50 790 Td (5\) YENI ISLEM EKLEME \(FAB +\)) Tj ET
+BT /F1 11 Tf 50 765 Td (Adimlar:) Tj ET
+BT /F1 11 Tf 70 745 Td (1. Alt sag kosedeki + dugmesine basin.) Tj ET
+BT /F1 11 Tf 70 730 Td (2. Islem tipi secin: Gelir veya Gider.) Tj ET
+BT /F1 11 Tf 70 715 Td (3. Kategori kartlarindan uygun kategoriyi secin.) Tj ET
+BT /F1 11 Tf 70 700 Td (4. Tutari girin.) Tj ET
+BT /F1 11 Tf 70 685 Td (5. Para birimini secin.) Tj ET
+BT /F1 11 Tf 70 670 Td (6. Tarih alanini kontrol edin.) Tj ET
+BT /F1 11 Tf 70 655 Td (7. Aciklama \(istege bagli\) yazin.) Tj ET
+BT /F1 11 Tf 70 640 Td (8. Kaydet ile islemi tamamlayin.) Tj ET
+BT /F2 11 Tf 50 615 Td (Canli kur kutusu:) Tj ET
+BT /F1 11 Tf 70 595 Td (TRY/RUB seciminde sistem USD karsiligini anlik gosterir. Boylece farkli para) Tj ET
+BT /F1 11 Tf 70 580 Td (birimleri tek raporda dogru kiyaslanir.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Length 1125 >>
+stream
+0.95 0.97 1 rg 40 120 515 680 re f
+0.2 0.5 0.8 RG 2 w 40 120 515 680 re S
+0.1 0.45 0.75 rg 40 740 515 60 re f
+1 1 1 rg BT /F2 16 Tf 60 765 Td (Islemler Sekmesi) Tj ET
+0.98 0.98 0.98 rg 60 650 220 70 re f 315 650 220 70 re f
+0.9 0.93 0.97 rg 60 560 475 70 re f
+0.94 0.97 0.94 rg 60 470 475 70 re f
+0.97 0.94 0.94 rg 60 380 475 70 re f
+0.92 0.92 0.92 rg 60 170 475 180 re f
+0 0 0 rg
+0.15 0.45 0.85 rg 70 318 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 329 Td (1) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 330 Td (Ay filtresi ile donem sec) Tj ET
+0.15 0.45 0.85 rg 70 294 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 305 Td (2) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 306 Td (Liste ogesinde duzenle dugmesi) Tj ET
+0.15 0.45 0.85 rg 70 270 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 281 Td (3) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 282 Td (Liste ogesinde sil dugmesi) Tj ET
+0.15 0.45 0.85 rg 70 246 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 257 Td (4) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 258 Td (Ustte toplam ve para birimi ozetleri) Tj ET
+0.15 0.45 0.85 rg 70 222 20 20 re f
+1 1 1 rg BT /F2 11 Tf 77 233 Td (5) Tj ET
+0 0 0 rg
+BT /F1 11 Tf 98 234 Td (Alt sekmeden Bilanco ekranina gec) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Length 889 >>
+stream
+BT /F2 16 Tf 50 790 Td (6\) BILANCO MODULU \(VARLIK/BORC/OZKAYNAK\)) Tj ET
+BT /F1 11 Tf 50 765 Td (Bilanco kalemi ekleme:) Tj ET
+BT /F1 11 Tf 70 745 Td (1. Bilanco sekmesine gecin.) Tj ET
+BT /F1 11 Tf 70 730 Td (2. + Yeni Kalem dugmesine basin.) Tj ET
+BT /F1 11 Tf 70 715 Td (3. Tarih secin \(ay sonu onerilir\).) Tj ET
+BT /F1 11 Tf 70 700 Td (4. Tur secin: Varlik veya Borc.) Tj ET
+BT /F1 11 Tf 70 685 Td (5. Grup secin \(nakit, banka, kredi karti vb.\).) Tj ET
+BT /F1 11 Tf 70 670 Td (6. Kalem adini yazin.) Tj ET
+BT /F1 11 Tf 70 655 Td (7. Tutar ve para birimini girin.) Tj ET
+BT /F1 11 Tf 70 640 Td (8. Kaydet'e basin.) Tj ET
+BT /F2 11 Tf 50 615 Td (Trend grafigi:) Tj ET
+BT /F1 11 Tf 70 595 Td (Bilanco ekranindaki Aylik/Yillik dugmesi ile trend gorunumu degisir. Bu grafik,) Tj ET
+BT /F1 11 Tf 70 580 Td (net finansal durumunuzun zaman icindeki yonunu izlemek icin kullanilir.) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Length 646 >>
+stream
+BT /F2 16 Tf 50 790 Td (7\) DOVIZ KURU YONETIMI) Tj ET
+BT /F1 11 Tf 50 765 Td (Ust menudeki para simgesine basarak Doviz Kurlari penceresini acin.) Tj ET
+BT /F1 11 Tf 70 745 Td (? Guncel Kurlari Al: Internetten anlik TRY/RUB degerini getirir.) Tj ET
+BT /F1 11 Tf 70 730 Td (? Tumune Uygula: Guncel degeri 12 aya otomatik yayar.) Tj ET
+BT /F1 11 Tf 70 715 Td (? Aylik grid: Her ay icin farkli kur girebilirsiniz.) Tj ET
+BT /F1 11 Tf 70 700 Td (? Kaydet: Girilen degerleri kalici hale getirir.) Tj ET
+BT /F2 11 Tf 50 675 Td (ONEMLI:) Tj ET
+BT /F1 11 Tf 70 655 Td (Dogru rapor icin once kur ekranini doldurun. Sonrasinda islem girisine gecin.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Length 804 >>
+stream
+BT /F2 16 Tf 50 790 Td (8\) RAPORLAR VE VERI GUVENLIGI) Tj ET
+BT /F1 11 Tf 50 765 Td (Rapor alma:) Tj ET
+BT /F1 11 Tf 70 745 Td (? PDF simgesi: Yonetim ozeti ve tablolari PDF olarak indirir.) Tj ET
+BT /F1 11 Tf 70 730 Td (? Excel simgesi: Ayrintili calisma sayfalari ile XLSX dosyasi uretir.) Tj ET
+BT /F1 11 Tf 50 705 Td (Veri Yonetimi:) Tj ET
+BT /F1 11 Tf 70 685 Td (? JSON Indir: Mevcut tum veriyi yedekler.) Tj ET
+BT /F1 11 Tf 70 670 Td (? JSON Yukle: Eski yedegi geri yukler.) Tj ET
+BT /F1 11 Tf 70 655 Td (? Verileri Temizle: Tum kayitlari siler \(geri donussuz\).) Tj ET
+BT /F2 11 Tf 50 630 Td (Guvenli kullanim onerisi:) Tj ET
+BT /F1 11 Tf 70 610 Td (Her hafta en az bir kez JSON disa aktarimi alin. Buyuk guncellemeler oncesi) Tj ET
+BT /F1 11 Tf 70 595 Td (mutlaka ayrica yedek olusturun.) Tj ET
+endstream
+endobj
+12 0 obj
+<< /Length 983 >>
+stream
+BT /F2 16 Tf 50 790 Td (9\) SIK SORULAN SORULAR) Tj ET
+BT /F1 11 Tf 50 765 Td (S: Gelir/gider toplami ile net durum neden farkli olabilir?) Tj ET
+BT /F1 11 Tf 50 750 Td (C: Farkli para birimlerinde kayit varsa, kur tablosuna gore USD esdeger hesaplanir. Kur) Tj ET
+BT /F1 11 Tf 50 735 Td (girisi eksikse sapma olusabilir.) Tj ET
+BT /F1 11 Tf 50 710 Td (S: Yanlis islemi nasil duzeltebilirim?) Tj ET
+BT /F1 11 Tf 50 695 Td (C: Islemler sekmesine gecin, ilgili satirdaki duzenle dugmesini kullanin veya silip) Tj ET
+BT /F1 11 Tf 50 680 Td (yeniden girin.) Tj ET
+BT /F1 11 Tf 50 655 Td (S: Bilanco neden bos gorunuyor?) Tj ET
+BT /F1 11 Tf 50 640 Td (C: Once bir tarih ve tur secerek en az bir bilanco kalemi kaydetmeniz gerekir.) Tj ET
+BT /F1 11 Tf 50 615 Td (S: Dil/Tema nasil degisir?) Tj ET
+BT /F1 11 Tf 50 600 Td (C: Ust cubuktaki Ay ve TR/EN dugmelerini kullanabilirsiniz.) Tj ET
+BT /F2 11 Tf 50 575 Td (Bu kilavuzla uygulamayi ilk gunden itibaren guvenle kullanabilirsiniz.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 3 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+14 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+15 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+16 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+17 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 7 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+18 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 8 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+19 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 9 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+20 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 10 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+21 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 11 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+22 0 obj
+<< /Type /Page /Parent 23 0 R /MediaBox [0 0 595 842] /Contents 12 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+23 0 obj
+<< /Type /Pages /Kids [13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R] /Count 10 >>
+endobj
+24 0 obj
+<< /Type /Catalog /Pages 23 0 R >>
+endobj
+xref
+0 25
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000160 00000 n 
+0000000706 00000 n 
+0000001800 00000 n 
+0000003269 00000 n 
+0000004199 00000 n 
+0000005096 00000 n 
+0000006273 00000 n 
+0000007213 00000 n 
+0000007911 00000 n 
+0000008767 00000 n 
+0000009802 00000 n 
+0000009940 00000 n 
+0000010078 00000 n 
+0000010216 00000 n 
+0000010354 00000 n 
+0000010492 00000 n 
+0000010630 00000 n 
+0000010768 00000 n 
+0000010907 00000 n 
+0000011046 00000 n 
+0000011185 00000 n 
+0000011308 00000 n 
+trailer
+<< /Size 25 /Root 24 0 R >>
+startxref
+11359
+%%EOF
