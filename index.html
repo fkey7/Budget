@@ -1577,7 +1577,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 
 <div class="summary-grid">
 <div class="summary-card income">
-<div class="label" id="incomeLabel">AYLIK GELIR PLANI</div>
+<div class="label" id="incomeLabel">AYLIK GELİR PLANI</div>
 <div class="amount" id="planIncome">$0</div>
 <div class="sub-amount" id="planIncomeSub">₺0 / ₽0</div>
 <div class="fact-row" id="factIncomeRow">
@@ -1589,7 +1589,7 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 </div>
 </div>
 <div class="summary-card expense">
-<div class="label" id="expenseLabel">AYLIK GIDER PLANI</div>
+<div class="label" id="expenseLabel">AYLIK GİDER PLANI</div>
 <div class="amount" id="planExpense">$0</div>
 <div class="sub-amount" id="planExpenseSub">₺0 / ₽0</div>
 <div class="fact-row" id="factExpenseRow">
@@ -1625,8 +1625,8 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <th>GELIR GERÇ.</th>
 <th>GIDER PLAN</th>
 <th>GIDER GERÇ.</th>
-<th>Net Plan</th>
-<th>Net Gerç.</th>
+<th>NET<br>PLAN</th>
+<th>NET<br>GERÇ.</th>
 <th>Kümülatif</th>
 </tr>
 </thead>
@@ -2155,7 +2155,7 @@ netPlan: 'Net Plan', netActual: 'Net Gerçek.', cumulative: 'Kümülatif',
 annualSavingsPlan: 'Yıllık Tasarruf Planı', actualSavings: 'Gerçekleşen Tasarruf',
 monthlySavingsTarget: 'Aylık Tasarruf Hedefi', yearEndForecast: 'Yıl Sonu Tahmini',
 incomePlan: 'Gelir Plan', incomeActual: 'Gelir Gerçek.', expensePlan: 'Gider Plan', expenseActual: 'Gider Gerçek.',
-plannedIncome: 'Planlanan Gelir', actualIncome: 'Gerçekleşen Gelir', plannedExpense: 'Planlanan Gider', actualExpense: 'Gerçekleşen Gider',
+plannedIncome: 'P.Gelir', actualIncome: 'A.Gelir', plannedExpense: 'P.Gider', actualExpense: 'A.Gider',
 cash: 'Nakit', receivables: 'Alacaklar', investments: 'Yatırımlar', loans: 'Krediler', creditCards: 'Kredi Kartı Borçları', personalDebts: 'Şahıslara Borçlar',
 newIncomeCategory: 'Yeni Gelir Kalemi', newExpenseCategory: 'Yeni Gider Kalemi', newTransaction: 'Yeni İşlem', editBudget: 'Bütçe Düzenle', newBalanceItem: 'Yeni Bilanço Kalemi', editBalanceItem: 'Bilanço Kalemi Düzenle',
 categoryName: 'Kategori Adı', budgetCurrency: 'Bütçe Para Birimi', yearlyBudget: 'Yıllık Bütçe', monthlyBudgets: 'Aylık Bütçeler', distributeEvenly: 'Eşit Dağıt', icon: 'İkon',
@@ -2241,10 +2241,10 @@ incomePlan: 'Income Plan',
 incomeActual: 'Income Actual',
 expensePlan: 'Expense Plan',
 expenseActual: 'Expense Actual',
-plannedIncome: 'Planned Income',
-actualIncome: 'Actual Income',
-plannedExpense: 'Planned Expense',
-actualExpense: 'Actual Expense',
+plannedIncome: 'P.Income',
+actualIncome: 'A.Income',
+plannedExpense: 'P.Expense',
+actualExpense: 'A.Expense',
 cash: 'Cash',
 receivables: 'Receivables',
 investments: 'Investments',
@@ -2336,7 +2336,7 @@ monthlyIncomePlan: 'Monthly Income Plan',
 monthlyExpensePlan: 'Monthly Expense Plan',
 yearlyIncomePlan: 'Yearly Income Plan',
 yearlyExpensePlan: 'Yearly Expense Plan',
-netPositionActual: 'Net Position (Actual)',
+netPositionActual: 'NET POSITION (ACTUAL)',
 netPosition: 'Net Position',
 incomeType: 'Income',
 expenseType: 'Expense',
@@ -2892,12 +2892,12 @@ avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
 // Label metinlerini güncelle
 document.getElementById('incomeLabel').textContent = viewMode === 'monthly' 
-? (isEn ? 'MONTHLY INCOME PLAN' : 'AYLIK GELIR PLANI')
-: (isEn ? 'YEARLY INCOME PLAN' : 'YILLIK GELIR PLANI');
+? (isEn ? 'MONTHLY INCOME PLAN' : 'AYLIK GELİR PLANI')
+: (isEn ? 'YEARLY INCOME PLAN' : 'YILLIK GELİR PLANI');
 
 document.getElementById('expenseLabel').textContent = viewMode === 'monthly'
-? (isEn ? 'MONTHLY EXPENSE PLAN' : 'AYLIK GIDER PLANI')
-: (isEn ? 'YEARLY EXPENSE PLAN' : 'YILLIK GIDER PLANI');
+? (isEn ? 'MONTHLY EXPENSE PLAN' : 'AYLIK GİDER PLANI')
+: (isEn ? 'YEARLY EXPENSE PLAN' : 'YILLIK GİDER PLANI');
 
 // Net Durum kartı
 const netLabel = document.querySelector('.summary-card.full .label');
@@ -3173,8 +3173,8 @@ th[2].textContent = isEn ? 'INCOME ACTUAL' : 'GELIR GERÇ.';
 th[3].textContent = isEn ? 'EXPENSE PLAN' : 'GIDER PLAN';
 th[4].textContent = isEn ? 'EXPENSE ACTUAL' : 'GIDER GERÇ.';
 if (th.length > 5) {
-th[5].textContent = isEn ? 'NET PLAN' : 'NET PLAN';
-th[6].textContent = isEn ? 'NET ACTUAL' : 'NET GERÇ.';
+th[5].innerHTML = isEn ? 'NET<br>PLAN' : 'NET<br>PLAN';
+th[6].innerHTML = isEn ? 'NET<br>ACTUAL' : 'NET<br>GERÇ.';
 th[7].textContent = isEn ? 'CUMULATIVE' : 'KÜMÜLATIF';
 }
 }
@@ -5922,8 +5922,8 @@ th[1].textContent = 'INCOME PLAN';
 th[2].textContent = 'INCOME ACTUAL';
 th[3].textContent = 'EXPENSE PLAN';
 th[4].textContent = 'EXPENSE ACTUAL';
-th[5].textContent = 'NET PLAN';
-th[6].textContent = 'NET ACTUAL';
+th[5].innerHTML = 'NET<br>PLAN';
+th[6].innerHTML = 'NET<br>ACTUAL';
 th[7].textContent = 'CUMULATIVE';
 } else {
 th[0].textContent = 'AY';
@@ -5931,8 +5931,8 @@ th[1].textContent = 'GELIR PLAN';
 th[2].textContent = 'GELIR GERÇ.';
 th[3].textContent = 'GIDER PLAN';
 th[4].textContent = 'GIDER GERÇ.';
-th[5].textContent = 'NET PLAN';
-th[6].textContent = 'NET GERÇ.';
+th[5].innerHTML = 'NET<br>PLAN';
+th[6].innerHTML = 'NET<br>GERÇ.';
 th[7].textContent = 'KÜMÜLATIF';
 }
 }
@@ -5967,7 +5967,8 @@ const cfTable2 = document.getElementById('cashflowTable');
 if (cfTable2) {
 const headers = cfTable2.querySelectorAll('thead th');
 if (headers.length >= 8) {
-headers[6].textContent = 'NET ACTUAL';
+headers[5].innerHTML = 'NET<br>PLAN';
+headers[6].innerHTML = 'NET<br>ACTUAL';
 headers[7].textContent = 'CUMULATIVE';
 }
 }
@@ -5978,7 +5979,7 @@ const label = card.querySelector('.label');
 if (label) {
 const txt = label.textContent;
 if (txt.toLowerCase().includes('net') && txt.toLowerCase().includes('position')) {
-label.textContent = 'Net Position (Actual)';
+label.textContent = 'NET POSITION (ACTUAL)';
 }
 }
 });
@@ -6709,7 +6710,7 @@ const trToEn = {
 "Aylık Gider Planı":"Monthly Expense Plan",
 "Yıllık Gelir Planı":"Yearly Income Plan",
 "Yıllık Gider Planı":"Yearly Expense Plan",
-"Net Durum (Gerçekleşen)":"Net Position (Actual)",
+"Net Durum (Gerçekleşen)":"NET POSITION (ACTUAL)",
 "Net Durum":"Net Position",
 "Gerçekleşen:":"Actual:",
 "Planlanan":"Planned",
@@ -6717,16 +6718,16 @@ const trToEn = {
 "Fark":"Difference",
 
 "📊 Bütçe Özeti (Para Birimi Bazında)":"📊 Budget Summary (by Currency)",
-"Planlanan Gelir:":"Planned Income:",
-"Gerçekleşen Gelir:":"Actual Income:",
-"Planlanan Gider:":"Planned Expense:",
-"Gerçekleşen Gider:":"Actual Expense:",
+"Planlanan Gelir:":"P.Income:",
+"Gerçekleşen Gelir:":"A.Income:",
+"Planlanan Gider:":"P.Expense:",
+"Gerçekleşen Gider:":"A.Expense:",
 "Net:":"Net:",
 
-"Planlanan Gelir":"Planned Income",
-"Gerçekleşen Gelir":"Actual Income",
-"Planlanan Gider":"Planned Expense",
-"Gerçekleşen Gider":"Actual Expense",
+"Planlanan Gelir":"P.Income",
+"Gerçekleşen Gelir":"A.Income",
+"Planlanan Gider":"P.Expense",
+"Gerçekleşen Gider":"A.Expense",
 
 "💰 Aylık Nakit Akışı (Cash Flow)":"💰 Monthly Cashflow",
 "Aylık Nakit Akışı (Cash Flow)":"Monthly Cashflow",
@@ -6892,7 +6893,7 @@ Object.assign(trToEn, {
 "Yeni Gelir Kalemi":"New Income Item",
 "Yıllık Bütçe":"Annual Budget",
 "Aylık Bütçeler":"Monthly Budgets",
-"Net position(actual)":"Net Position (Actual)"
+"Net position(actual)":"NET POSITION (ACTUAL)"
 });
 
 // Add months (full + short)
