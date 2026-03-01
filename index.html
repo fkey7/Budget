@@ -4534,6 +4534,13 @@ document.getElementById('confirmMessage').textContent = 'Tüm kategoriler ve iş
 deleteCallback = () => {
 categories = { income: [], expense: [] };
 transactions = [];
+balanceSheets = {};
+balanceManualMonths = {};
+monthlyRates = {
+TRY: Array(12).fill(38.50),
+RUB: Array(12).fill(96.00)
+};
+exchangeRates = { USD: 1, TRY: 38.50, RUB: 96.00 };
 nextCategoryId = 1;
 saveData();
 closeModal('dataModal');
