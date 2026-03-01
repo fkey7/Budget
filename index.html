@@ -2038,6 +2038,7 @@ d.exchangeRates = d.exchangeRates || { USD: 1, TRY: 38.50, RUB: 96.00 };
 d.nextCategoryId = Number.isFinite(d.nextCategoryId) ? d.nextCategoryId : 1;
 
 d.balanceSheets = d.balanceSheets || {};
+d.balanceManualMonths = d.balanceManualMonths || {};
 // normalize each month
 try {
 Object.keys(d.balanceSheets).forEach(ym => {
@@ -2054,11 +2055,26 @@ d.balanceSheets[ym] = bm;
 });
 } catch(e) {}
 
+if (typeof d.balanceManualMonths !== 'object' || d.balanceManualMonths === null || Array.isArray(d.balanceManualMonths)) {
+d.balanceManualMonths = {};
+}
+
+let prevSnapshot = null;
+Object.keys(d.balanceSheets).sort().forEach((ym, idx) => {
+if (typeof d.balanceManualMonths[ym] === 'boolean') {
+prevSnapshot = JSON.stringify(d.balanceSheets[ym] || defaultBalanceMonth());
+return;
+}
+const currentSnapshot = JSON.stringify(d.balanceSheets[ym] || defaultBalanceMonth());
+d.balanceManualMonths[ym] = idx === 0 ? true : currentSnapshot !== prevSnapshot;
+prevSnapshot = currentSnapshot;
+});
+
 return d;
 }
 
 function packData() {
-return normalizeData({ categories, transactions, exchangeRates, monthlyRates, nextCategoryId, balanceSheets });
+return normalizeData({ categories, transactions, exchangeRates, monthlyRates, nextCategoryId, balanceSheets, balanceManualMonths });
 }
 
 function unpackData(data) {
@@ -2069,6 +2085,7 @@ monthlyRates = d.monthlyRates;
 exchangeRates = d.exchangeRates;
 nextCategoryId = d.nextCategoryId;
 balanceSheets = d.balanceSheets;
+balanceManualMonths = d.balanceManualMonths || {};
 }
 
 function saveLocal(dataObj) {
@@ -2695,6 +2712,7 @@ if (typeof updateAll === 'function') updateAll();
 let categories = { income: [], expense: [] };
 let transactions = [];
 let balanceSheets = {};
+let balanceManualMonths = {};
 let activeBalanceYM = 'latest';
 let openBalanceGroups = {}; // {ym: {groupKey: bool}}
 let selectedBalanceCurrency = 'USD';
@@ -4453,6 +4471,7 @@ exchangeRates,
 monthlyRates,
 nextCategoryId,
 balanceSheets: balanceSheets || {},
+balanceManualMonths: balanceManualMonths || {},
 appSettings: appSettings || { lang:'tr', theme:'light' }
 };
 
@@ -4490,6 +4509,7 @@ nextCategoryId = data.nextCategoryId || 1;
 
 // Balance + settings
 balanceSheets = data.balanceSheets || balanceSheets || {};
+balanceManualMonths = data.balanceManualMonths || balanceManualMonths || {};
 if (data.appSettings){
 appSettings = { ...appSettings, ...data.appSettings };
 saveAppSettings();
@@ -6143,12 +6163,22 @@ bm.liabilities.payables = Array.isArray(bm.liabilities.payables) ? bm.liabilitie
 return balanceSheets[ym];
 }
 
+function markBalanceMonthAsManual(ym){
+if (!ym) return;
+if (!balanceManualMonths || typeof balanceManualMonths !== 'object') balanceManualMonths = {};
+balanceManualMonths[ym] = true;
+}
+
 function syncBalanceForwardFromMonth(fromYm){
 if (!balanceSheets || !balanceSheets[fromYm]) return;
 
 const sourceSnapshot = JSON.parse(JSON.stringify(balanceSheets[fromYm]));
+const nextManualYm = Object.keys(balanceManualMonths || {})
+.filter(key => key > fromYm && balanceManualMonths[key])
+.sort()[0];
+
 Object.keys(balanceSheets)
-.filter(key => key > fromYm)
+.filter(key => key > fromYm && (!nextManualYm || key < nextManualYm))
 .sort()
 .forEach(key => {
 balanceSheets[key] = JSON.parse(JSON.stringify(sourceSnapshot));
@@ -6311,8 +6341,8 @@ const itemHtml = (items||[])
 <div class="muted">$${formatMoney(it.amountUSD)}</div>
 </div>
 <div class="balance-item-actions">
-<button title="Düzenle" onclick="openEditBalanceItemModal('${typeKey}','${g.key}',${idx})"><i class="fas fa-pen"></i></button>
-<button title="Sil" onclick="deleteBalanceItem('${typeKey}','${g.key}',${idx})"><i class="fas fa-trash"></i></button>
+<button title="Düzenle" onclick="openEditBalanceItemModal('${typeKey}','${g.key}',${idx},'${ym}')"><i class="fas fa-pen"></i></button>
+<button title="Sil" onclick="deleteBalanceItem('${typeKey}','${g.key}',${idx},'${ym}')"><i class="fas fa-trash"></i></button>
 </div>
 </div>
 `).join('') || `<div class="muted" style="padding:8px 2px;">(boş)</div>`;
@@ -6414,7 +6444,9 @@ sel.innerHTML = groups.map(g=>`<option value="${g.key}">${g.label}</option>`).jo
 
 async function saveBalanceItem(){
 const _d = document.getElementById('balanceItemDate')?.value; const ym = (_d ? _d.slice(0,7) : resolveBalanceYM());
-const bm = ensureBalanceMonth(ym);
+const editYm = balanceEditPtr?.ym;
+const baseYm = editYm || ym;
+const bm = ensureBalanceMonth(baseYm);
 
 const group = document.getElementById('balanceGroupSelect')?.value;
 const name = (document.getElementById('balanceItemName')?.value || '').trim();
@@ -6436,7 +6468,7 @@ rateAtTime = live;
 amountUSD = amount / rateAtTime;
 rateSource = 'live';
 } else {
-const m = Number((ym.split('-')[1]||'01')) - 1;
+const m = Number((baseYm.split('-')[1]||'01')) - 1;
 rateAtTime = getRateForMonth(selectedBalanceCurrency, m);
 amountUSD = amount / rateAtTime;
 rateSource = 'monthly';
@@ -6457,22 +6489,23 @@ arr[index] = { ...arr[index], name, amountUSD, originalAmount: amount, originalC
 target.push({ name, amountUSD, originalAmount: amount, originalCurrency: selectedBalanceCurrency, rateAtTime, rateSource });
 }
 
+markBalanceMonthAsManual(baseYm);
 closeModal('balanceItemModal');
-syncBalanceForwardFromMonth(ym);
+syncBalanceForwardFromMonth(baseYm);
 saveData();
 updateAll();
 showToast('Kaydedildi ✓');
 }
 
 
-function openEditBalanceItemModal(typeKey, groupKey, index){
-const ym = resolveBalanceYM();
+function openEditBalanceItemModal(typeKey, groupKey, index, targetYm){
+const ym = targetYm || resolveBalanceYM();
 const bm = ensureBalanceMonth(ym);
 const arr = (typeKey==='asset') ? bm.assets[groupKey] : bm.liabilities[groupKey];
 const it = arr?.[index];
 if (!it) return;
 
-balanceEditPtr = { typeKey, groupKey, index };
+balanceEditPtr = { typeKey, groupKey, index, ym };
 
 document.getElementById('balanceItemModalTitle').textContent = 'Bilanço Kalemi Düzenle';
 setBalanceType(typeKey==='asset' ? 'asset' : 'liability');
@@ -6492,6 +6525,8 @@ const info = document.querySelector('#balanceItemModal [data-i18n="balanceSnapsh
 if (info){
     info.textContent = t('balanceSnapshotInfo');
 }
+const dateInput = document.getElementById('balanceItemDate');
+if (dateInput) dateInput.value = `${ym}-01`;
 updateBalanceUsdPreview();
 openModal('balanceItemModal');
 }
@@ -6525,7 +6560,7 @@ let rate = live;
 let src = 'live';
 if (!rate){
 const ym = resolveBalanceYM();
-const m = Number((ym.split('-')[1]||'01')) - 1;
+const m = Number((baseYm.split('-')[1]||'01')) - 1;
 rate = getRateForMonth(selectedBalanceCurrency, m);
 src = 'monthly';
 }
@@ -6539,12 +6574,13 @@ eq.textContent = `≈ $${formatMoney(usd)}`;
 
 
 
-function deleteBalanceItem(typeKey, groupKey, idx){
-const ym = resolveBalanceYM();
+function deleteBalanceItem(typeKey, groupKey, idx, targetYm){
+const ym = targetYm || resolveBalanceYM();
 const bm = ensureBalanceMonth(ym);
 const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
 if (idx<0 || idx>=arr.length) return;
 arr.splice(idx,1);
+markBalanceMonthAsManual(ym);
 syncBalanceForwardFromMonth(ym);
 saveData();
 updateAll();
