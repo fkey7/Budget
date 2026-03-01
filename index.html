@@ -139,7 +139,7 @@ letter-spacing: 0.5px;
 
 .header-actions {
 display: grid;
-grid-template-columns: repeat(4, 38px);
+grid-template-columns: repeat(8, 38px);
 gap: 6px;
 justify-content: end;
 }
@@ -1520,6 +1520,9 @@ border:none; background: transparent; cursor:pointer; opacity:0.8;
 <button id="btnLang" class="header-btn" type="button" title="Dil">
 <span class="lang-pill">TR</span>
 </button>
+<button class="header-btn" onclick="openUserGuide()" title="Kullanma Kılavuzu">
+<i class="fas fa-book-open"></i>
+</button>
 <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
 <i class="fas fa-file-pdf"></i>
 </button>
@@ -2157,7 +2160,7 @@ monthsFull: ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağusto
 budgetSummaryTitle: 'Bütçe Özeti (Para Birimi Bazında)', cashflowTitle: 'Aylık Nakit Akışı',
 categoryDistribution: 'Kategori Dağılımı', monthlyBudgetVsActual: 'Aylık Bütçe vs Gerçekleşen',
 theme: 'Tema', lang: 'Dil', pdfReport: 'PDF Rapor', excelReport: 'Excel Rapor',
-dataMgmt: 'Veri Yönetimi', rates: 'Döviz Kurları', install: 'Yükle',
+dataMgmt: 'Veri Yönetimi', rates: 'Döviz Kurları', install: 'Yükle', userGuide: 'Kullanma Kılavuzu',
 installBannerTitle: '📱 iPhone\'a Yükle', installBannerDescription: 'Bu uygulamayı ana ekranınıza ekleyebilirsiniz:', installBannerStep1: '1️⃣ Safari\'de <strong>Paylaş</strong> butonuna tıklayın <i class="fas fa-share-square"></i>', installBannerStep2: '2️⃣ <strong>"Ana Ekrana Ekle"</strong> seçin', installBannerStep3: '3️⃣ <strong>"Ekle"</strong> butonuna tıklayın', gotIt: 'Anladım',
 balanceSectionTitle: 'Bilanço (Varlıklar / Borçlar / Öz Sermaye)', addItem: 'Kalem Ekle',
 actual: 'Gerçekleşen', actualColon: 'Gerçekleşen:', planned: 'Planlanan', difference: 'Fark',
@@ -2224,6 +2227,7 @@ excelReport: 'Excel Report',
 dataMgmt: 'Data Management',
 rates: 'Exchange Rates',
 install: 'Install',
+userGuide: 'User Guide',
 installBannerTitle: '📱 Install on iPhone',
 installBannerDescription: 'You can add this app to your home screen:',
 installBannerStep1: '1️⃣ In Safari, tap the <strong>Share</strong> button <i class="fas fa-share-square"></i>',
@@ -2402,6 +2406,7 @@ if (oc.startsWith('generateExcelReport')) b.title = t('excelReport');
 if (oc.startsWith('openDataModal')) b.title = t('dataMgmt');
 if (oc.startsWith('openRatesModal')) b.title = t('rates');
 if (oc.startsWith('showInstallBanner')) b.title = t('install');
+if (oc.startsWith('openUserGuide')) b.title = t('userGuide');
 });
 
 const langBtn = document.getElementById('btnLang');
@@ -4433,6 +4438,12 @@ document.getElementById('statTransactions').textContent = `${txCount} ${t('trans
 document.getElementById('dataModal').classList.add('active');
 }
 
+function openUserGuide() {
+const isEn = (appSettings?.lang || 'tr') === 'en';
+const guidePath = isEn ? 'Budget_Tracker_User_Guide.pdf' : 'Bütçe_Takip_Kullanım_Kılavuzu.pdf';
+window.open(encodeURI(guidePath), '_blank', 'noopener');
+}
+
 
 function exportData() {
 const data = {
@@ -6174,7 +6185,7 @@ if (type === 'asset') {
 return [
 { key:'cash', label:`💵 ${t('cash')}` },
 { key:'receivables', label:`🧾 ${t('receivables')}` },
-{ key:'investments', label:`🪙 ${t('investments')}` }
+{ key:'investments', label:`🥇 ${t('investments')}` }
 ];
 }
 return [
@@ -6776,6 +6787,7 @@ const trToEn = {
 "Dil":"Language",
 "PDF Rapor":"PDF Report",
 "Excel Rapor":"Excel Report",
+"Kullanma Kılavuzu":"User Guide",
 "Veri Yönetimi":"Data Management",
 "Döviz Kurları":"Exchange Rates",
 "Yükle":"Install",
