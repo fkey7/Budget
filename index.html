@@ -6143,6 +6143,18 @@ bm.liabilities.payables = Array.isArray(bm.liabilities.payables) ? bm.liabilitie
 return balanceSheets[ym];
 }
 
+function syncBalanceForwardFromMonth(fromYm){
+if (!balanceSheets || !balanceSheets[fromYm]) return;
+
+const sourceSnapshot = JSON.parse(JSON.stringify(balanceSheets[fromYm]));
+Object.keys(balanceSheets)
+.filter(key => key > fromYm)
+.sort()
+.forEach(key => {
+balanceSheets[key] = JSON.parse(JSON.stringify(sourceSnapshot));
+});
+}
+
 function applyTransactionToBalance(tx){
 try{
 if (!tx || !tx.date) return;
@@ -6446,6 +6458,7 @@ target.push({ name, amountUSD, originalAmount: amount, originalCurrency: selecte
 }
 
 closeModal('balanceItemModal');
+syncBalanceForwardFromMonth(ym);
 saveData();
 updateAll();
 showToast('Kaydedildi ✓');
@@ -6532,6 +6545,7 @@ const bm = ensureBalanceMonth(ym);
 const arr = (typeKey === 'asset') ? (bm.assets[groupKey]||[]) : (bm.liabilities[groupKey]||[]);
 if (idx<0 || idx>=arr.length) return;
 arr.splice(idx,1);
+syncBalanceForwardFromMonth(ym);
 saveData();
 updateAll();
 }
