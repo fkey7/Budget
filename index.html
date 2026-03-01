@@ -2014,6 +2014,15 @@ if (!Array.isArray(d.categories.income)) d.categories.income = [];
 if (!Array.isArray(d.categories.expense)) d.categories.expense = [];
 
 d.transactions = Array.isArray(d.transactions) ? d.transactions : [];
+d.transactions = d.transactions.map(tx => {
+const normalized = { ...tx };
+if (!normalized.date && normalized.transactionDate) normalized.date = normalized.transactionDate;
+if (typeof normalized.amount !== 'number') normalized.amount = Number(normalized.amount) || 0;
+if (typeof normalized.amountUSD !== 'number') normalized.amountUSD = Number(normalized.amountUSD) || 0;
+if (typeof normalized.rateAtTime !== 'number') normalized.rateAtTime = Number(normalized.rateAtTime) || 1;
+if (!normalized.currency) normalized.currency = 'USD';
+return normalized;
+});
 
 d.monthlyRates = d.monthlyRates || {
 TRY: Array(12).fill(38.50),
@@ -2804,8 +2813,63 @@ if (typeof activeBalanceYM !== 'undefined') activeBalanceYM = 'latest';
 updateAll();
 }
 
+function getTransactionDateObj(tx) {
+const raw = tx?.date ?? tx?.transactionDate ?? tx?.createdAt;
+if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw;
+
+if (typeof raw === 'number' && Number.isFinite(raw)) {
+const ts = raw < 1e12 ? raw * 1000 : raw;
+const d = new Date(ts);
+if (!Number.isNaN(d.getTime())) return d;
+}
+
+if (typeof raw === 'string') {
+const value = raw.trim();
+if (!value) return null;
+
+const direct = new Date(value);
+if (!Number.isNaN(direct.getTime())) return direct;
+
+const dm = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+if (dm) {
+const [, day, month, year] = dm;
+const d = new Date(Number(year), Number(month) - 1, Number(day));
+if (!Number.isNaN(d.getTime())) return d;
+}
+
+const ym = value.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+if (ym) {
+const [, year, month, day] = ym;
+const d = new Date(Number(year), Number(month) - 1, Number(day));
+if (!Number.isNaN(d.getTime())) return d;
+}
+}
+
+return null;
+}
+
+function getTransactionYear(tx) {
+const d = getTransactionDateObj(tx);
+return d ? d.getFullYear() : null;
+}
+
+function getTransactionMonth(tx) {
+const d = getTransactionDateObj(tx);
+return d ? d.getMonth() : -1;
+}
+
+function getTransactionTime(tx) {
+const d = getTransactionDateObj(tx);
+return d ? d.getTime() : 0;
+}
+
+function formatTransactionDate(tx, locale = 'tr-TR') {
+const d = getTransactionDateObj(tx);
+return d ? d.toLocaleDateString(locale) : '-';
+}
+
 function getYearTransactions() {
-return transactions.filter(t => new Date(t.date).getFullYear() === currentYear);
+return transactions.filter(t => getTransactionYear(t) === currentYear);
 }
 
 // ==================== SUMMARY ====================
@@ -2875,7 +2939,7 @@ const isEn = appSettings.lang === 'en';
 
 if (viewMode === 'monthly') {
 // Aylık modda
-txList = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+txList = yearTx.filter(t => getTransactionMonth(t) === currentMonth);
 
 planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
 planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
@@ -3112,7 +3176,7 @@ let cumulativePlan = 0, cumulativeActual = 0;
 
 // Her ay için hesapla
 for (let i = 0; i < 12; i++) {
-const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+const monthTx = yearTx.filter(t => getTransactionMonth(t) === i);
 
 const incomePlan = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
 const incomeActual = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
@@ -3246,7 +3310,7 @@ const incomePlanData = [];
 const expensePlanData = [];
 
 for (let i = 0; i < 12; i++) {
-const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+const monthTx = yearTx.filter(t => getTransactionMonth(t) === i);
 
 incomeData.push(monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0));
 expenseData.push(monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0));
@@ -3344,7 +3408,7 @@ callback: (v) => '$' + v.toLocaleString()
 });
 } else {
 // Doughnut chart for monthly view - showing category breakdown
-const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+const monthTx = yearTx.filter(t => getTransactionMonth(t) === currentMonth);
 
 const expenseByCategory = [];
 const categoryLabels = [];
@@ -3511,7 +3575,7 @@ const plan = isMonthly
 : getCategoryYearlyPlan(cat);
 
 const txList = isMonthly
-? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+? yearTx.filter(t => t.categoryId === cat.id && getTransactionMonth(t) === currentMonth)
 : yearTx.filter(t => t.categoryId === cat.id);
 
 const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
@@ -3660,7 +3724,7 @@ const container = document.getElementById('transactionsList');
 let yearTx = getYearTransactions();
 
 if (selectedMonth !== 'all') {
-yearTx = yearTx.filter(t => new Date(t.date).getMonth() === selectedMonth);
+yearTx = yearTx.filter(t => getTransactionMonth(t) === selectedMonth);
 }
 
 if (yearTx.length === 0) {
@@ -3673,13 +3737,13 @@ container.innerHTML = `
 return;
 }
 
-const sorted = [...yearTx].sort((a, b) => new Date(b.date) - new Date(a.date));
+const sorted = [...yearTx].sort((a, b) => getTransactionTime(b) - getTransactionTime(a));
 
 container.innerHTML = sorted.map(t => {
 const cat = [...categories.income, ...categories.expense].find(c => c.id === t.categoryId);
 const catName = cat ? cat.name : 'Bilinmeyen';
 const catIcon = cat ? cat.icon : 'fa-tag';
-const date = new Date(t.date);
+const date = getTransactionDateObj(t) || new Date();
 
 return `
 <div class="transaction-item">
@@ -4609,7 +4673,7 @@ function generatePDFReport() {
     let txListForCalc;
 
     if (isMonthly) {
-        txListForCalc = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+        txListForCalc = yearTx.filter(t => getTransactionMonth(t) === currentMonth);
         planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
         planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
         factIncome = txListForCalc.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
@@ -4668,7 +4732,7 @@ function generatePDFReport() {
     // Her ay için para birimi bazında plan ve gerçekleşen hesapla
     const monthlyByCurrencyData = [];
     for (let i = 0; i < 12; i++) {
-        const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i && t.type === 'expense');
+        const monthTx = yearTx.filter(t => getTransactionMonth(t) === i && t.type === 'expense');
         const monthTryRate = getRateForMonth('TRY', i);
         const monthRubRate = getRateForMonth('RUB', i);
 
@@ -4835,7 +4899,7 @@ function generatePDFReport() {
     let projectedYearlyExpense, dailyAverage, monthlyAverage;
 
     if (isMonthly) {
-        const monthExpense = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth && t.type === 'expense')
+        const monthExpense = yearTx.filter(t => getTransactionMonth(t) === currentMonth && t.type === 'expense')
             .reduce((sum, t) => sum + t.amountUSD, 0);
         const monthPlan = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
 
@@ -4906,7 +4970,7 @@ function generatePDFReport() {
 
         // Gerçekleşen harcamaları al
         const txListCat = isMonthly
-            ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+            ? yearTx.filter(t => t.categoryId === cat.id && getTransactionMonth(t) === currentMonth)
             : yearTx.filter(t => t.categoryId === cat.id);
         const factUSD = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
 
@@ -4983,7 +5047,7 @@ function generatePDFReport() {
         const planUSD = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
 
         const txListCat = isMonthly
-            ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+            ? yearTx.filter(t => t.categoryId === cat.id && getTransactionMonth(t) === currentMonth)
             : yearTx.filter(t => t.categoryId === cat.id);
         const factUSD = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
 
@@ -5217,7 +5281,7 @@ function generateExcelReport() {
     // Hesaplamalar
     let planIncome, planExpense, factIncome, factExpense;
     if (isMonthly) {
-        const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+        const monthTx = yearTx.filter(t => getTransactionMonth(t) === currentMonth);
         planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
         planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
         factIncome = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
@@ -5257,7 +5321,7 @@ function generateExcelReport() {
         else if (budgetCurrency === 'RUB') planRUB += catPlan * monthRubRate;
     });
 
-    const txListForCurrency = isMonthly ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth && t.type === 'expense') : yearTx.filter(t => t.type === 'expense');
+    const txListForCurrency = isMonthly ? yearTx.filter(t => getTransactionMonth(t) === currentMonth && t.type === 'expense') : yearTx.filter(t => t.type === 'expense');
     actualUSD = txListForCurrency.filter(t => t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
     actualTRY = txListForCurrency.filter(t => t.currency === 'TRY').reduce((sum, t) => sum + t.amount, 0);
     actualRUB = txListForCurrency.filter(t => t.currency === 'RUB').reduce((sum, t) => sum + t.amount, 0);
@@ -5301,7 +5365,7 @@ function generateExcelReport() {
     categories.income.forEach(cat => {
         const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
         const txList = isMonthly
-            ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+            ? yearTx.filter(t => t.categoryId === cat.id && getTransactionMonth(t) === currentMonth)
             : yearTx.filter(t => t.categoryId === cat.id);
         const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
         const diff = fact - plan;
@@ -5357,7 +5421,7 @@ function generateExcelReport() {
         categories.expense.forEach(cat => {
             const plan = getCategoryMonthlyPlan(cat, currentMonth);
             const dailyLimit = plan / daysInMonth;
-            const txList = yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth);
+            const txList = yearTx.filter(t => t.categoryId === cat.id && getTransactionMonth(t) === currentMonth);
             const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
             const diff = plan - fact;
             const percent = plan > 0 ? (fact / plan * 100) : 0;
@@ -5451,16 +5515,16 @@ function generateExcelReport() {
     txData.push([isEn ? 'Date' : 'Tarih', isEn ? 'Type' : 'Tür', isEn ? 'Category' : 'Kategori', isEn ? 'Amount ($)' : 'Tutar ($)', isEn ? 'Amount (₺)' : 'Tutar (₺)', isEn ? 'Original Amount' : 'Orijinal Tutar', isEn ? 'Currency' : 'Para Birimi', isEn ? 'Rate' : 'Kur', isEn ? 'Note' : 'Not']);
 
     const txList = isMonthly
-        ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth)
+        ? yearTx.filter(t => getTransactionMonth(t) === currentMonth)
         : yearTx;
 
-    txList.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
+    txList.sort((a, b) => getTransactionTime(b) - getTransactionTime(a)).forEach(tx => {
         const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
         const catName = cat ? cat.name : (isEn ? 'Unknown' : 'Bilinmiyor');
-        const txTryRate = getRateForMonth('TRY', new Date(tx.date).getMonth());
+        const txTryRate = getRateForMonth('TRY', getTransactionMonth(tx));
 
         txData.push([
-            new Date(tx.date).toLocaleDateString(isEn ? 'en-US' : 'tr-TR'),
+            formatTransactionDate(tx, isEn ? 'en-US' : 'tr-TR'),
             tx.type === 'income' ? (isEn ? '✅ Income' : '✅ Gelir') : (isEn ? '❌ Expense' : '❌ Gider'),
             catName,
             formatNumber(tx.amountUSD),
@@ -6076,7 +6140,8 @@ if (!catName) return;
 // sadece gider işlemlerinde kredi düşsün
 if (tx.type !== 'expense') return;
 
-const d = new Date(tx.date);
+const d = getTransactionDateObj(tx);
+if (!d) return;
 const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 const bm = ensureBalanceMonth(ym);
 
